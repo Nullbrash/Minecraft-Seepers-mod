@@ -18,6 +18,7 @@ sourceSets.main.resources {
     // Exclude common development only resources from finalized outputs
     exclude("**/*.bbmodel") // BlockBench project files
     exclude("src/generated/**/.cache") // datagen cache files
+    exclude("**/.gitkeep") // placeholders that keep empty data folders in git
 }
 
 repositories {

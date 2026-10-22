@@ -1,0 +1,20 @@
+{
+  "seepers.configuration.title": "Настройки Seepers",
+  "seepers.configuration.section.seepers.common.toml": "Общие настройки",
+  "seepers.configuration.section.seepers.common.toml.title": "Общие настройки",
+  "seepers.configuration.section.seepers.client.toml": "Настройки клиента",
+  "seepers.configuration.section.seepers.client.toml.title": "Настройки клиента",
+  "seepers.configuration.section.seepers.server.toml": "Настройки сервера",
+  "seepers.configuration.section.seepers.server.toml.title": "Настройки сервера",
+  "seepers.configuration.debug": "Отладка",
+  "seepers.configuration.debug.button": "Отладка...",
+  "seepers.configuration.debug.tooltip": "Отладка и диагностика",
+  "seepers.configuration.verboseLogging": "Подробный журнал",
+  "seepers.configuration.verboseLogging.tooltip": "Писать в журнал дополнительные диагностические сообщения систем Seepers.",
+  "seepers.configuration.logNetwork": "Журнал сетевых пакетов",
+  "seepers.configuration.logNetwork.tooltip": "Писать в журнал пакеты Seepers, полученные клиентом.",
+  "seepers.configuration.debugCommands": "Отладочные команды",
+  "seepers.configuration.debugCommands.tooltip": "Включить команды /seepers debug для операторов (уровень прав 2).",
+
+  "commands.seepers.debug.ping.result": "Seepers: ответ от %s за %s мс"
+}

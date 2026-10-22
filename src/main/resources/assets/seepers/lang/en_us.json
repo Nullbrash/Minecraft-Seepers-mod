@@ -1,0 +1,20 @@
+{
+  "seepers.configuration.title": "Seepers Settings",
+  "seepers.configuration.section.seepers.common.toml": "Common Settings",
+  "seepers.configuration.section.seepers.common.toml.title": "Common Settings",
+  "seepers.configuration.section.seepers.client.toml": "Client Settings",
+  "seepers.configuration.section.seepers.client.toml.title": "Client Settings",
+  "seepers.configuration.section.seepers.server.toml": "Server Settings",
+  "seepers.configuration.section.seepers.server.toml.title": "Server Settings",
+  "seepers.configuration.debug": "Debug",
+  "seepers.configuration.debug.button": "Debug...",
+  "seepers.configuration.debug.tooltip": "Debugging and diagnostics",
+  "seepers.configuration.verboseLogging": "Verbose logging",
+  "seepers.configuration.verboseLogging.tooltip": "Log extra diagnostic messages from Seepers systems.",
+  "seepers.configuration.logNetwork": "Log network packets",
+  "seepers.configuration.logNetwork.tooltip": "Log Seepers packets received by the client.",
+  "seepers.configuration.debugCommands": "Debug commands",
+  "seepers.configuration.debugCommands.tooltip": "Enable /seepers debug commands for operators (permission level 2).",
+
+  "commands.seepers.debug.ping.result": "Seepers: pong from %s in %s ms"
+}
