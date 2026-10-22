@@ -1,0 +1,52 @@
+### Gradle ###
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/**/build/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/**/out/
+.run/
+
+### Eclipse / VS Code Java (jdt.ls) ###
+.apt_generated
+.classpath
+.eclipse/
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/**/bin/
+
+### VS Code — shared tasks/launch are committed, personal settings are not ###
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Minecraft Modding ###
+run/
+runs/
+!**/src/**/run/
+**/src/generated/**/.cache/
+repo/
+!**/src/**/repo/
+
+### Private project docs (owner decision: not in git) ###
+CLAUDE.md
+.plans/
+.ideas/
+docs/
+.claude/settings.local.json

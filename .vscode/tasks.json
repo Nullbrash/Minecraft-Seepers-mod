@@ -1,0 +1,75 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "./gradlew build",
+            "windows": { "command": ".\\gradlew.bat build" },
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": []
+        },
+        {
+            "label": "runClient",
+            "type": "shell",
+            "command": "./gradlew runClient",
+            "windows": { "command": ".\\gradlew.bat runClient" },
+            "problemMatcher": []
+        },
+        {
+            "label": "runServer",
+            "type": "shell",
+            "command": "./gradlew runServer",
+            "windows": { "command": ".\\gradlew.bat runServer" },
+            "problemMatcher": []
+        },
+        {
+            "label": "runData",
+            "type": "shell",
+            "command": "./gradlew runData",
+            "windows": { "command": ".\\gradlew.bat runData" },
+            "problemMatcher": []
+        },
+        {
+            "label": "deployToInstance",
+            "type": "shell",
+            "command": "./gradlew deployToInstance",
+            "windows": { "command": ".\\gradlew.bat deployToInstance" },
+            "problemMatcher": []
+        },
+        {
+            // --debug-jvm makes the game JVM wait for a debugger on port 5005; the matcher
+            // tells VS Code the task is "ready" so launch.json can attach.
+            "label": "runClient (debug)",
+            "type": "shell",
+            "command": "./gradlew runClient --debug-jvm",
+            "windows": { "command": ".\\gradlew.bat runClient --debug-jvm" },
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "seepers-debug",
+                "pattern": { "regexp": "^__never_matches__$" },
+                "background": {
+                    "activesBegin": ".",
+                    "beginsPattern": ".",
+                    "endsPattern": "Listening for transport dt_socket at address: 5005"
+                }
+            }
+        },
+        {
+            "label": "runServer (debug)",
+            "type": "shell",
+            "command": "./gradlew runServer --debug-jvm",
+            "windows": { "command": ".\\gradlew.bat runServer --debug-jvm" },
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "seepers-debug",
+                "pattern": { "regexp": "^__never_matches__$" },
+                "background": {
+                    "activesBegin": ".",
+                    "beginsPattern": ".",
+                    "endsPattern": "Listening for transport dt_socket at address: 5005"
+                }
+            }
+        }
+    ]
+}
