@@ -5,6 +5,7 @@ import io.github.nullbrash.seepers.command.SeepersCommands;
 import io.github.nullbrash.seepers.config.CommonConfig;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import io.github.nullbrash.seepers.datagen.SeepersDataGen;
+import io.github.nullbrash.seepers.mob.HostileSpawnControl;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
 import io.github.nullbrash.seepers.registry.SeepersAttachments;
 import net.minecraft.resources.ResourceLocation;
@@ -32,6 +33,8 @@ public final class Seepers {
         modBus.addListener(SeepersNetwork::register);
         modBus.addListener(SeepersDataGen::gatherData);
         NeoForge.EVENT_BUS.addListener(SeepersCommands::register);
+        NeoForge.EVENT_BUS.addListener(HostileSpawnControl::onSpawnPlacementCheck);
+        NeoForge.EVENT_BUS.addListener(HostileSpawnControl::onFinalizeSpawn);
     }
 
     public static ResourceLocation id(String path) {
