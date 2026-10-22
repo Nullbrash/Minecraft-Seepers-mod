@@ -77,6 +77,11 @@ neoForge {
     }
 }
 
+// Lets the dev server console read commands typed into (or piped to) the Gradle terminal.
+tasks.named('runServer', JavaExec) {
+    standardInput = System.in
+}
+
 // 'localRuntime' = present in dev runs only, never published as a dependency of the mod.
 configurations {
     runtimeClasspath.extendsFrom localRuntime

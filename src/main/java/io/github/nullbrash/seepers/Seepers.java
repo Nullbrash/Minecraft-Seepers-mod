@@ -6,6 +6,7 @@ import io.github.nullbrash.seepers.config.CommonConfig;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import io.github.nullbrash.seepers.datagen.SeepersDataGen;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
+import io.github.nullbrash.seepers.registry.SeepersAttachments;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -25,6 +26,8 @@ public final class Seepers {
 
         container.registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
         container.registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC);
+
+        SeepersAttachments.ATTACHMENT_TYPES.register(modBus);
 
         modBus.addListener(SeepersNetwork::register);
         modBus.addListener(SeepersDataGen::gatherData);

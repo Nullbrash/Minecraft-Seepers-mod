@@ -16,5 +16,9 @@
   "seepers.configuration.debugCommands": "Отладочные команды",
   "seepers.configuration.debugCommands.tooltip": "Включить команды /seepers debug для операторов (уровень прав 2).",
 
-  "commands.seepers.debug.ping.result": "Seepers: ответ от %s за %s мс"
+  "commands.seepers.debug.ping.result": "Seepers: ответ от %s за %s мс",
+  "commands.seepers.debug.storage.chunk": "Чанк %s: блоков игроков %s, огней %s (проверка %s), аномалии взорвано %s / обтёсано %s",
+  "commands.seepers.debug.storage.dimension": "Измерение %s: обжитых чанков %s (этот: %s), точек лидара %s от %s источников",
+  "commands.seepers.debug.storage.global": "Мир: полных копий баз %s, останков %s, игроков с жизнями %s; ваших жизней %s, текущая метка %s",
+  "commands.seepers.debug.storage.test": "Seepers: тестовые записи сделаны у %s"
 }
