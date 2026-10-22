@@ -52,11 +52,18 @@ neoForge {
     runs {
         client {
             client()
+            // ./gradlew runClient -Pseepers.quickPlay="World name" opens that singleplayer world directly.
+            def quickPlay = providers.gradleProperty('seepers.quickPlay')
+            if (quickPlay.isPresent()) {
+                programArguments.addAll '--quickPlaySingleplayer', quickPlay.get()
+            }
         }
 
         server {
             server()
             programArgument '--nogui'
+            // Own game dir: run/mods holds client-only mods (Sodium) that must not load on a dedicated server.
+            gameDirectory = file('run/server')
         }
 
         data {
@@ -83,13 +90,27 @@ tasks.named('runServer', JavaExec) {
 }
 
 // 'localRuntime' = present in dev runs only, never published as a dependency of the mod.
+// 'clientRunMods' = copied into run/mods instead of the classpath.
 configurations {
     runtimeClasspath.extendsFrom localRuntime
+    clientRunMods { transitive = false }
 }
 
 dependencies {
-    localRuntime "maven.modrinth:sodium:${sodium_version}"
     localRuntime "maven.modrinth:emi:${emi_version}"
+    // Sodium is a jar-in-jar container with an early-loading service. On the dev classpath FML takes the
+    // container itself as the "sodium" mod (no classes) and Sodium silently does nothing; from the mods
+    // folder it loads exactly as in a real instance.
+    clientRunMods "maven.modrinth:sodium:${sodium_version}"
+}
+
+// run/mods is managed by Gradle: files not listed in clientRunMods are removed.
+def syncClientRunMods = tasks.register('syncClientRunMods', Sync) {
+    from configurations.clientRunMods
+    into file('run/mods')
+}
+tasks.named('runClient') {
+    dependsOn syncClientRunMods
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
