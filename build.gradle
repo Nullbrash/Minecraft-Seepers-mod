@@ -21,7 +21,7 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // Run-only test mods. Content filters keep these repos from being queried for anything else.
+    // Run-only test mods — the same Modrinth files as in the Prism test instance.
     exclusiveContent {
         forRepository {
             maven {
@@ -30,18 +30,6 @@ repositories {
             }
         }
         filter { includeGroup 'maven.modrinth' }
-    }
-    exclusiveContent {
-        forRepository {
-            maven {
-                name = 'BlameJared'
-                url = 'https://maven.blamejared.com'
-            }
-        }
-        filter {
-            includeGroup 'mezz.jei'
-            includeGroup 'net.mezzdev.config' // JEI's transitive config library (other net.mezzdev artifacts live on Maven Central)
-        }
     }
 }
 
@@ -95,7 +83,7 @@ configurations {
 
 dependencies {
     localRuntime "maven.modrinth:sodium:${sodium_version}"
-    localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    localRuntime "maven.modrinth:emi:${emi_version}"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

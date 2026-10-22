@@ -10,7 +10,7 @@ Requires JDK 21.
 
 ```
 ./gradlew build            # jar in build/libs/
-./gradlew runClient        # dev client (Sodium and JEI are loaded for testing only)
+./gradlew runClient        # dev client (Sodium and EMI are loaded for testing only)
 ./gradlew runServer        # dev dedicated server
 ./gradlew deployToInstance # copy the jar into a local test instance
 ```
