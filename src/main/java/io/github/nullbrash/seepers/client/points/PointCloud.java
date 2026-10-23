@@ -25,6 +25,8 @@ public final class PointCloud {
     private static final int QUANT = 32;
     private static final int LIGHT_CHECK_TICKS = 20;
     private static final int LIGHT_SAMPLES_PER_TICK = 4096;
+    /** A point touched again sooner than this is left as is: constant touching must not churn the ring. */
+    private static final float REFRESH_MIN_AGE_SECONDS = 2;
 
     private static @Nullable PointCloud current;
 
@@ -50,8 +52,13 @@ public final class PointCloud {
         }
     }
 
-    /** One source's points in arrival order. Slots whose section entry points elsewhere are dead. */
+    /**
+     * One source's points in arrival order. Slots whose section entry points elsewhere are dead (refreshed or
+     * replaced). The limit counts live points; twice as many slots leave room for the dead ones, so refreshing
+     * old points does not push out other live ones early.
+     */
     static final class Ring {
+        final int limit;
         final int capacity;
         final long[] section;
         final int[] local;
@@ -64,9 +71,11 @@ public final class PointCloud {
         final float[] lifetime;
         int head;
         int size;
+        int live;
 
-        Ring(int capacity) {
-            this.capacity = capacity;
+        Ring(int limit) {
+            this.limit = limit;
+            this.capacity = limit * 2;
             section = new long[capacity];
             local = new int[capacity];
             x = new float[capacity];
@@ -120,9 +129,20 @@ public final class PointCloud {
         float lz = (float) (z - oz);
         int local = face.ordinal() << 27 | quant(lx) << 18 | quant(ly) << 9 | quant(lz);
 
+        Section section = sections.computeIfAbsent(sectionKey, Section::new);
+        int existing = section.points.get(local);
+        float now = now(0);
+        if (existing != -1) {
+            Ring owner = ringOf(existing);
+            if (owner == ring && now - ring.born[existing & 0xFFFFFF] < REFRESH_MIN_AGE_SECONDS) return;
+            section.points.remove(local); // its slot turns dead now, before any eviction below
+            owner.live--;
+        }
+        while (ring.live >= ring.limit) removeSlot(source, ring, ring.head); // drop the oldest live point
         if (ring.size == ring.capacity) removeSlot(source, ring, ring.head);
         int slot = (ring.head + ring.size) % ring.capacity;
         ring.size++;
+        ring.live++;
         ring.section[slot] = sectionKey;
         ring.local[slot] = local;
         ring.x[slot] = lx;
@@ -130,11 +150,10 @@ public final class PointCloud {
         ring.z[slot] = lz;
         ring.face[slot] = (byte) face.ordinal();
         ring.material[slot] = (byte) material;
-        ring.born[slot] = now(0);
+        ring.born[slot] = now;
         ring.lifetime[slot] = source.lifetimeSeconds();
 
-        Section section = sections.computeIfAbsent(sectionKey, Section::new);
-        section.points.put(local, source.ordinal() << 24 | slot); // an older point at the spot is now dead
+        section.points.put(local, source.ordinal() << 24 | slot);
         section.dirty = true;
     }
 
@@ -154,12 +173,7 @@ public final class PointCloud {
 
     public int count(PointSource source) {
         Ring ring = rings.get(source);
-        if (ring == null) return 0;
-        int alive = 0;
-        for (int i = 0; i < ring.size; i++) {
-            if (isAlive(source, ring, (ring.head + i) % ring.capacity)) alive++;
-        }
-        return alive;
+        return ring == null ? 0 : ring.live;
     }
 
     public int clear() {
@@ -214,7 +228,7 @@ public final class PointCloud {
     private @Nullable Ring ring(PointSource source) {
         int capacity = source.capacity();
         Ring ring = rings.get(source);
-        if (ring != null && ring.capacity == capacity) return ring;
+        if (ring != null && ring.limit == capacity) return ring;
         if (ring != null) {
             while (ring.size > 0) removeSlot(source, ring, ring.head); // the limit changed: start this share over
             rings.remove(source);
@@ -236,6 +250,7 @@ public final class PointCloud {
             Section section = sections.get(ring.section[slot]);
             section.points.remove(ring.local[slot]);
             section.dirty = true;
+            ring.live--;
         }
         ring.head = (ring.head + 1) % ring.capacity;
         ring.size--;

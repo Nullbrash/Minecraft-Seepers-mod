@@ -271,5 +271,7 @@
   "commands.seepers.points.test": "Добавлено %s точек на %s гранях за %s мс",
   "commands.seepers.points.clear": "Удалено точек: %s",
   "commands.seepers.points.stats": "Точек: %s (ощупь %s/%s, отладка %s); секций %s, с буферами %s; за секунду пересобрано секций %s за %s мс; рисование %s мс за кадр; %s FPS",
-  "commands.seepers.points.disabled": "Отладочные команды точек требуют включённых отладочных команд на сервере и прав оператора"
+  "commands.seepers.points.disabled": "Отладочные команды точек требуют включённых отладочных команд на сервере и прав оператора",
+  "seepers.configuration.touch.warmHeat": "Тёплое от тепла",
+  "seepers.configuration.touch.warmHeat.tooltip": "Тепло (плотность тумана, снятая источниками тепла), с которого поверхность на ощупь тёплая."
 }

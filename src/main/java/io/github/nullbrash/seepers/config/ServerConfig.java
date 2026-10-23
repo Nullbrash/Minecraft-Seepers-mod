@@ -61,6 +61,7 @@ public final class ServerConfig {
     public static final ModConfigSpec.IntValue ROOM_RECHECK_TICKS;
     public static final ModConfigSpec.IntValue TOUCH_POINT_LIMIT;
     public static final ModConfigSpec.DoubleValue TOUCH_POINT_LIFETIME_SECONDS;
+    public static final ModConfigSpec.DoubleValue TOUCH_WARM_HEAT;
     public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_START;
     public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_FULL;
     public static final ModConfigSpec.DoubleValue FIRE_CHECK_SECONDS;
@@ -198,6 +199,8 @@ public final class ServerConfig {
                 .translation("seepers.configuration.touch.pointLimit").defineInRange("pointLimit", 4096, 0, 65536);
         TOUCH_POINT_LIFETIME_SECONDS = builder.comment("Seconds a touch point lasts; it fades over the last third.")
                 .translation("seepers.configuration.touch.pointLifetimeSeconds").defineInRange("pointLifetimeSeconds", 60.0, 1.0, 3600.0);
+        TOUCH_WARM_HEAT = builder.comment("Heat (fog density cleared by heat sources) from which a surface feels warm.")
+                .translation("seepers.configuration.touch.warmHeat").defineInRange("warmHeat", 0.4, 0.0, 16.0);
         builder.pop();
 
         builder.comment("Fog blows out torches, breaks campfires and puts out candles (tags #seepers:fire/*). Lanterns are safe.")

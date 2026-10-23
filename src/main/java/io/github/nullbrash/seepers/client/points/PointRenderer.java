@@ -10,6 +10,7 @@ import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import io.github.nullbrash.seepers.Seepers;
+import io.github.nullbrash.seepers.client.touch.TouchMaterial;
 import io.github.nullbrash.seepers.config.ClientConfig;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -39,10 +40,6 @@ public final class PointRenderer {
             .add("UV0", VertexFormatElement.UV0)
             .add("UV1", VertexFormatElement.UV1)
             .build();
-    /** Cold blue-white (CLAUDE.md 5: one color for all sources until analysis). */
-    private static final int RED = 199;
-    private static final int GREEN = 230;
-    private static final int BLUE = 255;
     private static final long REBUILD_BUDGET_NANOS = 2_000_000;
     private static final int[][] CORNERS = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
 
@@ -166,8 +163,10 @@ public final class PointRenderer {
             float x = ring.x[slot] + face.getStepX() * lift;
             float y = ring.y[slot] + face.getStepY() * lift;
             float z = ring.z[slot] + face.getStepZ() * lift;
+            // Material tint (touch); solid is the cold blue-white shared by all sources (CLAUDE.md 5).
+            TouchMaterial material = TouchMaterial.byId(ring.material[slot]);
             for (int[] corner : CORNERS) {
-                builder.addVertex(x, y, z).setColor(RED, GREEN, BLUE, alpha).setUv(ring.born[slot], ring.lifetime[slot])
+                builder.addVertex(x, y, z).setColor(material.red, material.green, material.blue, alpha).setUv(ring.born[slot], ring.lifetime[slot])
                         .setUv1(corner[0], corner[1]);
             }
         }

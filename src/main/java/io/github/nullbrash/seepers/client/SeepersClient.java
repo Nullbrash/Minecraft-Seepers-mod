@@ -8,6 +8,7 @@ import io.github.nullbrash.seepers.client.fog.ClientRooms;
 import io.github.nullbrash.seepers.client.points.PointCloud;
 import io.github.nullbrash.seepers.client.points.PointCommands;
 import io.github.nullbrash.seepers.client.points.PointRenderer;
+import io.github.nullbrash.seepers.client.touch.ClientTouch;
 import io.github.nullbrash.seepers.config.ClientConfig;
 import io.github.nullbrash.seepers.light.LightDimension;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -40,6 +41,7 @@ public final class SeepersClient {
         modBus.addListener(PointRenderer::onRegisterShaders);
         NeoForge.EVENT_BUS.addListener(PointRenderer::onRenderLevelStage);
         NeoForge.EVENT_BUS.addListener(PointCommands::register);
+        NeoForge.EVENT_BUS.addListener(ClientTouch::onClientTick);
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> {
             PointCloud cloud = PointCloud.get();
             if (cloud != null) cloud.tick();

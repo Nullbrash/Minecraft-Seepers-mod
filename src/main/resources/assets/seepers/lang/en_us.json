@@ -271,5 +271,7 @@
   "commands.seepers.points.test": "Added %s points on %s faces in %s ms",
   "commands.seepers.points.clear": "Removed %s points",
   "commands.seepers.points.stats": "Points: %s (touch %s/%s, debug %s); sections %s with buffers %s; rebuilt %s sections in %s ms last second; draw %s ms per frame; %s FPS",
-  "commands.seepers.points.disabled": "Point debug commands need debug commands enabled on the server and operator rights"
+  "commands.seepers.points.disabled": "Point debug commands need debug commands enabled on the server and operator rights",
+  "seepers.configuration.touch.warmHeat": "Feels warm from heat",
+  "seepers.configuration.touch.warmHeat.tooltip": "Heat (fog density cleared by heat sources) from which a surface feels warm."
 }

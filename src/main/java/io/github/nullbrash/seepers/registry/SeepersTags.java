@@ -19,6 +19,11 @@ public final class SeepersTags {
         public static final TagKey<Block> FIRE_BREAK = TagKey.create(Registries.BLOCK, Seepers.id("fire/break"));
         /** Fog puts these out in place (state property {@code lit}). */
         public static final TagKey<Block> FIRE_EXTINGUISH = TagKey.create(Registries.BLOCK, Seepers.id("fire/extinguish"));
+        /** Touch materials (CLAUDE.md 5.1); anything else feels solid. Warm also comes from the heat field. */
+        public static final TagKey<Block> TOUCH_LOOSE = TagKey.create(Registries.BLOCK, Seepers.id("touch/loose"));
+        public static final TagKey<Block> TOUCH_SOFT = TagKey.create(Registries.BLOCK, Seepers.id("touch/soft"));
+        public static final TagKey<Block> TOUCH_WET = TagKey.create(Registries.BLOCK, Seepers.id("touch/wet"));
+        public static final TagKey<Block> TOUCH_WARM = TagKey.create(Registries.BLOCK, Seepers.id("touch/warm"));
         /** Not dimmed when waterlogged: blocks that only glow in water. */
         public static final TagKey<Block> LIGHT_NO_WATER_DIMMING =
                 TagKey.create(Registries.BLOCK, Seepers.id("light/no_water_dimming"));
