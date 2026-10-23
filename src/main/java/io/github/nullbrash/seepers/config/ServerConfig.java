@@ -49,6 +49,10 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue FOG_DISTORTION_START;
     public static final ModConfigSpec.DoubleValue FOG_DISTORTION_FULL;
     public static final ModConfigSpec.DoubleValue FOG_DISTORTION_DENSITY;
+    public static final ModConfigSpec.DoubleValue FOG_NEAR_FRACTION;
+    public static final ModConfigSpec.DoubleValue FOG_HALO_STRENGTH;
+    public static final ModConfigSpec.DoubleValue FOG_UNDERWATER_VISIBILITY;
+    public static final ModConfigSpec.IntValue FOG_RENDER_MARGIN;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -149,6 +153,12 @@ public final class ServerConfig {
         FOG_DISTORTION_START = fogDouble(builder, "startDistance", "Distance from spawn where fog starts to grow.", 1000.0, 0.0, 1.0E7);
         FOG_DISTORTION_FULL = fogDouble(builder, "fullDistance", "Distance where the extra density reaches its maximum.", 10000.0, 1.0, 1.0E7);
         FOG_DISTORTION_DENSITY = fogDouble(builder, "density", "Extra density at full distortion.", 1.0, 0.0, 8.0);
+        builder.pop();
+        builder.push("render");
+        FOG_NEAR_FRACTION = fogDouble(builder, "nearFraction", "Fog starts at this fraction of the visibility distance.", 0.15, 0.0, 1.0);
+        FOG_HALO_STRENGTH = fogDouble(builder, "haloStrength", "How much the fog lightens when you stand in light (0 = never).", 0.25, 0.0, 1.0);
+        FOG_UNDERWATER_VISIBILITY = fogDouble(builder, "underwaterVisibility", "Blocks visible under water (more with water vision and conduit power).", 6.0, 1.0, 128.0);
+        FOG_RENDER_MARGIN = fogInt(builder, "renderDistanceMargin", "Fog always ends this many blocks before the render distance.", 16, 0, 256);
         builder.pop(2);
 
         SPEC = builder.build();

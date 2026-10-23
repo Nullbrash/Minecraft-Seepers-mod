@@ -33,7 +33,11 @@ public record FogSettings(
         double waterDensity,
         double distortionStart,
         double distortionFull,
-        double distortionDensity) {
+        double distortionDensity,
+        double nearFraction,
+        double haloStrength,
+        double underwaterVisibility,
+        int renderDistanceMargin) {
 
     private static volatile FogSettings current = read();
 
@@ -79,6 +83,10 @@ public record FogSettings(
                 ServerConfig.get(ServerConfig.FOG_WATER_DENSITY),
                 ServerConfig.get(ServerConfig.FOG_DISTORTION_START),
                 ServerConfig.get(ServerConfig.FOG_DISTORTION_FULL),
-                ServerConfig.get(ServerConfig.FOG_DISTORTION_DENSITY));
+                ServerConfig.get(ServerConfig.FOG_DISTORTION_DENSITY),
+                ServerConfig.get(ServerConfig.FOG_NEAR_FRACTION),
+                ServerConfig.get(ServerConfig.FOG_HALO_STRENGTH),
+                ServerConfig.get(ServerConfig.FOG_UNDERWATER_VISIBILITY),
+                ServerConfig.get(ServerConfig.FOG_RENDER_MARGIN));
     }
 }
