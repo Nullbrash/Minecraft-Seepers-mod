@@ -1,5 +1,6 @@
 package io.github.nullbrash.seepers.config;
 
+import io.github.nullbrash.seepers.heat.HeatCategory;
 import io.github.nullbrash.seepers.light.LightCategory;
 import java.util.EnumMap;
 import java.util.List;
@@ -53,6 +54,11 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue FOG_HALO_STRENGTH;
     public static final ModConfigSpec.DoubleValue FOG_UNDERWATER_VISIBILITY;
     public static final ModConfigSpec.IntValue FOG_RENDER_MARGIN;
+    public static final ModConfigSpec.DoubleValue HEAT_WARMUP_SECONDS;
+    public static final ModConfigSpec.DoubleValue HEAT_COOLDOWN_SECONDS;
+    public static final ModConfigSpec.IntValue HEAT_MAX_SOURCES_PER_CHUNK;
+    public static final Map<HeatCategory, ModConfigSpec.DoubleValue> HEAT_STRENGTH = new EnumMap<>(HeatCategory.class);
+    public static final Map<HeatCategory, ModConfigSpec.DoubleValue> HEAT_RADIUS = new EnumMap<>(HeatCategory.class);
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -160,6 +166,24 @@ public final class ServerConfig {
         FOG_UNDERWATER_VISIBILITY = fogDouble(builder, "underwaterVisibility", "Blocks visible under water (more with water vision and conduit power).", 6.0, 1.0, 128.0);
         FOG_RENDER_MARGIN = fogInt(builder, "renderDistanceMargin", "Fog always ends this many blocks before the render distance.", 16, 0, 256);
         builder.pop(2);
+
+        builder.comment("Heat clears fog around its sources (tags #seepers:heat/<name>).")
+                .translation("seepers.configuration.heat").push("heat");
+        HEAT_WARMUP_SECONDS = builder.comment("Seconds until a newly lit source clears fog fully.")
+                .translation("seepers.configuration.heat.warmupSeconds").defineInRange("warmupSeconds", 30.0, 0.0, 3600.0);
+        HEAT_COOLDOWN_SECONDS = builder.comment("Seconds for the fog to return after a source goes out (inertia).")
+                .translation("seepers.configuration.heat.cooldownSeconds").defineInRange("cooldownSeconds", 120.0, 0.0, 36000.0);
+        HEAT_MAX_SOURCES_PER_CHUNK = builder.comment("Heat sources tracked per chunk (lava lakes and the like are capped).")
+                .translation("seepers.configuration.heat.maxSourcesPerChunk").defineInRange("maxSourcesPerChunk", 64, 0, 4096);
+        for (HeatCategory category : HeatCategory.values()) {
+            builder.push(category.id);
+            HEAT_STRENGTH.put(category, builder.comment("Fog density cleared at the source (halvings).")
+                    .translation("seepers.configuration.heat.strength").defineInRange("strength", category.defaultStrength, 0.0, 16.0));
+            HEAT_RADIUS.put(category, builder.comment("Radius of the heated area, blocks.")
+                    .translation("seepers.configuration.heat.radius").defineInRange("radius", category.defaultRadius, 0.0, 16.0));
+            builder.pop();
+        }
+        builder.pop();
 
         SPEC = builder.build();
     }

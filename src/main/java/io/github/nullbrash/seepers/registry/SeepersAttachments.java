@@ -4,6 +4,7 @@ import io.github.nullbrash.seepers.Seepers;
 import io.github.nullbrash.seepers.data.chunk.AnomalyBlocks;
 import io.github.nullbrash.seepers.data.chunk.ChunkData;
 import io.github.nullbrash.seepers.data.chunk.FireSources;
+import io.github.nullbrash.seepers.data.chunk.HeatSources;
 import io.github.nullbrash.seepers.data.chunk.PlayerPlacedBlocks;
 import java.util.function.Function;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -23,6 +24,12 @@ public final class SeepersAttachments {
             chunk("fire_sources", FireSources::new);
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<AnomalyBlocks>> ANOMALY_BLOCKS =
             chunk("anomaly_blocks", AnomalyBlocks::new);
+    /** Synced to clients: they render heated fog from it. */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<HeatSources>> HEAT_SOURCES =
+            ATTACHMENT_TYPES.register("heat_sources", () -> AttachmentType.builder(HeatSources::new)
+                    .serialize(ChunkData.serializer(HeatSources::new))
+                    .sync(HeatSources.SYNC)
+                    .build());
 
     private static <T extends ChunkData> DeferredHolder<AttachmentType<?>, AttachmentType<T>> chunk(
             String name, Function<IAttachmentHolder, T> constructor) {

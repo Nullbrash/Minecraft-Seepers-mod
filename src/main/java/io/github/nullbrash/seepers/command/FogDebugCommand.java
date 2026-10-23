@@ -37,7 +37,7 @@ final class FogDebugCommand {
         double total = FogField.density(context, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
 
         source.sendSuccess(() -> Component.translatable("commands.seepers.debug.fog.total",
-                pos.toShortString(), f(total), f(settings.visibility(total))), false);
+                pos.toShortString(), f(total), f(total - s.total()), f(settings.visibility(total))), false);
         source.sendSuccess(() -> Component.translatable("commands.seepers.debug.fog.parts",
                 f(s.base()), f(s.layers()), f(s.wave()), f(s.weather()), f(s.water()), f(s.distortion()),
                 f(s.pocketFactor()), f(s.storm())), false);

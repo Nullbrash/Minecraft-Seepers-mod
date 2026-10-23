@@ -52,6 +52,11 @@ public final class ClientFog {
         return hasSeed ? FogField.density(level, seed, x, y, z) : Double.NaN;
     }
 
+    /** Base density without modifiers (heat, rooms): the fog just outside a heated area. */
+    public static double baseDensity(ClientLevel level, double x, double y, double z) {
+        return hasSeed ? FogDensity.at(context(level), x, y, z) : Double.NaN;
+    }
+
     /** Trilinear sample from the grid; falls back to direct computation for cells not computed yet. */
     public static double density(ClientLevel level, double x, double y, double z) {
         if (!hasSeed) return Double.NaN;

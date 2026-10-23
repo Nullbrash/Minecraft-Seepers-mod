@@ -3,6 +3,7 @@ package io.github.nullbrash.seepers.client.fog;
 import com.mojang.blaze3d.shaders.FogShape;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import io.github.nullbrash.seepers.fog.FogSettings;
+import io.github.nullbrash.seepers.heat.HeatField;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
@@ -28,6 +29,7 @@ public final class ClientFogRenderer {
 
     private static FogType smoothedType;
     private static double smoothedVisibility;
+    private static double smoothedEdge;
     private static long lastUpdateNanos;
 
     public static void onRenderFog(ViewportEvent.RenderFog event) {
@@ -39,6 +41,7 @@ public final class ClientFogRenderer {
         FogSettings settings = FogSettings.current();
         Vec3 camera = event.getCamera().getPosition();
         double target;
+        double edge = 0;
         if (type == FogType.WATER) {
             target = settings.underwaterVisibility();
             if (event.getCamera().getEntity() instanceof LocalPlayer player) {
@@ -49,13 +52,22 @@ public final class ClientFogRenderer {
             double density = ClientFog.density(level, camera.x, camera.y, camera.z);
             if (Double.isNaN(density)) return; // no fog seed yet: leave vanilla fog
             target = settings.visibility(density);
+            // Inside a heated area the fog starts at its edge and the outside looks fogged (CLAUDE.md 4.4).
+            edge = HeatField.edgeDistance(level, camera.x, camera.y, camera.z);
+            if (edge > 0) {
+                double outside = settings.visibility(ClientFog.baseDensity(level, camera.x, camera.y, camera.z));
+                target = Math.max(target, edge + outside);
+            }
         }
 
-        double visibility = smooth(type, target);
+        double alpha = smoothingStep(type);
+        smoothedVisibility += (target - smoothedVisibility) * alpha;
+        smoothedEdge += (edge - smoothedEdge) * alpha;
         double renderLimit = minecraft.options.getEffectiveRenderDistance() * 16.0 - settings.renderDistanceMargin();
-        float far = (float) Math.max(1.0, Math.min(Math.min(visibility, renderLimit), event.getFarPlaneDistance()));
+        float far = (float) Math.max(1.0, Math.min(Math.min(smoothedVisibility, renderLimit), event.getFarPlaneDistance()));
+        float near = (float) Math.min(far, Math.max(far * settings.nearFraction(), smoothedEdge));
         event.setFarPlaneDistance(far);
-        event.setNearPlaneDistance((float) (far * settings.nearFraction()));
+        event.setNearPlaneDistance(near);
         event.setFogShape(FogShape.SPHERE); // layers are horizontal: distance must count vertically too
         event.setCanceled(true); // required for the plane changes to apply
     }
@@ -81,19 +93,22 @@ public final class ClientFogRenderer {
         return FogSettings.current().haloStrength() * t * t;
     }
 
-    /** Time-based, so the two fog events per frame (sky and terrain) do not step twice. */
-    private static double smooth(FogType type, double target) {
+    /**
+     * Fraction to move toward the targets this call. Time-based, so the two fog events per frame
+     * (sky and terrain) do not step twice; 1 (snap) when entering or leaving water.
+     */
+    private static double smoothingStep(FogType type) {
         long now = System.nanoTime();
+        double alpha;
         if (type != smoothedType) {
             smoothedType = type;
-            smoothedVisibility = target; // entering or leaving water: snap
+            alpha = 1;
         } else {
             double dt = (now - lastUpdateNanos) / 1.0e9;
-            double alpha = 1 - Math.exp(-Math.max(0, dt) / SMOOTHING_SECONDS);
-            smoothedVisibility += (target - smoothedVisibility) * alpha;
+            alpha = 1 - Math.exp(-Math.max(0, dt) / SMOOTHING_SECONDS);
         }
         lastUpdateNanos = now;
-        return smoothedVisibility;
+        return alpha;
     }
 
     private ClientFogRenderer() {}
