@@ -79,5 +79,8 @@
   "commands.seepers.debug.storage.chunk": "Чанк %s: блоков игроков %s, огней %s (проверка %s), аномалии взорвано %s / обтёсано %s",
   "commands.seepers.debug.storage.dimension": "Измерение %s: обжитых чанков %s (этот: %s), точек лидара %s от %s источников",
   "commands.seepers.debug.storage.global": "Мир: полных копий баз %s, останков %s, игроков с жизнями %s; ваших жизней %s, текущая метка %s",
-  "commands.seepers.debug.storage.test": "Seepers: тестовые записи сделаны у %s"
+  "commands.seepers.debug.storage.test": "Seepers: тестовые записи сделаны у %s",
+  "commands.seepers.debug.light": "Свет в %s: блочный %s, небесный %s; %s — категория %s, излучает здесь %s, непрозрачность %s",
+  "commands.seepers.debug.relight.started": "Пересчёт света: %s чанков вокруг %s...",
+  "commands.seepers.debug.relight.done": "Пересчёт света готов: %s чанков, проверено блоков: %s"
 }

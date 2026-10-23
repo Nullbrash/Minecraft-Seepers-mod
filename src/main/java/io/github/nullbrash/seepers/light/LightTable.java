@@ -26,6 +26,7 @@ public final class LightTable {
     private static final int PRESENT = 1 << 12;
 
     public static synchronized void rebuild() {
+        long startedAt = System.nanoTime();
         int cap = ServerConfig.get(ServerConfig.LIGHT_UNCATEGORIZED_MAX);
         double waterloggedFactor = ServerConfig.get(ServerConfig.LIGHT_WATERLOGGED_FACTOR);
         int waterAbsorption = ServerConfig.get(ServerConfig.LIGHT_WATER_ABSORPTION);
@@ -50,8 +51,8 @@ public final class LightTable {
                 }
             }
         }
-        Seepers.LOGGER.info("Light table rebuilt: {} states overridden; emitters without a light category: {}",
-                overridden, uncategorized.isEmpty() ? "none" : uncategorized);
+        Seepers.LOGGER.info("Light table rebuilt in {} ms: {} states overridden; emitters without a light category: {}",
+                (System.nanoTime() - startedAt) / 1_000_000, overridden, uncategorized.isEmpty() ? "none" : uncategorized);
     }
 
     private static int computeLight(BlockState state, Map<LightCategory, int[]> levels, int cap,
@@ -90,7 +91,7 @@ public final class LightTable {
         return pack(overworld, nether, end);
     }
 
-    private static LightCategory categoryOf(BlockState state) {
+    public static LightCategory categoryOf(BlockState state) {
         for (LightCategory category : LightCategory.values()) {
             if (state.is(category.tag)) return category;
         }

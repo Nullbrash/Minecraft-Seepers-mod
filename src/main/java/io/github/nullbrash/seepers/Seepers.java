@@ -6,6 +6,7 @@ import io.github.nullbrash.seepers.config.CommonConfig;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import io.github.nullbrash.seepers.datagen.SeepersDataGen;
 import io.github.nullbrash.seepers.light.LightTable;
+import io.github.nullbrash.seepers.light.Relighter;
 import io.github.nullbrash.seepers.mob.HostileSpawnControl;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
 import io.github.nullbrash.seepers.registry.SeepersAttachments;
@@ -41,6 +42,8 @@ public final class Seepers {
 
         // Light overrides depend on tags and the server config: rebuild whenever either changes.
         NeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> LightTable.rebuild());
+        NeoForge.EVENT_BUS.addListener(Relighter::onServerTick);
+        NeoForge.EVENT_BUS.addListener(Relighter::onServerStopping);
         modBus.addListener((ModConfigEvent.Loading event) -> onConfigChanged(event.getConfig()));
         modBus.addListener((ModConfigEvent.Reloading event) -> onConfigChanged(event.getConfig()));
     }

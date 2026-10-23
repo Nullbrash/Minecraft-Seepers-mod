@@ -79,5 +79,8 @@
   "commands.seepers.debug.storage.chunk": "Chunk %s: player blocks %s, fire sources %s (last check %s), anomaly blasted %s / chiseled %s",
   "commands.seepers.debug.storage.dimension": "Dimension %s: active chunks %s (this one: %s), lidar points %s from %s sources",
   "commands.seepers.debug.storage.global": "World: full base copies %s, remains %s, players with lives %s; your lives %s, current tag %s",
-  "commands.seepers.debug.storage.test": "Seepers: test records written at %s"
+  "commands.seepers.debug.storage.test": "Seepers: test records written at %s",
+  "commands.seepers.debug.light": "Light at %s: block %s, sky %s; %s — category %s, emits %s here, opacity %s",
+  "commands.seepers.debug.relight.started": "Relighting %s chunks around %s...",
+  "commands.seepers.debug.relight.done": "Relight done: %s chunks, %s blocks re-checked"
 }

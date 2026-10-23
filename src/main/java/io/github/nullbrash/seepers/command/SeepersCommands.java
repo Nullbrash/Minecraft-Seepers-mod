@@ -25,7 +25,9 @@ public final class SeepersCommands {
                                             PingTracker.send(context.getSource(), EntityArgument.getPlayer(context, "target"));
                                             return 1;
                                         })))
-                        .then(StorageDebugCommand.build())));
+                        .then(StorageDebugCommand.build())
+                        .then(LightDebugCommand.light())
+                        .then(LightDebugCommand.relight())));
     }
 
     private SeepersCommands() {}
