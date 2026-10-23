@@ -1,5 +1,9 @@
 package io.github.nullbrash.seepers.config;
 
+import io.github.nullbrash.seepers.light.LightCategory;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
@@ -13,6 +17,11 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue MAX_GAMMA;
     public static final ModConfigSpec.BooleanValue NIGHT_VISION_BRIGHTENS;
     public static final ModConfigSpec.BooleanValue DISABLE_NATURAL_HOSTILE_SPAWNS;
+    public static final ModConfigSpec.IntValue LIGHT_UNCATEGORIZED_MAX;
+    public static final ModConfigSpec.DoubleValue LIGHT_WATERLOGGED_FACTOR;
+    public static final ModConfigSpec.IntValue LIGHT_WATER_ABSORPTION;
+    public static final Map<LightCategory, ModConfigSpec.ConfigValue<List<? extends Integer>>> LIGHT_LEVELS =
+            new EnumMap<>(LightCategory.class);
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -45,6 +54,30 @@ public final class ServerConfig {
                 .translation("seepers.configuration.disableNaturalHostileSpawns")
                 .define("disableNaturalHostileSpawns", true);
         builder.pop();
+
+        builder.comment("Block light. Changes apply where light is recomputed (new chunks, changed blocks).")
+                .translation("seepers.configuration.light").push("light");
+        LIGHT_UNCATEGORIZED_MAX = builder
+                .comment("Maximum light level of emitting blocks that are in no light category tag (e.g. from other mods).")
+                .translation("seepers.configuration.uncategorizedMax")
+                .defineInRange("uncategorizedMax", 13, 0, 15);
+        LIGHT_WATERLOGGED_FACTOR = builder
+                .comment("Light multiplier for waterlogged blocks (except tag #seepers:light/no_water_dimming).")
+                .translation("seepers.configuration.waterloggedFactor")
+                .defineInRange("waterloggedFactor", 0.5, 0.0, 1.0);
+        LIGHT_WATER_ABSORPTION = builder
+                .comment("Light levels lost per block of water (vanilla: 1).")
+                .translation("seepers.configuration.waterAbsorption")
+                .defineInRange("waterAbsorption", 3, 1, 15);
+        builder.comment("Light level of each tag #seepers:light/<name> as [overworld, nether, end]; candle: [1, 2, 3, 4 candles].")
+                .translation("seepers.configuration.categories").push("categories");
+        for (LightCategory category : LightCategory.values()) {
+            LIGHT_LEVELS.put(category, builder
+                    .translation("seepers.configuration.light." + category.id)
+                    .defineList(category.id, category.defaults, () -> 0,
+                            value -> value instanceof Integer level && level >= 0 && level <= 15));
+        }
+        builder.pop(2);
 
         SPEC = builder.build();
     }

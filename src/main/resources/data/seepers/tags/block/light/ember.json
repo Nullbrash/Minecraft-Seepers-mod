@@ -1,0 +1,17 @@
+{
+  "values": [
+    "minecraft:nether_portal",
+    "minecraft:end_portal",
+    "minecraft:end_gateway",
+    "minecraft:crying_obsidian",
+    "minecraft:glow_lichen",
+    "minecraft:sea_pickle",
+    "minecraft:amethyst_cluster",
+    "minecraft:large_amethyst_bud",
+    "minecraft:medium_amethyst_bud",
+    "minecraft:small_amethyst_bud",
+    "minecraft:magma_block",
+    "minecraft:cave_vines",
+    "minecraft:cave_vines_plant"
+  ]
+}

@@ -4,6 +4,8 @@ import io.github.nullbrash.seepers.Seepers;
 import io.github.nullbrash.seepers.client.darkness.DarkFog;
 import io.github.nullbrash.seepers.client.darkness.DarkSkyEffects;
 import io.github.nullbrash.seepers.config.ClientConfig;
+import io.github.nullbrash.seepers.light.LightDimension;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -12,6 +14,7 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.LevelEvent;
 
 /** Client entry point; FML never loads this class on a dedicated server. */
 @Mod(value = Seepers.MOD_ID, dist = Dist.CLIENT)
@@ -23,5 +26,11 @@ public final class SeepersClient {
 
         modBus.addListener(DarkSkyEffects::register);
         NeoForge.EVENT_BUS.addListener(DarkFog::onComputeFogColor);
+        // Chunk-mesh regions carry no level: tell the light overrides which dimension the client is in.
+        NeoForge.EVENT_BUS.addListener((LevelEvent.Load event) -> {
+            if (event.getLevel() instanceof ClientLevel level) {
+                LightDimension.setFallback(level.dimension());
+            }
+        });
     }
 }
