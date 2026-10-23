@@ -1,5 +1,7 @@
 {
   "values": [
-    "#minecraft:leaves"
+    "#minecraft:leaves",
+    "#minecraft:fences",
+    "#minecraft:fence_gates"
   ]
 }
