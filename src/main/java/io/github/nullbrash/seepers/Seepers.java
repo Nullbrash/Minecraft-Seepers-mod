@@ -5,7 +5,13 @@ import io.github.nullbrash.seepers.command.SeepersCommands;
 import io.github.nullbrash.seepers.config.CommonConfig;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import io.github.nullbrash.seepers.datagen.SeepersDataGen;
+import io.github.nullbrash.seepers.fog.FogField;
+import io.github.nullbrash.seepers.fog.FogSettings;
 import io.github.nullbrash.seepers.light.LightTable;
+import io.github.nullbrash.seepers.network.payload.FogSeedPayload;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import io.github.nullbrash.seepers.light.Relighter;
 import io.github.nullbrash.seepers.mob.HostileSpawnControl;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
@@ -44,6 +50,13 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> LightTable.rebuild());
         NeoForge.EVENT_BUS.addListener(Relighter::onServerTick);
         NeoForge.EVENT_BUS.addListener(Relighter::onServerStopping);
+
+        NeoForge.EVENT_BUS.addListener(FogField::onServerStarting);
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
+            if (event.getEntity() instanceof ServerPlayer player) {
+                PacketDistributor.sendToPlayer(player, new FogSeedPayload(FogField.serverSeed()));
+            }
+        });
         modBus.addListener((ModConfigEvent.Loading event) -> onConfigChanged(event.getConfig()));
         modBus.addListener((ModConfigEvent.Reloading event) -> onConfigChanged(event.getConfig()));
     }
@@ -51,6 +64,7 @@ public final class Seepers {
     private static void onConfigChanged(ModConfig config) {
         if (config.getSpec() == ServerConfig.SPEC) {
             LightTable.rebuild();
+            FogSettings.reload();
         }
     }
 

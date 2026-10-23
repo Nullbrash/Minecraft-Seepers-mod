@@ -1,6 +1,9 @@
 package io.github.nullbrash.seepers.network;
 
 import io.github.nullbrash.seepers.client.network.ClientPayloadHandlers;
+import io.github.nullbrash.seepers.network.payload.FogProbePayload;
+import io.github.nullbrash.seepers.network.payload.FogProbeReplyPayload;
+import io.github.nullbrash.seepers.network.payload.FogSeedPayload;
 import io.github.nullbrash.seepers.network.payload.PingPayload;
 import io.github.nullbrash.seepers.network.payload.PongPayload;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -20,6 +23,12 @@ public final class SeepersNetwork {
                 (payload, context) -> ClientPayloadHandlers.handlePing(payload, context));
 
         registrar.playToServer(PongPayload.TYPE, PongPayload.STREAM_CODEC, PingTracker::handlePong);
+
+        registrar.playToClient(FogSeedPayload.TYPE, FogSeedPayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandlers.handleFogSeed(payload, context));
+        registrar.playToClient(FogProbePayload.TYPE, FogProbePayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandlers.handleFogProbe(payload, context));
+        registrar.playToServer(FogProbeReplyPayload.TYPE, FogProbeReplyPayload.STREAM_CODEC, FogProbeTracker::handleReply);
     }
 
     private SeepersNetwork() {}

@@ -5,6 +5,7 @@ import io.github.nullbrash.seepers.config.CommonConfig;
 import io.github.nullbrash.seepers.network.payload.PingPayload;
 import io.github.nullbrash.seepers.network.payload.PongPayload;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +38,7 @@ public final class PingTracker {
         if (pending == null || !(context.player() instanceof ServerPlayer player) || !player.getUUID().equals(pending.player())) {
             return;
         }
-        String ms = String.format("%.1f", (System.nanoTime() - pending.sentAt()) / 1_000_000.0);
+        String ms = String.format(Locale.ROOT, "%.1f", (System.nanoTime() - pending.sentAt()) / 1_000_000.0);
         String name = player.getGameProfile().getName();
         if (CommonConfig.VERBOSE_LOGGING.get()) {
             Seepers.LOGGER.info("Ping {} from {}: {} ms", payload.id(), name, ms);

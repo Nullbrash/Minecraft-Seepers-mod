@@ -57,6 +57,11 @@ neoForge {
             if (quickPlay.isPresent()) {
                 programArguments.addAll '--quickPlaySingleplayer', quickPlay.get()
             }
+            // ./gradlew runClient -Pseepers.quickPlayServer=localhost joins the dev server (run/server, online-mode=false).
+            def quickPlayServer = providers.gradleProperty('seepers.quickPlayServer')
+            if (quickPlayServer.isPresent()) {
+                programArguments.addAll '--quickPlayMultiplayer', quickPlayServer.get()
+            }
         }
 
         server {
