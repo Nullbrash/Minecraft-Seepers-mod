@@ -5,6 +5,9 @@ import io.github.nullbrash.seepers.client.darkness.DarkSkyEffects;
 import io.github.nullbrash.seepers.client.fog.ClientFog;
 import io.github.nullbrash.seepers.client.fog.ClientFogRenderer;
 import io.github.nullbrash.seepers.client.fog.ClientRooms;
+import io.github.nullbrash.seepers.client.points.PointCloud;
+import io.github.nullbrash.seepers.client.points.PointCommands;
+import io.github.nullbrash.seepers.client.points.PointRenderer;
 import io.github.nullbrash.seepers.config.ClientConfig;
 import io.github.nullbrash.seepers.light.LightDimension;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -13,6 +16,8 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
@@ -32,6 +37,14 @@ public final class SeepersClient {
         NeoForge.EVENT_BUS.addListener(ClientFog::onClientTick);
         NeoForge.EVENT_BUS.addListener(ClientFog::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(ClientRooms::onClientTick);
+        modBus.addListener(PointRenderer::onRegisterShaders);
+        NeoForge.EVENT_BUS.addListener(PointRenderer::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(PointCommands::register);
+        NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> {
+            PointCloud cloud = PointCloud.get();
+            if (cloud != null) cloud.tick();
+        });
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> PointCloud.reset());
         // Chunk-mesh regions carry no level: tell the light overrides which dimension the client is in.
         NeoForge.EVENT_BUS.addListener((LevelEvent.Load event) -> {
             if (event.getLevel() instanceof ClientLevel level) {

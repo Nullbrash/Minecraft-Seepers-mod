@@ -59,6 +59,8 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue ROOM_CLEAR_SECONDS;
     public static final ModConfigSpec.DoubleValue ROOM_REFERENCE_VOLUME;
     public static final ModConfigSpec.IntValue ROOM_RECHECK_TICKS;
+    public static final ModConfigSpec.IntValue TOUCH_POINT_LIMIT;
+    public static final ModConfigSpec.DoubleValue TOUCH_POINT_LIFETIME_SECONDS;
     public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_START;
     public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_FULL;
     public static final ModConfigSpec.DoubleValue FIRE_CHECK_SECONDS;
@@ -188,6 +190,14 @@ public final class ServerConfig {
                 .translation("seepers.configuration.rooms.referenceVolume").defineInRange("referenceVolume", 64.0, 1.0, 262144.0);
         ROOM_RECHECK_TICKS = builder.comment("Ticks between room checks around players.")
                 .translation("seepers.configuration.rooms.recheckTicks").defineInRange("recheckTicks", 20, 1, 1200);
+        builder.pop();
+
+        builder.comment("Touch: the first sense, drawn as points (CLAUDE.md 5.1). Balance values for difficulty presets.")
+                .translation("seepers.configuration.touch").push("touch");
+        TOUCH_POINT_LIMIT = builder.comment("Touch points kept at once; the oldest go first. Lidar upgrades do not raise it.")
+                .translation("seepers.configuration.touch.pointLimit").defineInRange("pointLimit", 4096, 0, 65536);
+        TOUCH_POINT_LIFETIME_SECONDS = builder.comment("Seconds a touch point lasts; it fades over the last third.")
+                .translation("seepers.configuration.touch.pointLifetimeSeconds").defineInRange("pointLifetimeSeconds", 60.0, 1.0, 3600.0);
         builder.pop();
 
         builder.comment("Fog blows out torches, breaks campfires and puts out candles (tags #seepers:fire/*). Lanterns are safe.")

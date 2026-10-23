@@ -3,6 +3,7 @@ package io.github.nullbrash.seepers.client.network;
 import io.github.nullbrash.seepers.Seepers;
 import io.github.nullbrash.seepers.client.fog.ClientFog;
 import io.github.nullbrash.seepers.config.ClientConfig;
+import io.github.nullbrash.seepers.network.payload.ClientCommandPayload;
 import io.github.nullbrash.seepers.network.payload.FogProbePayload;
 import io.github.nullbrash.seepers.network.payload.FogProbeReplyPayload;
 import io.github.nullbrash.seepers.network.payload.FogSeedPayload;
@@ -11,6 +12,7 @@ import io.github.nullbrash.seepers.network.payload.PongPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.neoforged.neoforge.client.ClientCommandHandler;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Handlers for client-bound payloads. Client only — referenced from common code through lambdas. */
@@ -20,6 +22,13 @@ public final class ClientPayloadHandlers {
             Seepers.LOGGER.info("Received ping {}", payload.id());
         }
         context.reply(new PongPayload(payload.id()));
+    }
+
+    public static void handleClientCommand(ClientCommandPayload payload, IPayloadContext context) {
+        // Only our own client commands: the server must not drive anything else on the client.
+        if (payload.command().startsWith("seepers ")) {
+            ClientCommandHandler.runCommand(payload.command());
+        }
     }
 
     public static void handleFogSeed(FogSeedPayload payload, IPayloadContext context) {
