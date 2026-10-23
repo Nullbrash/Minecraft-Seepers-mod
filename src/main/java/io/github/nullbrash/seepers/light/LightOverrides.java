@@ -7,4 +7,9 @@ public interface LightOverrides {
 
     /** 0 = no override; otherwise light opacity + 1. */
     void seepers$setLightBlockOverride(int opacityPlusOne);
+
+    /** Cached fog-wall axes, see {@code room.RoomWalls}; 0 = not computed yet. */
+    int seepers$roomWalls();
+
+    void seepers$setRoomWalls(int bits);
 }

@@ -28,7 +28,8 @@ public final class SeepersCommands {
                         .then(StorageDebugCommand.build())
                         .then(LightDebugCommand.light())
                         .then(LightDebugCommand.relight())
-                        .then(FogDebugCommand.build())));
+                        .then(FogDebugCommand.build())
+                        .then(RoomDebugCommand.build())));
     }
 
     private SeepersCommands() {}

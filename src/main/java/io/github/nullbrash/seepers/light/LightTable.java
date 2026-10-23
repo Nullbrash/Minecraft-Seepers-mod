@@ -44,6 +44,7 @@ public final class LightTable {
                 overrides.seepers$setPackedLight(packed);
                 if (packed != 0) overridden++;
 
+                overrides.seepers$setRoomWalls(0); // tags changed: room walls are recomputed lazily
                 overrides.seepers$setLightBlockOverride(0);
                 if (state.getFluidState().is(FluidTags.WATER)) {
                     int vanillaOpacity = state.getLightBlock(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);

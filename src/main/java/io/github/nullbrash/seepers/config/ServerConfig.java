@@ -54,6 +54,11 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue FOG_HALO_STRENGTH;
     public static final ModConfigSpec.DoubleValue FOG_UNDERWATER_VISIBILITY;
     public static final ModConfigSpec.IntValue FOG_RENDER_MARGIN;
+    public static final ModConfigSpec.IntValue ROOM_MAX_VOLUME;
+    public static final ModConfigSpec.DoubleValue ROOM_FILL_SECONDS;
+    public static final ModConfigSpec.DoubleValue ROOM_CLEAR_SECONDS;
+    public static final ModConfigSpec.DoubleValue ROOM_REFERENCE_VOLUME;
+    public static final ModConfigSpec.IntValue ROOM_RECHECK_TICKS;
     public static final ModConfigSpec.DoubleValue HEAT_WARMUP_SECONDS;
     public static final ModConfigSpec.DoubleValue HEAT_COOLDOWN_SECONDS;
     public static final ModConfigSpec.IntValue HEAT_MAX_SOURCES_PER_CHUNK;
@@ -166,6 +171,20 @@ public final class ServerConfig {
         FOG_UNDERWATER_VISIBILITY = fogDouble(builder, "underwaterVisibility", "Blocks visible under water (more with water vision and conduit power).", 6.0, 1.0, 128.0);
         FOG_RENDER_MARGIN = fogInt(builder, "renderDistanceMargin", "Fog always ends this many blocks before the render distance.", 16, 0, 256);
         builder.pop(2);
+
+        builder.comment("Closed rooms keep fog out; leaks let it creep back in.")
+                .translation("seepers.configuration.rooms").push("rooms");
+        ROOM_MAX_VOLUME = builder.comment("Largest room, in air blocks; bigger spaces count as open.")
+                .translation("seepers.configuration.rooms.maxVolume").defineInRange("maxVolume", 16384, 1, 262144);
+        ROOM_FILL_SECONDS = builder.comment("Seconds for fog to fill a reference-size room through one leak; more leaks per volume - faster.")
+                .translation("seepers.configuration.rooms.fillSeconds").defineInRange("fillSeconds", 60.0, 1.0, 3600.0);
+        ROOM_CLEAR_SECONDS = builder.comment("Seconds for fog to clear after a room is closed.")
+                .translation("seepers.configuration.rooms.clearSeconds").defineInRange("clearSeconds", 120.0, 0.0, 3600.0);
+        ROOM_REFERENCE_VOLUME = builder.comment("Room volume (blocks) for which one leak takes fillSeconds.")
+                .translation("seepers.configuration.rooms.referenceVolume").defineInRange("referenceVolume", 64.0, 1.0, 262144.0);
+        ROOM_RECHECK_TICKS = builder.comment("Ticks between room checks around players.")
+                .translation("seepers.configuration.rooms.recheckTicks").defineInRange("recheckTicks", 20, 1, 1200);
+        builder.pop();
 
         builder.comment("Heat clears fog around its sources (tags #seepers:heat/<name>).")
                 .translation("seepers.configuration.heat").push("heat");

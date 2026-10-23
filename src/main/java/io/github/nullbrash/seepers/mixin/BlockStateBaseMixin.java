@@ -23,6 +23,8 @@ public abstract class BlockStateBaseMixin implements LightOverrides {
     private int seepers$packedLight;
     @Unique
     private int seepers$lightBlockOverride;
+    @Unique
+    private int seepers$roomWalls;
 
     @Override
     public void seepers$setPackedLight(int packed) {
@@ -32,6 +34,16 @@ public abstract class BlockStateBaseMixin implements LightOverrides {
     @Override
     public void seepers$setLightBlockOverride(int opacityPlusOne) {
         seepers$lightBlockOverride = opacityPlusOne;
+    }
+
+    @Override
+    public int seepers$roomWalls() {
+        return seepers$roomWalls;
+    }
+
+    @Override
+    public void seepers$setRoomWalls(int bits) {
+        seepers$roomWalls = bits;
     }
 
     /** Overrides IBlockStateExtension#getLightEmission(BlockGetter, BlockPos) (a class method beats the interface default). */

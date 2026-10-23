@@ -12,6 +12,9 @@ import io.github.nullbrash.seepers.heat.HeatSettings;
 import io.github.nullbrash.seepers.heat.HeatTracker;
 import io.github.nullbrash.seepers.light.LightTable;
 import io.github.nullbrash.seepers.network.payload.FogSeedPayload;
+import io.github.nullbrash.seepers.room.RoomField;
+import io.github.nullbrash.seepers.room.RoomSettings;
+import io.github.nullbrash.seepers.room.RoomTracker;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -58,6 +61,9 @@ public final class Seepers {
         FogField.addModifier(HeatField::densityAt);
         NeoForge.EVENT_BUS.addListener(HeatTracker::onNeighborNotify);
         NeoForge.EVENT_BUS.addListener(HeatTracker::onChunkLoad);
+        FogField.addModifier(RoomField::densityAt);
+        NeoForge.EVENT_BUS.addListener(RoomTracker::onServerTick);
+        NeoForge.EVENT_BUS.addListener(RoomTracker::onNeighborNotify);
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
             if (event.getEntity() instanceof ServerPlayer player) {
                 PacketDistributor.sendToPlayer(player, new FogSeedPayload(FogField.serverSeed()));
@@ -72,6 +78,7 @@ public final class Seepers {
             LightTable.rebuild();
             FogSettings.reload();
             HeatSettings.reload();
+            RoomSettings.reload();
         }
     }
 

@@ -11,6 +11,8 @@ public final class SeepersTags {
     public static final class Blocks {
         /** Keep vanilla light, without the uncategorized cap (state-driven 0-15 like respawn anchors). */
         public static final TagKey<Block> LIGHT_VANILLA = TagKey.create(Registries.BLOCK, Seepers.id("light/vanilla"));
+        /** Never a room wall for fog even with a full collision shape (leaves). */
+        public static final TagKey<Block> ROOM_NOT_WALL = TagKey.create(Registries.BLOCK, Seepers.id("room/not_wall"));
         /** Not dimmed when waterlogged: blocks that only glow in water. */
         public static final TagKey<Block> LIGHT_NO_WATER_DIMMING =
                 TagKey.create(Registries.BLOCK, Seepers.id("light/no_water_dimming"));

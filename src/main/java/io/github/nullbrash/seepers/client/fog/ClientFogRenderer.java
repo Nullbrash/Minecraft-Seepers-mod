@@ -4,6 +4,7 @@ import com.mojang.blaze3d.shaders.FogShape;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import io.github.nullbrash.seepers.fog.FogSettings;
 import io.github.nullbrash.seepers.heat.HeatField;
+import io.github.nullbrash.seepers.room.RoomField;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
@@ -49,11 +50,13 @@ public final class ClientFogRenderer {
                 if (player.hasEffect(MobEffects.CONDUIT_POWER)) target *= 1.5;
             }
         } else {
-            double density = ClientFog.density(level, camera.x, camera.y, camera.z);
+            // Exact value at the camera: grid cells (4 blocks) straddle the walls of small rooms.
+            double density = ClientFog.densityDirect(level, camera.x, camera.y, camera.z);
             if (Double.isNaN(density)) return; // no fog seed yet: leave vanilla fog
             target = settings.visibility(density);
             // Inside a heated area the fog starts at its edge and the outside looks fogged (CLAUDE.md 4.4).
-            edge = HeatField.edgeDistance(level, camera.x, camera.y, camera.z);
+            edge = Math.max(HeatField.edgeDistance(level, camera.x, camera.y, camera.z),
+                    RoomField.reach(level, camera.x, camera.y, camera.z));
             if (edge > 0) {
                 double outside = settings.visibility(ClientFog.baseDensity(level, camera.x, camera.y, camera.z));
                 target = Math.max(target, edge + outside);
