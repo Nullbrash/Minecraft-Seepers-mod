@@ -29,7 +29,8 @@ public final class SeepersCommands {
                         .then(LightDebugCommand.light())
                         .then(LightDebugCommand.relight())
                         .then(FogDebugCommand.build())
-                        .then(RoomDebugCommand.build())));
+                        .then(RoomDebugCommand.build())
+                        .then(FireDebugCommand.build())));
     }
 
     private SeepersCommands() {}

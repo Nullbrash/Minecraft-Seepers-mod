@@ -5,6 +5,8 @@ import io.github.nullbrash.seepers.command.SeepersCommands;
 import io.github.nullbrash.seepers.config.CommonConfig;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import io.github.nullbrash.seepers.datagen.SeepersDataGen;
+import io.github.nullbrash.seepers.fire.FireSettings;
+import io.github.nullbrash.seepers.fire.FireTracker;
 import io.github.nullbrash.seepers.fog.FogField;
 import io.github.nullbrash.seepers.fog.FogSettings;
 import io.github.nullbrash.seepers.heat.HeatField;
@@ -64,6 +66,10 @@ public final class Seepers {
         FogField.addModifier(RoomField::densityAt);
         NeoForge.EVENT_BUS.addListener(RoomTracker::onServerTick);
         NeoForge.EVENT_BUS.addListener(RoomTracker::onNeighborNotify);
+        NeoForge.EVENT_BUS.addListener(FireTracker::onNeighborNotify);
+        NeoForge.EVENT_BUS.addListener(FireTracker::onChunkLoad);
+        NeoForge.EVENT_BUS.addListener(FireTracker::onChunkUnload);
+        NeoForge.EVENT_BUS.addListener(FireTracker::onServerTick);
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
             if (event.getEntity() instanceof ServerPlayer player) {
                 PacketDistributor.sendToPlayer(player, new FogSeedPayload(FogField.serverSeed()));
@@ -79,6 +85,7 @@ public final class Seepers {
             FogSettings.reload();
             HeatSettings.reload();
             RoomSettings.reload();
+            FireSettings.reload();
         }
     }
 

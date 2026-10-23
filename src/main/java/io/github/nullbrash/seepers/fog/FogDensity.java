@@ -23,8 +23,12 @@ public final class FogDensity {
     public record Context(Level level, FogNoise noise, FogSettings settings, double time, double driftX,
                           double driftZ, double storm, double weather, double spawnX, double spawnZ) {
         public static Context of(Level level, FogNoise noise) {
+            return at(level, noise, level.getDayTime());
+        }
+
+        /** The field at another day time (catching up on unloaded chunks); weather stays the current one. */
+        public static Context at(Level level, FogNoise noise, double time) {
             FogSettings s = FogSettings.current();
-            double time = level.getDayTime();
             double driftBlocks = time / 1200.0 * s.driftBlocksPerMinute();
             BlockPos spawn = level.getSharedSpawnPos();
             return new Context(level, noise, s, time, noise.driftX * driftBlocks, noise.driftZ * driftBlocks,

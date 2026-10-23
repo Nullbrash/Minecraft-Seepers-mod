@@ -46,6 +46,13 @@ public final class RoomRegistry {
         return lastFillNanos;
     }
 
+    /** Whether {@link #discover} at pos would flood-fill (the costly case) rather than answer from what is known. */
+    public boolean needsFill(Level level, BlockPos pos) {
+        long key = pos.asLong();
+        return !cellToRoom.containsKey(key) && !openCells.contains(key)
+                && pos.getY() < level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ());
+    }
+
     /** Finds (or confirms) the room containing pos; null if pos is open space or solid. */
     public @Nullable Room discover(Level level, BlockPos pos) {
         long key = pos.asLong();

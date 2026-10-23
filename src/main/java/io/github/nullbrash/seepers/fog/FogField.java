@@ -38,6 +38,11 @@ public final class FogField {
         return FogDensity.Context.of(level, FogNoise.of(fogSeed, level.dimension()));
     }
 
+    /** The field at another day time; modifiers (heat, rooms) still see the current state. */
+    public static FogDensity.Context context(Level level, long fogSeed, double dayTime) {
+        return FogDensity.Context.at(level, FogNoise.of(fogSeed, level.dimension()), dayTime);
+    }
+
     /** Total density at a point, never negative. */
     public static double density(FogDensity.Context context, double x, double y, double z) {
         double base = FogDensity.at(context, x, y, z);

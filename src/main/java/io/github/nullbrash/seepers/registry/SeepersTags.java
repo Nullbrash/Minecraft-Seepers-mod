@@ -13,6 +13,12 @@ public final class SeepersTags {
         public static final TagKey<Block> LIGHT_VANILLA = TagKey.create(Registries.BLOCK, Seepers.id("light/vanilla"));
         /** Never a room wall for fog even with a full collision shape (leaves). */
         public static final TagKey<Block> ROOM_NOT_WALL = TagKey.create(Registries.BLOCK, Seepers.id("room/not_wall"));
+        /** Fog blows these out: they drop as items (CLAUDE.md 4.6). */
+        public static final TagKey<Block> FIRE_BLOW_OUT = TagKey.create(Registries.BLOCK, Seepers.id("fire/blow_out"));
+        /** Fog breaks these apart; their loot tables decide what is left. */
+        public static final TagKey<Block> FIRE_BREAK = TagKey.create(Registries.BLOCK, Seepers.id("fire/break"));
+        /** Fog puts these out in place (state property {@code lit}). */
+        public static final TagKey<Block> FIRE_EXTINGUISH = TagKey.create(Registries.BLOCK, Seepers.id("fire/extinguish"));
         /** Not dimmed when waterlogged: blocks that only glow in water. */
         public static final TagKey<Block> LIGHT_NO_WATER_DIMMING =
                 TagKey.create(Registries.BLOCK, Seepers.id("light/no_water_dimming"));

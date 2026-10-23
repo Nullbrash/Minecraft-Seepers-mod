@@ -59,6 +59,10 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue ROOM_CLEAR_SECONDS;
     public static final ModConfigSpec.DoubleValue ROOM_REFERENCE_VOLUME;
     public static final ModConfigSpec.IntValue ROOM_RECHECK_TICKS;
+    public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_START;
+    public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_FULL;
+    public static final ModConfigSpec.DoubleValue FIRE_CHECK_SECONDS;
+    public static final ModConfigSpec.IntValue FIRE_MAX_CHECKS_PER_TICK;
     public static final ModConfigSpec.DoubleValue HEAT_WARMUP_SECONDS;
     public static final ModConfigSpec.DoubleValue HEAT_COOLDOWN_SECONDS;
     public static final ModConfigSpec.IntValue HEAT_MAX_SOURCES_PER_CHUNK;
@@ -184,6 +188,18 @@ public final class ServerConfig {
                 .translation("seepers.configuration.rooms.referenceVolume").defineInRange("referenceVolume", 64.0, 1.0, 262144.0);
         ROOM_RECHECK_TICKS = builder.comment("Ticks between room checks around players.")
                 .translation("seepers.configuration.rooms.recheckTicks").defineInRange("recheckTicks", 20, 1, 1200);
+        builder.pop();
+
+        builder.comment("Fog blows out torches, breaks campfires and puts out candles (tags #seepers:fire/*). Lanterns are safe.")
+                .translation("seepers.configuration.fires").push("fires");
+        FIRE_BLOW_OUT_START = builder.comment("Fog density (with heat and rooms) at the fire below which it is safe.")
+                .translation("seepers.configuration.fires.blowOutStart").defineInRange("blowOutStart", 1.5, 0.0, 16.0);
+        FIRE_BLOW_OUT_FULL = builder.comment("Density from which every check puts the fire out; the chance grows linearly from blowOutStart.")
+                .translation("seepers.configuration.fires.blowOutFull").defineInRange("blowOutFull", 2.5, 0.0, 16.0);
+        FIRE_CHECK_SECONDS = builder.comment("Seconds between checks of each fire near players.")
+                .translation("seepers.configuration.fires.checkSeconds").defineInRange("checkSeconds", 10.0, 1.0, 600.0);
+        FIRE_MAX_CHECKS_PER_TICK = builder.comment("Fog samples per tick for fire checks; the rest wait for the next tick.")
+                .translation("seepers.configuration.fires.maxChecksPerTick").defineInRange("maxChecksPerTick", 256, 1, 65536);
         builder.pop();
 
         builder.comment("Heat clears fog around its sources (tags #seepers:heat/<name>).")

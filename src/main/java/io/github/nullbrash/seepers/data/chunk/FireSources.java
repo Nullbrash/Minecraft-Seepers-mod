@@ -2,9 +2,11 @@ package io.github.nullbrash.seepers.data.chunk;
 
 import it.unimi.dsi.fastutil.ints.Int2ByteMap;
 import it.unimi.dsi.fastutil.ints.Int2ByteOpenHashMap;
+import java.util.function.BiConsumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.attachment.IAttachmentHolder;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,8 +17,12 @@ import org.jetbrains.annotations.Nullable;
 public final class FireSources extends ChunkData {
     /** Ids are saved to disk — never renumber. */
     public enum Kind {
+        /** Blown out: drops as an item. */
         TORCH(0),
-        CAMPFIRE(1);
+        /** Broken apart: drops its (overridden) loot. */
+        CAMPFIRE(1),
+        /** Goes out in place. */
+        CANDLE(2);
 
         public final byte id;
 
@@ -64,6 +70,14 @@ public final class FireSources extends ChunkData {
         return sources.size();
     }
 
+    public void forEach(BiConsumer<BlockPos, Kind> action) {
+        ChunkPos chunkPos = chunkPos();
+        for (Int2ByteMap.Entry entry : sources.int2ByteEntrySet()) {
+            Kind kind = Kind.byId(entry.getByteValue());
+            if (kind != null) action.accept(unpackLocal(chunkPos, entry.getIntKey()), kind);
+        }
+    }
+
     /** Game time of the last fog check, or -1 if never checked. */
     public long lastCheckedTime() {
         return lastCheckedTime;
@@ -76,7 +90,7 @@ public final class FireSources extends ChunkData {
 
     @Override
     public boolean isEmpty() {
-        return sources.isEmpty() && lastCheckedTime == NEVER;
+        return sources.isEmpty(); // the check time means nothing without fires
     }
 
     @Override
