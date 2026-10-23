@@ -9,6 +9,8 @@ import io.github.nullbrash.seepers.client.points.PointCloud;
 import io.github.nullbrash.seepers.client.points.PointCommands;
 import io.github.nullbrash.seepers.client.points.PointRenderer;
 import io.github.nullbrash.seepers.client.touch.ClientTouch;
+import io.github.nullbrash.seepers.client.touch.HandTouch;
+import io.github.nullbrash.seepers.client.touch.TouchCaption;
 import io.github.nullbrash.seepers.config.ClientConfig;
 import io.github.nullbrash.seepers.light.LightDimension;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -42,11 +44,17 @@ public final class SeepersClient {
         NeoForge.EVENT_BUS.addListener(PointRenderer::onRenderLevelStage);
         NeoForge.EVENT_BUS.addListener(PointCommands::register);
         NeoForge.EVENT_BUS.addListener(ClientTouch::onClientTick);
+        NeoForge.EVENT_BUS.addListener(HandTouch::onInteraction);
+        NeoForge.EVENT_BUS.addListener(HandTouch::onClientTick);
+        modBus.addListener(TouchCaption::register);
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> {
             PointCloud cloud = PointCloud.get();
             if (cloud != null) cloud.tick();
         });
-        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> PointCloud.reset());
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> {
+            PointCloud.reset();
+            HandTouch.onLoggingOut();
+        });
         // Chunk-mesh regions carry no level: tell the light overrides which dimension the client is in.
         NeoForge.EVENT_BUS.addListener((LevelEvent.Load event) -> {
             if (event.getLevel() instanceof ClientLevel level) {

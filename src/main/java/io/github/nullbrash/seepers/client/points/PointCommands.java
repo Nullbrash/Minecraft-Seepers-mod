@@ -1,6 +1,7 @@
 package io.github.nullbrash.seepers.client.points;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import io.github.nullbrash.seepers.client.touch.HandTouch;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import java.util.Locale;
 import net.minecraft.client.Minecraft;
@@ -17,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 
 /**
- * {@code /seepers points test <radius> | clear | stats} — client-side debugging of the point cloud. Other
+ * {@code /seepers points test <radius> | clear | stats | touch} — client-side debugging of the point cloud. Other
  * {@code /seepers} subcommands fall through to the server. Needs the server's debug commands and operator rights:
  * covering everything around with points would reveal the dark.
  */
@@ -32,6 +33,7 @@ public final class PointCommands {
                                 .then(Commands.argument("radius", IntegerArgumentType.integer(1, 48))
                                         .executes(context -> test(context.getSource(), IntegerArgumentType.getInteger(context, "radius")))))
                         .then(Commands.literal("clear").executes(context -> clear(context.getSource())))
+                        .then(Commands.literal("touch").executes(context -> HandTouch.debugTouch() ? 1 : 0))
                         .then(Commands.literal("stats").executes(context -> stats(context.getSource())))));
     }
 
