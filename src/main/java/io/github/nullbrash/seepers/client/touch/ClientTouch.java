@@ -200,7 +200,22 @@ public final class ClientTouch {
         VoxelShape collision = state.getCollisionShape(level, pos);
         if (collision.isEmpty()) return null;
         VoxelShape visible = state.getShape(level, pos);
-        return visible.isEmpty() ? collision.bounds() : collision.bounds().minmax(visible.bounds());
+        AABB bounds = visible.isEmpty() ? collision.bounds() : collision.bounds().minmax(visible.bounds());
+        double cover = coverHeight(level, pos);
+        return cover > 0 ? bounds.setMaxY(Math.max(bounds.maxY, 1 + cover)) : bounds;
+    }
+
+    /**
+     * Height of a thin cover with no collision lying on the block (pressure plate, rail, 1-layer snow), or 0. The
+     * feet and the hand go through it to the block below; points at that top would sit inside the cover.
+     */
+    static double coverHeight(Level level, BlockPos pos) {
+        BlockPos above = pos.above();
+        BlockState state = level.getBlockState(above);
+        if (state.isAir() || !state.getCollisionShape(level, above).isEmpty()) return 0;
+        VoxelShape visible = state.getShape(level, above);
+        if (visible.isEmpty() || visible.min(Direction.Axis.Y) > 0 || visible.max(Direction.Axis.Y) > 0.25) return 0;
+        return visible.max(Direction.Axis.Y);
     }
 
     /** A line of points along the top edge of a ledge, corners included: the drop reads as a line. */

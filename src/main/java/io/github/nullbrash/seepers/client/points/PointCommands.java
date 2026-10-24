@@ -11,7 +11,9 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -64,7 +66,7 @@ public final class PointCommands {
                         neighbor.setWithOffset(pos, face);
                         if (!Block.shouldRenderFace(state, level, pos, face, neighbor)) continue;
                         faces++;
-                        points += coverFace(cloud, random, pos, face);
+                        points += coverFace(cloud, random, level, pos, state, face);
                     }
                 }
             }
@@ -76,19 +78,27 @@ public final class PointCommands {
         return added;
     }
 
-    private static int coverFace(PointCloud cloud, RandomSource random, BlockPos pos, Direction face) {
-        double plane = face.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1 : 0;
-        for (int i = 0; i < GRID; i++) {
-            for (int j = 0; j < GRID; j++) {
-                double u = (i + 0.5 + (random.nextDouble() - 0.5) * 0.6) / GRID;
-                double v = (j + 0.5 + (random.nextDouble() - 0.5) * 0.6) / GRID;
-                double x = pos.getX() + switch (face.getAxis()) { case X -> plane; case Y -> u; case Z -> u; };
-                double y = pos.getY() + switch (face.getAxis()) { case X -> u; case Y -> plane; case Z -> v; };
-                double z = pos.getZ() + switch (face.getAxis()) { case X -> v; case Y -> v; case Z -> plane; };
-                cloud.add(PointSource.DEBUG, x, y, z, face, 0);
+    /** A jittered grid on the given side of every box of the block's visible shape (slabs, carpets, dripstone...). */
+    private static int coverFace(PointCloud cloud, RandomSource random, ClientLevel level, BlockPos pos, BlockState state,
+                                 Direction face) {
+        int added = 0;
+        for (AABB box : state.getShape(level, pos).toAabbs()) {
+            Direction.Axis axis = face.getAxis();
+            Direction.Axis uAxis = axis == Direction.Axis.X ? Direction.Axis.Y : Direction.Axis.X;
+            Direction.Axis vAxis = axis == Direction.Axis.Z ? Direction.Axis.Y : Direction.Axis.Z;
+            double plane = face.getAxisDirection() == Direction.AxisDirection.POSITIVE ? box.max(axis) : box.min(axis);
+            for (int i = 0; i < GRID; i++) {
+                for (int j = 0; j < GRID; j++) {
+                    double[] local = new double[3];
+                    local[axis.ordinal()] = plane;
+                    local[uAxis.ordinal()] = Mth.lerp((i + 0.5 + (random.nextDouble() - 0.5) * 0.6) / GRID, box.min(uAxis), box.max(uAxis));
+                    local[vAxis.ordinal()] = Mth.lerp((j + 0.5 + (random.nextDouble() - 0.5) * 0.6) / GRID, box.min(vAxis), box.max(vAxis));
+                    cloud.add(PointSource.DEBUG, pos.getX() + local[0], pos.getY() + local[1], pos.getZ() + local[2], face, 0);
+                    added++;
+                }
             }
         }
-        return GRID * GRID;
+        return added;
     }
 
     private static int clear(CommandSourceStack source) {
