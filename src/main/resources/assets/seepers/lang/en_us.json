@@ -293,5 +293,14 @@
   "seepers.touch.hint": "Click %s to feel around",
   "seepers.touch.hint.unbound": "The attack key is not bound: bind it to feel around",
   "seepers.configuration.touch.feetRadius": "Feet radius, blocks",
-  "seepers.configuration.touch.feetRadius.tooltip": "Floor felt by the feet around the player, blocks (0 = only what is underfoot)."
+  "seepers.configuration.touch.feetRadius.tooltip": "Floor felt by the feet around the player, blocks (0 = only what is underfoot).",
+  "seepers.configuration.touchCaption": "Touch caption",
+  "seepers.configuration.touchCaption.button": "Touch caption...",
+  "seepers.configuration.touchCaption.tooltip": "What the hand felt, shown on screen",
+  "seepers.configuration.touchCaption.enabled": "Show",
+  "seepers.configuration.touchCaption.enabled.tooltip": "Show what the hand felt (block name and material).",
+  "seepers.configuration.touchCaption.names": "Block names",
+  "seepers.configuration.touchCaption.names.tooltip": "Include the block's name.",
+  "seepers.configuration.touchCaption.position": "Position",
+  "seepers.configuration.touchCaption.position.tooltip": "Where on the screen."
 }

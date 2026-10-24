@@ -24,6 +24,8 @@ public final class SeepersTags {
         public static final TagKey<Block> TOUCH_SOFT = TagKey.create(Registries.BLOCK, Seepers.id("touch/soft"));
         public static final TagKey<Block> TOUCH_WET = TagKey.create(Registries.BLOCK, Seepers.id("touch/wet"));
         public static final TagKey<Block> TOUCH_WARM = TagKey.create(Registries.BLOCK, Seepers.id("touch/warm"));
+        /** Blocks one uses (chests, furnaces, anvils...): the hand hears their own sound, felt rather than used. */
+        public static final TagKey<Block> TOUCH_FUNCTIONAL = TagKey.create(Registries.BLOCK, Seepers.id("touch/functional"));
         /** Not dimmed when waterlogged: blocks that only glow in water. */
         public static final TagKey<Block> LIGHT_NO_WATER_DIMMING =
                 TagKey.create(Registries.BLOCK, Seepers.id("light/no_water_dimming"));

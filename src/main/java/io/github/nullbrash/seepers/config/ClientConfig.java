@@ -11,6 +11,9 @@ public final class ClientConfig {
     public static final ModConfigSpec.DoubleValue POINT_MIN_PIXELS;
     public static final ModConfigSpec.IntValue POINT_LIGHT_FADE_START;
     public static final ModConfigSpec.IntValue POINT_LIGHT_FADE_END;
+    public static final ModConfigSpec.BooleanValue TOUCH_CAPTION;
+    public static final ModConfigSpec.BooleanValue TOUCH_CAPTION_NAMES;
+    public static final ModConfigSpec.EnumValue<io.github.nullbrash.seepers.client.touch.TouchCaption.Position> TOUCH_CAPTION_POSITION;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -31,6 +34,16 @@ public final class ClientConfig {
                 .translation("seepers.configuration.points.lightFadeStart").defineInRange("lightFadeStart", 4, 0, 15);
         POINT_LIGHT_FADE_END = builder.comment("Block light at which surface points are gone.")
                 .translation("seepers.configuration.points.lightFadeEnd").defineInRange("lightFadeEnd", 8, 0, 15);
+        builder.pop();
+
+        builder.comment("What the hand felt, shown on screen").translation("seepers.configuration.touchCaption").push("touchCaption");
+        TOUCH_CAPTION = builder.comment("Show what the hand felt (block name and material).")
+                .translation("seepers.configuration.touchCaption.enabled").define("enabled", true);
+        TOUCH_CAPTION_NAMES = builder.comment("Include the block's name.")
+                .translation("seepers.configuration.touchCaption.names").define("names", true);
+        TOUCH_CAPTION_POSITION = builder.comment("Where on the screen.")
+                .translation("seepers.configuration.touchCaption.position")
+                .defineEnum("position", io.github.nullbrash.seepers.client.touch.TouchCaption.Position.CROSSHAIR);
         builder.pop();
 
         builder.comment("Debugging and diagnostics").translation("seepers.configuration.debug").push("debug");

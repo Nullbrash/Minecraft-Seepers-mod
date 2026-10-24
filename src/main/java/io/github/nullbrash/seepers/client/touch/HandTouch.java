@@ -17,7 +17,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.LightLayer;
-import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.core.Direction;
@@ -36,7 +35,6 @@ import org.jetbrains.annotations.Nullable;
  * still mines as usual: the click event is never cancelled.
  */
 public final class HandTouch {
-    private static final float STEP_SOUND_VOLUME = 0.25F;
     private static final float SWING_SOUND_VOLUME = 0.3F;
     /** Darkness long enough before the hint shows (CLAUDE.md 12). */
     private static final int HINT_DELAY_TICKS = 200;
@@ -132,18 +130,17 @@ public final class HandTouch {
         if (lava != null) {
             PacketDistributor.sendToServer(new TouchLavaPayload(lava));
             level.playLocalSound(eye.x, eye.y, eye.z, SoundEvents.LAVA_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 1.6F, false);
-            TouchCaption.show(Component.translatable("seepers.touch.hot"), TouchMaterial.WARM);
+            TouchCaption.show(null, Component.translatable("seepers.touch.hot"), TouchMaterial.WARM);
         } else if (center != null) {
-            TouchCaption.show(Component.translatable("seepers.touch.material." + center.material.name().toLowerCase(java.util.Locale.ROOT)),
+            TouchCaption.show(center.fluid ? null : center.state.getBlock().getName(),
+                    Component.translatable("seepers.touch.material." + center.material.name().toLowerCase(java.util.Locale.ROOT)),
                     center.material);
         }
         if (center == null) {
             // Nothing within reach: the hand swings through air (a passage, or a drop).
             level.playLocalSound(eye.x, eye.y, eye.z, SoundEvents.PLAYER_ATTACK_NODAMAGE, SoundSource.PLAYERS, SWING_SOUND_VOLUME, 1.2F, false);
         } else if (!center.fluid) {
-            SoundType sound = center.state.getSoundType(level, center.result.getBlockPos(), player);
-            level.playLocalSound(center.location.x, center.location.y, center.location.z, sound.getStepSound(), SoundSource.PLAYERS,
-                    sound.getVolume() * STEP_SOUND_VOLUME, sound.getPitch(), false);
+            TouchSounds.play(level, player, center.result.getBlockPos(), center.state, center.location);
         }
     }
 
