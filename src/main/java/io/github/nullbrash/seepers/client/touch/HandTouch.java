@@ -149,8 +149,9 @@ public final class HandTouch {
      */
     private static @Nullable Hit cast(LocalPlayer player, ClientLevel level, Vec3 eye, Vec3 direction, double reach) {
         Vec3 end = eye.add(direction.scale(reach));
-        BlockHitResult result = level.clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-        BlockHitResult withFluids = level.clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, player));
+        // Outline, not collision: the hand also finds what one walks through (pressure plates, cobweb, grass).
+        BlockHitResult result = level.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+        BlockHitResult withFluids = level.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, player));
         if (withFluids.getType() != HitResult.Type.MISS && level.getFluidState(withFluids.getBlockPos()).is(FluidTags.LAVA)
                 && (result.getType() == HitResult.Type.MISS
                     || withFluids.getLocation().distanceToSqr(eye) < result.getLocation().distanceToSqr(eye))) {
