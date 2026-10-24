@@ -33,7 +33,10 @@ import org.jetbrains.annotations.Nullable;
  * touch them, depth does (no points through walls), fading with age happens on the GPU.
  */
 public final class PointRenderer {
-    /** Position (section-relative), color (alpha = visibility in light), UV0 = (born, lifetime) s, UV1 = corner. */
+    /**
+     * Position (section-relative), color (alpha = how well light shows the surface: 0 dark .. 1 lit),
+     * UV0 = (born, lifetime) s, UV1 = corner. The shader also takes the fog into account.
+     */
     static final VertexFormat FORMAT = VertexFormat.builder()
             .add("Position", VertexFormatElement.POSITION)
             .add("Color", VertexFormatElement.COLOR)
@@ -158,8 +161,8 @@ public final class PointRenderer {
             int light = cloud.lightAt(section.key, ring, slot);
             hash = hash * 31 + light;
             float t = Mth.clamp((light - fadeStart) / (float) (fadeEnd - fadeStart), 0, 1);
-            int alpha = Math.round((1 - t * t * (3 - 2 * t)) * 255);
-            if (alpha <= 0) continue; // surface is lit and visible: no point needed
+            // Lit surfaces still get points: fog may hide them, the shader decides.
+            int alpha = Math.round(t * t * (3 - 2 * t) * 255);
             Direction face = Direction.values()[ring.face[slot]];
             float x = ring.x[slot] + face.getStepX() * lift;
             float y = ring.y[slot] + face.getStepY() * lift;

@@ -31,6 +31,11 @@ public enum TouchMaterial {
         this.blue = blue;
     }
 
+    /** Feet and body only tell water and warmth apart; the full palette is for the hands (CLAUDE.md 5.1). */
+    public TouchMaterial forBody() {
+        return this == WET || this == WARM ? this : SOLID;
+    }
+
     public static TouchMaterial byId(int id) {
         TouchMaterial[] values = values();
         return id >= 0 && id < values.length ? values[id] : SOLID;

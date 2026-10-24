@@ -79,4 +79,40 @@ fill ~30 ~1 ~23 ~30 ~2 ~26 minecraft:cobblestone
 execute positioned ~40 ~ ~ run function seepers:debug/testmap_annex
 fill ~40 ~1 ~13 ~40 ~2 ~15 minecraft:air
 
+# Double doors in every doorway: closed, each room keeps the fog out; an open door lets it in.
+setblock ~6 ~1 ~12 minecraft:oak_door[facing=south,half=lower,hinge=left]
+setblock ~6 ~2 ~12 minecraft:oak_door[facing=south,half=upper,hinge=left]
+setblock ~7 ~1 ~12 minecraft:oak_door[facing=south,half=lower,hinge=right]
+setblock ~7 ~2 ~12 minecraft:oak_door[facing=south,half=upper,hinge=right]
+setblock ~6 ~1 ~16 minecraft:oak_door[facing=north,half=lower,hinge=left]
+setblock ~6 ~2 ~16 minecraft:oak_door[facing=north,half=upper,hinge=left]
+setblock ~7 ~1 ~16 minecraft:oak_door[facing=north,half=lower,hinge=right]
+setblock ~7 ~2 ~16 minecraft:oak_door[facing=north,half=upper,hinge=right]
+setblock ~19 ~1 ~12 minecraft:oak_door[facing=south,half=lower,hinge=left]
+setblock ~19 ~2 ~12 minecraft:oak_door[facing=south,half=upper,hinge=left]
+setblock ~20 ~1 ~12 minecraft:oak_door[facing=south,half=lower,hinge=right]
+setblock ~20 ~2 ~12 minecraft:oak_door[facing=south,half=upper,hinge=right]
+setblock ~19 ~1 ~16 minecraft:oak_door[facing=north,half=lower,hinge=left]
+setblock ~19 ~2 ~16 minecraft:oak_door[facing=north,half=upper,hinge=left]
+setblock ~20 ~1 ~16 minecraft:oak_door[facing=north,half=lower,hinge=right]
+setblock ~20 ~2 ~16 minecraft:oak_door[facing=north,half=upper,hinge=right]
+setblock ~32 ~1 ~12 minecraft:oak_door[facing=south,half=lower,hinge=left]
+setblock ~32 ~2 ~12 minecraft:oak_door[facing=south,half=upper,hinge=left]
+setblock ~33 ~1 ~12 minecraft:oak_door[facing=south,half=lower,hinge=right]
+setblock ~33 ~2 ~12 minecraft:oak_door[facing=south,half=upper,hinge=right]
+setblock ~32 ~1 ~16 minecraft:oak_door[facing=north,half=lower,hinge=left]
+setblock ~32 ~2 ~16 minecraft:oak_door[facing=north,half=upper,hinge=left]
+setblock ~33 ~1 ~16 minecraft:oak_door[facing=north,half=lower,hinge=right]
+setblock ~33 ~2 ~16 minecraft:oak_door[facing=north,half=upper,hinge=right]
+setblock ~40 ~1 ~15 minecraft:stone
+setblock ~40 ~2 ~15 minecraft:stone
+setblock ~40 ~1 ~13 minecraft:oak_door[facing=west,half=lower,hinge=left]
+setblock ~40 ~2 ~13 minecraft:oak_door[facing=west,half=upper,hinge=left]
+setblock ~40 ~1 ~14 minecraft:oak_door[facing=west,half=lower,hinge=right]
+setblock ~40 ~2 ~14 minecraft:oak_door[facing=west,half=upper,hinge=right]
+setblock ~71 ~1 ~14 minecraft:oak_door[facing=west,half=lower,hinge=left]
+setblock ~71 ~2 ~14 minecraft:oak_door[facing=west,half=upper,hinge=left]
+setblock ~71 ~1 ~15 minecraft:oak_door[facing=west,half=lower,hinge=right]
+setblock ~71 ~2 ~15 minecraft:oak_door[facing=west,half=upper,hinge=right]
+
 tp @s ~20.5 ~1 ~14.5 -90 0

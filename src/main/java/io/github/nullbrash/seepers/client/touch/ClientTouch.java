@@ -208,7 +208,7 @@ public final class ClientTouch {
         BlockState state = level.getBlockState(pos);
         AABB bounds = surfaceBounds(level, pos, state);
         if (bounds == null) return;
-        int material = TouchMaterial.of(level, pos, state, side).ordinal();
+        int material = TouchMaterial.of(level, pos, state, side).forBody().ordinal();
         Direction.Axis along = side.getAxis() == Direction.Axis.X ? Direction.Axis.Z : Direction.Axis.X;
         double out = side.getAxisDirection() == Direction.AxisDirection.POSITIVE ? bounds.max(side.getAxis()) : bounds.min(side.getAxis());
         double top = pos.getY() + bounds.maxY;
@@ -245,7 +245,7 @@ public final class ClientTouch {
         BlockState state = level.getBlockState(pos);
         AABB bounds = surfaceBounds(level, pos, state);
         if (bounds == null) return;
-        int material = TouchMaterial.of(level, pos, state, face).ordinal();
+        int material = TouchMaterial.of(level, pos, state, face).forBody().ordinal();
         Direction.Axis axis = face.getAxis();
         Direction.Axis uAxis = axis == Direction.Axis.X ? Direction.Axis.Y : Direction.Axis.X;
         Direction.Axis vAxis = axis == Direction.Axis.Z ? Direction.Axis.Y : Direction.Axis.Z;
