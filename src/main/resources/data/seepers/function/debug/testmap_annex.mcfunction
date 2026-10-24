@@ -1,5 +1,6 @@
-# Block hall (49 kinds of floors, thin and odd blocks) and an underwater pool, for finding point display bugs.
-# Shell 49x18x31 at y 192..209; the hall is x 1..30, the pool x 32..47.
+# Annex of testmap, east of the main rooms (called from testmap_build with x + 40): a block hall
+# (49 kinds of floors, thin and odd blocks) and an underwater pool, for finding point display bugs.
+# Its west wall is the main block's east wall; the hall is x 1..30, the pool x 32..47.
 fill ~0 ~-8 ~0 ~48 ~9 ~30 minecraft:stone hollow
 fill ~1 ~-7 ~1 ~47 ~0 ~29 minecraft:stone
 fill ~31 ~1 ~1 ~31 ~8 ~29 minecraft:stone
@@ -71,4 +72,3 @@ setblock ~39 ~-6 ~21 minecraft:seagrass
 setblock ~42 ~-6 ~10 minecraft:kelp
 fill ~46 ~-6 ~15 ~46 ~0 ~15 minecraft:ladder[facing=west]
 
-tp @s ~16.5 ~1 ~29.5 180 0

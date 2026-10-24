@@ -75,4 +75,8 @@ setblock ~33 ~1 ~27 minecraft:water
 fill ~28 ~1 ~23 ~28 ~2 ~27 minecraft:cobblestone
 fill ~30 ~1 ~23 ~30 ~2 ~26 minecraft:cobblestone
 
+# Annex east: block hall and pool, through a door at the corridor's east end.
+execute positioned ~40 ~ ~ run function seepers:debug/testmap_annex
+fill ~40 ~1 ~13 ~40 ~2 ~15 minecraft:air
+
 tp @s ~20.5 ~1 ~14.5 -90 0
