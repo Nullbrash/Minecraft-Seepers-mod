@@ -74,6 +74,14 @@ public final class TouchSounds {
         USE_SOUNDS.put(Blocks.SMITHING_TABLE, SoundEvents.SMITHING_TABLE_USE);
     }
 
+    /** The felt sound of a functional block only (the cane's knock itself comes from the server). */
+    public static void playFunctional(Level level, Player player, BlockPos pos, BlockState state, Vec3 at) {
+        if (!state.is(SeepersTags.Blocks.TOUCH_FUNCTIONAL)) return;
+        SoundType type = state.getSoundType(level, pos, player);
+        SoundEvent event = USE_SOUNDS.getOrDefault(state.getBlock(), type.getHitSound());
+        Minecraft.getInstance().getSoundManager().play(new Fading(event, FUNCTIONAL_VOLUME, at.x, at.y, at.z));
+    }
+
     public static void play(Level level, Player player, BlockPos pos, BlockState state, Vec3 at) {
         SoundType type = state.getSoundType(level, pos, player);
         if (!state.is(SeepersTags.Blocks.TOUCH_FUNCTIONAL)) {

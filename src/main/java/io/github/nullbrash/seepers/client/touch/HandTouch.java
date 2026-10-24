@@ -159,13 +159,13 @@ public final class HandTouch {
         }
     }
 
-    private record Hit(BlockHitResult result, Vec3 location, BlockState state, TouchMaterial material, boolean fluid, boolean lava) {}
+    record Hit(BlockHitResult result, Vec3 location, BlockState state, TouchMaterial material, boolean fluid, boolean lava) {}
 
     /**
      * First block along the ray. The hand goes through water (blocks under it are felt, wet) but stops at lava,
      * which burns.
      */
-    private static @Nullable Hit cast(LocalPlayer player, ClientLevel level, Vec3 eye, Vec3 direction, double reach) {
+    static @Nullable Hit cast(LocalPlayer player, ClientLevel level, Vec3 eye, Vec3 direction, double reach) {
         Vec3 end = eye.add(direction.scale(reach));
         // Outline, not collision: the hand also finds what one walks through (pressure plates, cobweb, grass).
         BlockHitResult result = level.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
@@ -202,7 +202,7 @@ public final class HandTouch {
     }
 
     /** A random direction within halfAngle of the axis, uniform over the cone's spherical cap. */
-    private static Vec3 inCone(Vec3 axis, double halfAngle) {
+    static Vec3 inCone(Vec3 axis, double halfAngle) {
         double cosTheta = 1 - RANDOM.nextDouble() * (1 - Math.cos(halfAngle));
         double sinTheta = Math.sqrt(1 - cosTheta * cosTheta);
         double phi = RANDOM.nextDouble() * Math.PI * 2;

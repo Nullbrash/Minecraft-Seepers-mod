@@ -8,8 +8,8 @@ import io.github.nullbrash.seepers.config.ServerConfig;
  */
 public enum PointSource {
     TOUCH,
-    /** Cane (milestone 5), lidar (10) and foreign data (15): no share yet. */
     CANE,
+    /** Lidar (milestone 10) and foreign data (15): no share yet. */
     LIDAR,
     FOREIGN,
     /** {@code /seepers points test}: large share for render benchmarks. */
@@ -21,6 +21,7 @@ public enum PointSource {
     public int capacity() {
         return switch (this) {
             case TOUCH -> ServerConfig.get(ServerConfig.TOUCH_POINT_LIMIT);
+            case CANE -> ServerConfig.get(ServerConfig.CANE_POINT_LIMIT);
             case DEBUG -> DEBUG_CAPACITY;
             default -> 0;
         };
@@ -29,6 +30,7 @@ public enum PointSource {
     public float lifetimeSeconds() {
         return (float) switch (this) {
             case TOUCH -> ServerConfig.get(ServerConfig.TOUCH_POINT_LIFETIME_SECONDS);
+            case CANE -> ServerConfig.get(ServerConfig.CANE_POINT_LIFETIME_SECONDS);
             case DEBUG -> DEBUG_LIFETIME_SECONDS;
             default -> 60.0;
         };

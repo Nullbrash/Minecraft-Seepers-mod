@@ -24,6 +24,7 @@ import io.github.nullbrash.seepers.light.Relighter;
 import io.github.nullbrash.seepers.mob.HostileSpawnControl;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
 import io.github.nullbrash.seepers.registry.SeepersAttachments;
+import io.github.nullbrash.seepers.registry.SeepersItems;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -47,6 +48,8 @@ public final class Seepers {
         container.registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC);
 
         SeepersAttachments.ATTACHMENT_TYPES.register(modBus);
+        SeepersItems.ITEMS.register(modBus);
+        modBus.addListener(SeepersItems::addToCreativeTabs);
 
         modBus.addListener(SeepersNetwork::register);
         modBus.addListener(SeepersDataGen::gatherData);

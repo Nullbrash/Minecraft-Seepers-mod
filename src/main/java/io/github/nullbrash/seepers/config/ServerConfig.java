@@ -68,6 +68,13 @@ public final class ServerConfig {
     public static final ModConfigSpec.IntValue TOUCH_HAND_POINTS;
     public static final ModConfigSpec.DoubleValue TOUCH_HAND_CLICKS_PER_SECOND;
     public static final ModConfigSpec.DoubleValue TOUCH_LAVA_DAMAGE;
+    public static final ModConfigSpec.DoubleValue CANE_REACH;
+    public static final ModConfigSpec.DoubleValue CANE_SWEEP_MIN;
+    public static final ModConfigSpec.DoubleValue CANE_SWEEP_MAX;
+    public static final ModConfigSpec.IntValue CANE_SWEEP_TICKS;
+    public static final ModConfigSpec.IntValue CANE_POINTS;
+    public static final ModConfigSpec.IntValue CANE_POINT_LIMIT;
+    public static final ModConfigSpec.DoubleValue CANE_POINT_LIFETIME_SECONDS;
     public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_START;
     public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_FULL;
     public static final ModConfigSpec.DoubleValue FIRE_CHECK_SECONDS;
@@ -219,6 +226,24 @@ public final class ServerConfig {
                 .translation("seepers.configuration.touch.handClicksPerSecond").defineInRange("handClicksPerSecond", 20.0, 0.5, 20.0);
         TOUCH_LAVA_DAMAGE = builder.comment("Damage for touching lava with the hand (no fire), at most once a second.")
                 .translation("seepers.configuration.touch.lavaDamage").defineInRange("lavaDamage", 1.0, 0.0, 40.0);
+        builder.pop();
+
+        builder.comment("Cane (CLAUDE.md 5.2): taps along the view, sweeps on the floor ahead. Balance values for presets.")
+                .translation("seepers.configuration.cane").push("cane");
+        CANE_REACH = builder.comment("How far an aimed tap reaches, blocks.")
+                .translation("seepers.configuration.cane.reach").defineInRange("reach", 4.0, 1.0, 8.0);
+        CANE_SWEEP_MIN = builder.comment("Nearest floor a sweep taps, blocks ahead.")
+                .translation("seepers.configuration.cane.sweepMin").defineInRange("sweepMin", 1.5, 0.5, 8.0);
+        CANE_SWEEP_MAX = builder.comment("Farthest floor a sweep taps, blocks ahead.")
+                .translation("seepers.configuration.cane.sweepMax").defineInRange("sweepMax", 3.0, 0.5, 8.0);
+        CANE_SWEEP_TICKS = builder.comment("Ticks between sweep taps (10 = 2 taps a second).")
+                .translation("seepers.configuration.cane.sweepTicks").defineInRange("sweepTicks", 10, 3, 100);
+        CANE_POINTS = builder.comment("Points per tap.")
+                .translation("seepers.configuration.cane.points").defineInRange("points", 8, 1, 64);
+        CANE_POINT_LIMIT = builder.comment("Cane points kept at once; the oldest go first.")
+                .translation("seepers.configuration.cane.pointLimit").defineInRange("pointLimit", 4096, 0, 65536);
+        CANE_POINT_LIFETIME_SECONDS = builder.comment("Seconds a cane point lasts; it fades over the last third.")
+                .translation("seepers.configuration.cane.pointLifetimeSeconds").defineInRange("pointLifetimeSeconds", 60.0, 1.0, 3600.0);
         builder.pop();
 
         builder.comment("Fog blows out torches, breaks campfires and puts out candles (tags #seepers:fire/*). Lanterns are safe.")
