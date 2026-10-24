@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Touch with the hands (CLAUDE.md 5.1): each press of the attack key casts a few rays in a narrow cone along the
- * view, from the eyes; points appear where they hit. Only standing or crouching on the ground. Holding the key
+ * view, from the eyes; points appear where they hit. On the ground or in water, moving or not. Holding the key
  * still mines as usual: the click event is never cancelled.
  */
 public final class HandTouch {
@@ -99,13 +99,10 @@ public final class HandTouch {
                 : Component.translatable("seepers.touch.hint", attack.getTranslatedKeyMessage());
     }
 
-    /** Standing or crouching on the ground, or anywhere in water (feeling around while swimming is allowed). */
+    /** On the ground (walking and running included) or anywhere in water; not mid-jump, on a ladder or riding. */
     private static boolean canTouch(LocalPlayer player) {
         if (player.isSpectator() || player.onClimbable() || player.isPassenger()) return false;
-        if (player.isInWater()) return true;
-        if (!player.onGround() || player.isSprinting()) return false;
-        boolean moving = player.input.forwardImpulse != 0 || player.input.leftImpulse != 0 || player.input.jumping;
-        return !moving || player.isCrouching();
+        return player.isInWater() || player.onGround();
     }
 
     private static void touch(LocalPlayer player, ClientLevel level, PointCloud cloud) {

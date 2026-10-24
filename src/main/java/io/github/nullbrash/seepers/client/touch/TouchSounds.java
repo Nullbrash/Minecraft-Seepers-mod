@@ -20,14 +20,14 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * What the hand hears (CLAUDE.md 5.1): the touched block's step sound, quietly; functional blocks (tag
- * #seepers:touch/functional) their own use sound, but "felt" rather than used: quiet and fading out (a chest is
+ * #seepers:touch/functional) their own use sound, but "felt" rather than used: quiet and fading out fast (a chest is
  * lifted a crack, not opened). Heard only by the player.
  */
 public final class TouchSounds {
     private static final float STEP_VOLUME = 0.25F;
     private static final float FUNCTIONAL_VOLUME = 0.35F;
     /** Ticks over which a functional block's sound fades to silence. */
-    private static final int FADE_TICKS = 12;
+    private static final int FADE_TICKS = 8;
     private static final Map<Block, SoundEvent> USE_SOUNDS = new IdentityHashMap<>();
 
     /** A sound whose volume falls to zero over FADE_TICKS, then stops. */
