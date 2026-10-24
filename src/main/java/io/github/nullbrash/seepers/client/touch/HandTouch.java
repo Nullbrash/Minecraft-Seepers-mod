@@ -51,6 +51,7 @@ public final class HandTouch {
 
     /** Fires on the press and, while mining, every tick the key is held: only a fresh press touches. */
     public static void onInteraction(InputEvent.InteractionKeyMappingTriggered event) {
+        if (event.isAttack()) keepFeltBlock(event);
         if (!event.isAttack() || attackWasDown) return;
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
@@ -73,6 +74,23 @@ public final class HandTouch {
         usedThisSession = true;
         touch(minecraft.player, minecraft.level, cloud);
         return true;
+    }
+
+    /**
+     * An empty hand only feels blocks that break in one hit (grass, flowers, torches), so feeling around in the
+     * dark does not tear them off; with anything in hand they break as usual. Not in creative, where every block
+     * breaks in one hit.
+     */
+    private static void keepFeltBlock(InputEvent.InteractionKeyMappingTriggered event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.level == null || !player.getMainHandItem().isEmpty() || player.getAbilities().instabuild) return;
+        if (!(minecraft.hitResult instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK) return;
+        BlockPos pos = hit.getBlockPos();
+        if (minecraft.level.getBlockState(pos).getDestroyProgress(player, minecraft.level, pos) >= 1.0F) {
+            event.setCanceled(true);
+            event.setSwingHand(false);
+        }
     }
 
     public static void onClientTick(ClientTickEvent.Post event) {
