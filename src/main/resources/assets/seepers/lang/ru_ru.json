@@ -314,11 +314,15 @@
   "seepers.configuration.cane.sweepMax": "Подметание до",
   "seepers.configuration.cane.sweepMax.tooltip": "Дальний пол при подметании, блоков впереди.",
   "seepers.configuration.cane.sweepTicks": "Интервал подметания, тиков",
-  "seepers.configuration.cane.sweepTicks.tooltip": "Тиков между ударами при подметании (10 — 2 удара в секунду).",
+  "seepers.configuration.cane.sweepTicks.tooltip": "Тиков между проходами подметания (6 — около 3 в секунду).",
   "seepers.configuration.cane.points": "Точек за удар",
-  "seepers.configuration.cane.points.tooltip": "Точек за один удар.",
+  "seepers.configuration.cane.points.tooltip": "Точек за точный удар.",
   "seepers.configuration.cane.pointLimit": "Лимит точек трости",
   "seepers.configuration.cane.pointLimit.tooltip": "Сколько точек трости держится одновременно; первыми уходят самые старые.",
   "seepers.configuration.cane.pointLifetimeSeconds": "Жизнь точки трости, секунд",
-  "seepers.configuration.cane.pointLifetimeSeconds.tooltip": "Сколько секунд живёт точка трости; последнюю треть она гаснет."
+  "seepers.configuration.cane.pointLifetimeSeconds.tooltip": "Сколько секунд живёт точка трости; последнюю треть она гаснет.",
+  "seepers.configuration.cane.sweepDegrees": "Ширина подметания, градусов",
+  "seepers.configuration.cane.sweepDegrees.tooltip": "Ширина веера прямо по взгляду, который сканирует подметание, градусов.",
+  "seepers.configuration.cane.sweepRays": "Точек за проход",
+  "seepers.configuration.cane.sweepRays.tooltip": "Лучей (точек) за проход подметания, от пола до колен."
 }

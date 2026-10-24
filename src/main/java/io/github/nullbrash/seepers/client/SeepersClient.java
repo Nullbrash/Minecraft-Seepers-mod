@@ -10,7 +10,6 @@ import io.github.nullbrash.seepers.client.points.PointCommands;
 import io.github.nullbrash.seepers.client.points.PointRenderer;
 import io.github.nullbrash.seepers.client.touch.CaneTouch;
 import io.github.nullbrash.seepers.client.touch.ClientTouch;
-import io.github.nullbrash.seepers.item.CaneItem;
 import io.github.nullbrash.seepers.client.touch.HandTouch;
 import io.github.nullbrash.seepers.client.touch.TouchCaption;
 import io.github.nullbrash.seepers.config.ClientConfig;
@@ -48,7 +47,7 @@ public final class SeepersClient {
         NeoForge.EVENT_BUS.addListener(ClientTouch::onClientTick);
         NeoForge.EVENT_BUS.addListener(HandTouch::onInteraction);
         NeoForge.EVENT_BUS.addListener(HandTouch::onClientTick);
-        CaneItem.setClientUse(CaneTouch::tick);
+        NeoForge.EVENT_BUS.addListener(CaneTouch::onClientTick);
         modBus.addListener(TouchCaption::register);
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> {
             PointCloud cloud = PointCloud.get();

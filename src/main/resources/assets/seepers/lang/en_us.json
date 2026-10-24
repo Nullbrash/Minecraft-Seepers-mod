@@ -314,11 +314,15 @@
   "seepers.configuration.cane.sweepMax": "Sweep to",
   "seepers.configuration.cane.sweepMax.tooltip": "Farthest floor a sweep taps, blocks ahead.",
   "seepers.configuration.cane.sweepTicks": "Sweep interval, ticks",
-  "seepers.configuration.cane.sweepTicks.tooltip": "Ticks between sweep taps (10 = 2 taps a second).",
+  "seepers.configuration.cane.sweepTicks.tooltip": "Ticks between sweeps (6 = about 3 a second).",
   "seepers.configuration.cane.points": "Points per tap",
-  "seepers.configuration.cane.points.tooltip": "Points per tap.",
+  "seepers.configuration.cane.points.tooltip": "Points per aimed tap.",
   "seepers.configuration.cane.pointLimit": "Cane point limit",
   "seepers.configuration.cane.pointLimit.tooltip": "Cane points kept at once; the oldest go first.",
   "seepers.configuration.cane.pointLifetimeSeconds": "Cane point lifetime, seconds",
-  "seepers.configuration.cane.pointLifetimeSeconds.tooltip": "Seconds a cane point lasts; it fades over the last third."
+  "seepers.configuration.cane.pointLifetimeSeconds.tooltip": "Seconds a cane point lasts; it fades over the last third.",
+  "seepers.configuration.cane.sweepDegrees": "Sweep width, degrees",
+  "seepers.configuration.cane.sweepDegrees.tooltip": "Width of the fan a sweep scans straight ahead, degrees.",
+  "seepers.configuration.cane.sweepRays": "Points per sweep",
+  "seepers.configuration.cane.sweepRays.tooltip": "Rays (points) per sweep, floor to knee."
 }
