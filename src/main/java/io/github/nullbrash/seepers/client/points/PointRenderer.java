@@ -64,8 +64,9 @@ public final class PointRenderer {
     }
 
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        // After particles: dispatched from renderLevel itself, so it survives renderers that replace chunk drawing.
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || shader == null) return;
+        // Dispatched from renderLevel itself (survives renderers that replace chunk drawing) and before the
+        // translucent pass: water surfaces then tint points under them instead of hiding them by depth.
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES || shader == null) return;
         PointCloud cloud = PointCloud.get();
         if (cloud == null || cloud.sections.isEmpty()) return;
 

@@ -291,5 +291,7 @@
   "seepers.touch.material.warm": "Тёплое",
   "seepers.touch.hot": "Горячо!",
   "seepers.touch.hint": "Кликайте %s, чтобы ощупать",
-  "seepers.touch.hint.unbound": "Клавиша атаки не назначена — назначьте её, чтобы ощупывать"
+  "seepers.touch.hint.unbound": "Клавиша атаки не назначена — назначьте её, чтобы ощупывать",
+  "seepers.configuration.touch.feetRadius": "Радиус ног, блоков",
+  "seepers.configuration.touch.feetRadius.tooltip": "Сколько пола вокруг игрока ощупывают ноги, блоков (0 — только под ногами)."
 }

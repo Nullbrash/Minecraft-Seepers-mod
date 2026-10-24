@@ -99,11 +99,11 @@ public final class HandTouch {
                 : Component.translatable("seepers.touch.hint", attack.getTranslatedKeyMessage());
     }
 
+    /** Standing or crouching on the ground, or anywhere in water (feeling around while swimming is allowed). */
     private static boolean canTouch(LocalPlayer player) {
-        if (player.isSpectator() || !player.onGround() || player.isSprinting() || player.isInWater()
-                || player.onClimbable() || player.isPassenger()) {
-            return false;
-        }
+        if (player.isSpectator() || player.onClimbable() || player.isPassenger()) return false;
+        if (player.isInWater()) return true;
+        if (!player.onGround() || player.isSprinting()) return false;
         boolean moving = player.input.forwardImpulse != 0 || player.input.leftImpulse != 0 || player.input.jumping;
         return !moving || player.isCrouching();
     }
@@ -147,10 +147,19 @@ public final class HandTouch {
 
     private record Hit(BlockHitResult result, Vec3 location, BlockState state, TouchMaterial material, boolean fluid, boolean lava) {}
 
-    /** First block or fluid surface along the ray; fluids count as touched (water is wet, lava burns). */
+    /**
+     * First block along the ray. The hand goes through water (blocks under it are felt, wet) but stops at lava,
+     * which burns.
+     */
     private static @Nullable Hit cast(LocalPlayer player, ClientLevel level, Vec3 eye, Vec3 direction, double reach) {
-        BlockHitResult result = level.clip(new ClipContext(eye, eye.add(direction.scale(reach)),
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, player));
+        Vec3 end = eye.add(direction.scale(reach));
+        BlockHitResult result = level.clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        BlockHitResult withFluids = level.clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, player));
+        if (withFluids.getType() != HitResult.Type.MISS && level.getFluidState(withFluids.getBlockPos()).is(FluidTags.LAVA)
+                && (result.getType() == HitResult.Type.MISS
+                    || withFluids.getLocation().distanceToSqr(eye) < result.getLocation().distanceToSqr(eye))) {
+            result = withFluids;
+        }
         if (result.getType() == HitResult.Type.MISS) return null;
         BlockPos pos = result.getBlockPos();
         BlockState state = level.getBlockState(pos);

@@ -2,6 +2,7 @@ package io.github.nullbrash.seepers.client.touch;
 
 import io.github.nullbrash.seepers.client.points.PointCloud;
 import io.github.nullbrash.seepers.client.points.PointSource;
+import io.github.nullbrash.seepers.config.ServerConfig;
 import it.unimi.dsi.fastutil.HashCommon;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.client.Minecraft;
@@ -48,9 +49,11 @@ public final class ClientTouch {
         boolean refresh = ticks % REFRESH_TICKS == 0;
         AABB box = player.getBoundingBox();
         boolean onGround = player.onGround();
+        // In water the player sinks onto the bottom without landing: feel it as long as it is near.
+        boolean wading = player.isInWater() && !onGround;
 
-        if (onGround) {
-            feet(cloud, level, box, ticks % (REFRESH_TICKS * 2) == 0);
+        if (onGround || wading) {
+            feet(cloud, level, box, ticks % (REFRESH_TICKS * 2) == 0, wading ? 1.5 : 0.1, player.isCrouching());
         } else {
             footprint.clear();
         }
@@ -67,19 +70,44 @@ public final class ClientTouch {
         if (onGround && player.isCrouching() && refresh) edges(cloud, level, player, box);
     }
 
-    /** Top faces of the blocks under the player: new ones at once, all of them now and then while standing. */
-    private static void feet(PointCloud cloud, ClientLevel level, AABB box, boolean refreshAll) {
-        LongOpenHashSet current = new LongOpenHashSet();
+    /**
+     * The floor underfoot, and around the player while crouching (touch.feetRadius): top faces, denser right
+     * underfoot, plus side faces and a line along the top edge where the floor drops away, so ledges read.
+     * New blocks at once, all now and then.
+     */
+    private static void feet(PointCloud cloud, ClientLevel level, AABB box, boolean refreshAll, double below, boolean crouching) {
+        int radius = crouching ? ServerConfig.get(ServerConfig.TOUCH_FEET_RADIUS) : 0;
+        int centerX = Mth.floor((box.minX + box.maxX) / 2);
+        int centerZ = Mth.floor((box.minZ + box.maxZ) / 2);
+        LongOpenHashSet underfoot = new LongOpenHashSet();
         for (int x = Mth.floor(box.minX + EPS); x <= Mth.floor(box.maxX - EPS); x++) {
             for (int z = Mth.floor(box.minZ + EPS); z <= Mth.floor(box.maxZ - EPS); z++) {
-                BlockPos support = surface(level, x, z, box.minY, 0.1, 0.1);
-                if (support != null) current.add(support.asLong());
+                BlockPos support = surface(level, x, z, box.minY, below, 0.1);
+                if (support != null) underfoot.add(support.asLong());
+            }
+        }
+        LongOpenHashSet current = new LongOpenHashSet(underfoot);
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                if (dx * dx + dz * dz > radius * radius + 1) continue;
+                // Steps a block up or down still count as floor around.
+                BlockPos floor = surface(level, centerX + dx, centerZ + dz, box.minY, Math.max(below, 1.1), 1.1);
+                if (floor != null) current.add(floor.asLong());
             }
         }
         var it = current.iterator();
         while (it.hasNext()) {
             long key = it.nextLong();
-            if (refreshAll || !footprint.contains(key)) touchFace(cloud, level, BlockPos.of(key), Direction.UP);
+            if (!refreshAll && footprint.contains(key)) continue;
+            BlockPos pos = BlockPos.of(key);
+            touchFace(cloud, level, pos, Direction.UP, underfoot.contains(key) ? 3 : 2);
+            for (Direction side : Direction.Plane.HORIZONTAL) {
+                BlockPos next = pos.relative(side);
+                if (level.getBlockState(next).getCollisionShape(level, next).isEmpty()) {
+                    touchFace(cloud, level, pos, side, 2);
+                    touchEdge(cloud, level, pos, side);
+                }
+            }
         }
         footprint.clear();
         footprint.addAll(current);
@@ -162,6 +190,26 @@ public final class ClientTouch {
         }
     }
 
+    private static final int EDGE_POINTS = 5;
+
+    /** A line of points along the top edge of a ledge, corners included: the drop reads as a line. */
+    private static void touchEdge(PointCloud cloud, Level level, BlockPos pos, Direction side) {
+        BlockState state = level.getBlockState(pos);
+        VoxelShape shape = state.getCollisionShape(level, pos);
+        if (shape.isEmpty()) return;
+        AABB bounds = shape.bounds();
+        int material = TouchMaterial.of(level, pos, state, side).ordinal();
+        Direction.Axis along = side.getAxis() == Direction.Axis.X ? Direction.Axis.Z : Direction.Axis.X;
+        double out = side.getAxisDirection() == Direction.AxisDirection.POSITIVE ? bounds.max(side.getAxis()) : bounds.min(side.getAxis());
+        double top = pos.getY() + bounds.maxY;
+        for (int i = 0; i < EDGE_POINTS; i++) {
+            double t = Mth.lerp(i / (double) (EDGE_POINTS - 1), bounds.min(along), bounds.max(along));
+            double x = pos.getX() + (side.getAxis() == Direction.Axis.X ? out : t);
+            double z = pos.getZ() + (side.getAxis() == Direction.Axis.Z ? out : t);
+            cloud.add(PointSource.TOUCH, x, top, z, side, material);
+        }
+    }
+
     /** The block in column (x, z) whose collision top lies within [y - below, y + above], searching down from above. */
     private static @Nullable BlockPos surface(Level level, int x, int z, double y, double below, double above) {
         for (int by = Mth.floor(y + above); by >= Mth.floor(y - below) - 1; by--) {
@@ -179,6 +227,11 @@ public final class ClientTouch {
      * spot, so touching the same face again refreshes these points instead of adding new ones.
      */
     static void touchFace(PointCloud cloud, Level level, BlockPos pos, Direction face) {
+        touchFace(cloud, level, pos, face, 2);
+    }
+
+    /** A grid×grid jittered set of points over the face; see {@link #touchFace(PointCloud, Level, BlockPos, Direction)}. */
+    static void touchFace(PointCloud cloud, Level level, BlockPos pos, Direction face, int grid) {
         BlockState state = level.getBlockState(pos);
         VoxelShape shape = state.getCollisionShape(level, pos);
         if (shape.isEmpty()) return;
@@ -188,11 +241,11 @@ public final class ClientTouch {
         Direction.Axis uAxis = axis == Direction.Axis.X ? Direction.Axis.Y : Direction.Axis.X;
         Direction.Axis vAxis = axis == Direction.Axis.Z ? Direction.Axis.Y : Direction.Axis.Z;
         double plane = face.getAxisDirection() == Direction.AxisDirection.POSITIVE ? bounds.max(axis) : bounds.min(axis);
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                long hash = HashCommon.mix(pos.asLong() * 31 + face.ordinal() * 7L + i * 2L + j);
-                double u = Mth.lerp((i + 0.5 + ((hash & 0xFF) / 255.0 - 0.5) * 0.6) / 2, bounds.min(uAxis), bounds.max(uAxis));
-                double v = Mth.lerp((j + 0.5 + (((hash >>> 8) & 0xFF) / 255.0 - 0.5) * 0.6) / 2, bounds.min(vAxis), bounds.max(vAxis));
+        for (int i = 0; i < grid; i++) {
+            for (int j = 0; j < grid; j++) {
+                long hash = HashCommon.mix(pos.asLong() * 31 + face.ordinal() * 7L + i * 8L + j + grid * 64L);
+                double u = Mth.lerp((i + 0.5 + ((hash & 0xFF) / 255.0 - 0.5) * 0.6) / grid, bounds.min(uAxis), bounds.max(uAxis));
+                double v = Mth.lerp((j + 0.5 + (((hash >>> 8) & 0xFF) / 255.0 - 0.5) * 0.6) / grid, bounds.min(vAxis), bounds.max(vAxis));
                 double[] local = new double[3];
                 local[axis.ordinal()] = plane;
                 local[uAxis.ordinal()] = u;

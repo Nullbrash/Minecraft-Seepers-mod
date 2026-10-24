@@ -62,6 +62,7 @@ public final class ServerConfig {
     public static final ModConfigSpec.IntValue TOUCH_POINT_LIMIT;
     public static final ModConfigSpec.DoubleValue TOUCH_POINT_LIFETIME_SECONDS;
     public static final ModConfigSpec.DoubleValue TOUCH_WARM_HEAT;
+    public static final ModConfigSpec.IntValue TOUCH_FEET_RADIUS;
     public static final ModConfigSpec.DoubleValue TOUCH_HAND_REACH;
     public static final ModConfigSpec.DoubleValue TOUCH_HAND_CONE_DEGREES;
     public static final ModConfigSpec.IntValue TOUCH_HAND_POINTS;
@@ -201,19 +202,21 @@ public final class ServerConfig {
         builder.comment("Touch: the first sense, drawn as points (CLAUDE.md 5.1). Balance values for difficulty presets.")
                 .translation("seepers.configuration.touch").push("touch");
         TOUCH_POINT_LIMIT = builder.comment("Touch points kept at once; the oldest go first. Lidar upgrades do not raise it.")
-                .translation("seepers.configuration.touch.pointLimit").defineInRange("pointLimit", 4096, 0, 65536);
+                .translation("seepers.configuration.touch.pointLimit").defineInRange("pointLimit", 8192, 0, 65536);
         TOUCH_POINT_LIFETIME_SECONDS = builder.comment("Seconds a touch point lasts; it fades over the last third.")
                 .translation("seepers.configuration.touch.pointLifetimeSeconds").defineInRange("pointLifetimeSeconds", 60.0, 1.0, 3600.0);
         TOUCH_WARM_HEAT = builder.comment("Heat (fog density cleared by heat sources) from which a surface feels warm.")
                 .translation("seepers.configuration.touch.warmHeat").defineInRange("warmHeat", 0.4, 0.0, 16.0);
+        TOUCH_FEET_RADIUS = builder.comment("Floor felt by the feet around a crouching player, blocks (0 = only what is underfoot).")
+                .translation("seepers.configuration.touch.feetRadius").defineInRange("feetRadius", 2, 0, 4);
         TOUCH_HAND_REACH = builder.comment("How far a click reaches with the hand, blocks.")
-                .translation("seepers.configuration.touch.handReach").defineInRange("handReach", 2.0, 0.5, 6.0);
+                .translation("seepers.configuration.touch.handReach").defineInRange("handReach", 3.0, 0.5, 6.0);
         TOUCH_HAND_CONE_DEGREES = builder.comment("Full angle of the cone a click feels along the view, degrees.")
-                .translation("seepers.configuration.touch.handConeDegrees").defineInRange("handConeDegrees", 15.0, 0.0, 90.0);
+                .translation("seepers.configuration.touch.handConeDegrees").defineInRange("handConeDegrees", 25.0, 0.0, 90.0);
         TOUCH_HAND_POINTS = builder.comment("Rays (points) per click.")
                 .translation("seepers.configuration.touch.handPoints").defineInRange("handPoints", 6, 1, 64);
         TOUCH_HAND_CLICKS_PER_SECOND = builder.comment("Most clicks per second that feel; faster ones are ignored.")
-                .translation("seepers.configuration.touch.handClicksPerSecond").defineInRange("handClicksPerSecond", 4.0, 0.5, 20.0);
+                .translation("seepers.configuration.touch.handClicksPerSecond").defineInRange("handClicksPerSecond", 20.0, 0.5, 20.0);
         TOUCH_LAVA_DAMAGE = builder.comment("Damage for touching lava with the hand (no fire), at most once a second.")
                 .translation("seepers.configuration.touch.lavaDamage").defineInRange("lavaDamage", 1.0, 0.0, 40.0);
         builder.pop();
