@@ -20,6 +20,8 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -169,7 +171,21 @@ public final class HandTouch {
         TouchMaterial material = lava ? TouchMaterial.WARM
                 : fluid ? TouchMaterial.WET
                 : TouchMaterial.of(level, pos, state, result.getDirection());
-        return new Hit(result, result.getLocation(), state, material, fluid, lava);
+        Vec3 location = result.getLocation();
+        if (!fluid) {
+            // The ray stops at the collision shape; move the point out to the drawn surface if that sticks out
+            // further (mud, soul sand), or it would be hidden inside the block.
+            AABB bounds = ClientTouch.surfaceBounds(level, pos, state);
+            Direction face = result.getDirection();
+            if (bounds != null) {
+                Direction.Axis axis = face.getAxis();
+                double plane = (axis == Direction.Axis.X ? pos.getX() : axis == Direction.Axis.Y ? pos.getY() : pos.getZ())
+                        + (face.getAxisDirection() == Direction.AxisDirection.POSITIVE ? bounds.max(axis) : bounds.min(axis));
+                location = location.with(axis, face.getAxisDirection() == Direction.AxisDirection.POSITIVE
+                        ? Math.max(location.get(axis), plane) : Math.min(location.get(axis), plane));
+            }
+        }
+        return new Hit(result, location, state, material, fluid, lava);
     }
 
     /** A random direction within halfAngle of the axis, uniform over the cone's spherical cap. */

@@ -192,12 +192,22 @@ public final class ClientTouch {
 
     private static final int EDGE_POINTS = 5;
 
+    /**
+     * Where points on a block go: the union of its collision and visible shapes. Mud and soul sand collide
+     * lower than they are drawn; points at the collision top would sit inside the drawn block, hidden.
+     */
+    static @Nullable AABB surfaceBounds(Level level, BlockPos pos, BlockState state) {
+        VoxelShape collision = state.getCollisionShape(level, pos);
+        if (collision.isEmpty()) return null;
+        VoxelShape visible = state.getShape(level, pos);
+        return visible.isEmpty() ? collision.bounds() : collision.bounds().minmax(visible.bounds());
+    }
+
     /** A line of points along the top edge of a ledge, corners included: the drop reads as a line. */
     private static void touchEdge(PointCloud cloud, Level level, BlockPos pos, Direction side) {
         BlockState state = level.getBlockState(pos);
-        VoxelShape shape = state.getCollisionShape(level, pos);
-        if (shape.isEmpty()) return;
-        AABB bounds = shape.bounds();
+        AABB bounds = surfaceBounds(level, pos, state);
+        if (bounds == null) return;
         int material = TouchMaterial.of(level, pos, state, side).ordinal();
         Direction.Axis along = side.getAxis() == Direction.Axis.X ? Direction.Axis.Z : Direction.Axis.X;
         double out = side.getAxisDirection() == Direction.AxisDirection.POSITIVE ? bounds.max(side.getAxis()) : bounds.min(side.getAxis());
@@ -233,9 +243,8 @@ public final class ClientTouch {
     /** A grid×grid jittered set of points over the face; see {@link #touchFace(PointCloud, Level, BlockPos, Direction)}. */
     static void touchFace(PointCloud cloud, Level level, BlockPos pos, Direction face, int grid) {
         BlockState state = level.getBlockState(pos);
-        VoxelShape shape = state.getCollisionShape(level, pos);
-        if (shape.isEmpty()) return;
-        AABB bounds = shape.bounds();
+        AABB bounds = surfaceBounds(level, pos, state);
+        if (bounds == null) return;
         int material = TouchMaterial.of(level, pos, state, face).ordinal();
         Direction.Axis axis = face.getAxis();
         Direction.Axis uAxis = axis == Direction.Axis.X ? Direction.Axis.Y : Direction.Axis.X;
