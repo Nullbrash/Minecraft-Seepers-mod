@@ -36,6 +36,8 @@ public final class CaneTouch {
 
     private static final RandomSource RANDOM = RandomSource.create();
     private static int heldTicks;
+    /** One blow, one silhouette: only the first mob a tap or a sweep pass meets is outlined. */
+    private static boolean struckThisPass;
 
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -72,6 +74,7 @@ public final class CaneTouch {
         Vec3 eye = player.getEyePosition();
         Vec3 feet = player.position();
         HandTouch.Hit first = null;
+        struckThisPass = false;
         for (int i = 0; i < rays; i++) {
             float yaw = player.getYRot() * Mth.DEG_TO_RAD + (float) ((RANDOM.nextDouble() * 2 - 1) * halfAngle);
             double distance = Mth.lerp(RANDOM.nextDouble(), min, max);
@@ -89,6 +92,7 @@ public final class CaneTouch {
     private static void tap(LocalPlayer player, ClientLevel level, PointCloud cloud, InteractionHand hand, Vec3 eye,
                             Vec3 direction, double reach, int points, boolean aimed) {
         HandTouch.Hit center = HandTouch.cast(player, level, eye, direction, reach);
+        struckThisPass = false;
         if (mob(player, eye, direction, center == null ? reach : center.location().distanceTo(eye), hand)) return;
         if (center != null) {
             for (int i = 0; i < points; i++) {
@@ -112,6 +116,8 @@ public final class CaneTouch {
                 player.getBoundingBox().expandTowards(direction.scale(distance)).inflate(1.0),
                 entity -> !entity.isSpectator() && entity.isPickable(), distance * distance);
         if (hit == null) return false;
+        if (struckThisPass) return true; // the ray still stops at the mob
+        struckThisPass = true;
         Silhouettes.of(hit.getEntity());
         Vec3 at = hit.getLocation();
         PacketDistributor.sendToServer(new CaneTapPayload(hand == InteractionHand.OFF_HAND, true,
