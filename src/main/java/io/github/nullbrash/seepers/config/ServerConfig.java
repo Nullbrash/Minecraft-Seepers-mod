@@ -73,6 +73,7 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue TOUCH_LAVA_DAMAGE;
     public static final ModConfigSpec.DoubleValue CANE_REACH;
     public static final ModConfigSpec.DoubleValue SILHOUETTE_SECONDS;
+    public static final ModConfigSpec.DoubleValue CANE_LAVA_BURN;
     public static final ModConfigSpec.DoubleValue CANE_SWEEP_MIN;
     public static final ModConfigSpec.DoubleValue CANE_SWEEP_MAX;
     public static final ModConfigSpec.IntValue CANE_SWEEP_TICKS;
@@ -258,6 +259,8 @@ public final class ServerConfig {
                 .translation("seepers.configuration.cane.points").defineInRange("points", 16, 1, 64);
         CANE_POINT_LIMIT = builder.comment("Cane points kept at once; the oldest go first.")
                 .translation("seepers.configuration.cane.pointLimit").defineInRange("pointLimit", 8192, 0, 65536);
+        CANE_LAVA_BURN = builder.comment("Share of a wooden cane's full durability lost when it touches lava (an iron tip does not burn).")
+                .translation("seepers.configuration.cane.lavaBurn").defineInRange("lavaBurn", 0.05, 0.0, 1.0);
         SILHOUETTE_SECONDS = builder.comment("Seconds a mob's silhouette lasts after a blow (it fades over the last third).")
                 .translation("seepers.configuration.cane.silhouetteSeconds").defineInRange("silhouetteSeconds", 8.0, 1.0, 120.0);
         CANE_POINT_LIFETIME_SECONDS = builder.comment("Seconds a cane point lasts; it fades over the last third.")

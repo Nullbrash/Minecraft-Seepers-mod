@@ -6,7 +6,9 @@ import io.github.nullbrash.seepers.network.payload.CaneTapPayload;
 import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -43,10 +45,13 @@ public final class CaneTaps {
         LAST_TAP.put(player, now);
 
         Vec3 at = new Vec3(tap.x(), tap.y(), tap.z());
-        double reach = ServerConfig.get(ServerConfig.CANE_REACH) + 1.0;
+        boolean tipped = CaneItem.hasIronTip(cane);
+        double reach = ServerConfig.get(ServerConfig.CANE_REACH) + (tipped ? 2.0 : 1.0);
         if (tap.hit() && player.getEyePosition().distanceToSqr(at) <= reach * reach && level.isLoaded(tap.pos())) {
             BlockState state = level.getBlockState(tap.pos());
-            if (state.getShape(level, tap.pos()).isEmpty()) {
+            if (level.getFluidState(tap.pos()).is(FluidTags.LAVA)) {
+                // Lava: the hiss below says it all.
+            } else if (state.getShape(level, tap.pos()).isEmpty()) {
                 // Nothing solid there: the cane met a mob.
                 level.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_WEAK, SoundSource.PLAYERS, KNOCK_VOLUME, 0.8F);
             } else {
@@ -63,7 +68,16 @@ public final class CaneTaps {
             Vec3 eye = player.getEyePosition();
             level.playSound(null, eye.x, eye.y, eye.z, SoundEvents.PLAYER_ATTACK_NODAMAGE, SoundSource.PLAYERS, 0.4F, 1.3F);
         }
-        cane.hurtAndBreak(1, player, hand == InteractionHand.OFF_HAND ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND);
+        EquipmentSlot slot = hand == InteractionHand.OFF_HAND ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
+        // A wooden end in lava chars: a share of the full durability goes, with a hiss and a puff of smoke.
+        if (tap.hit() && tap.face() == null && !tipped && level.isLoaded(tap.pos())
+                && level.getFluidState(tap.pos()).is(FluidTags.LAVA) && player.getEyePosition().distanceToSqr(at) <= reach * reach) {
+            level.playSound(null, at.x, at.y, at.z, SoundEvents.LAVA_EXTINGUISH, SoundSource.PLAYERS, 0.6F, 1.4F);
+            level.sendParticles(ParticleTypes.SMOKE, at.x, at.y + 0.1, at.z, 6, 0.1, 0.1, 0.1, 0.01);
+            cane.hurtAndBreak(Math.max(1, (int) Math.ceil(cane.getMaxDamage() * ServerConfig.get(ServerConfig.CANE_LAVA_BURN))), player, slot);
+            return;
+        }
+        cane.hurtAndBreak(1, player, slot);
     }
 
     private CaneTaps() {}

@@ -24,6 +24,8 @@ import io.github.nullbrash.seepers.light.Relighter;
 import io.github.nullbrash.seepers.mob.HostileSpawnControl;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
 import io.github.nullbrash.seepers.registry.SeepersAttachments;
+import io.github.nullbrash.seepers.item.CaneItem;
+import io.github.nullbrash.seepers.registry.SeepersComponents;
 import io.github.nullbrash.seepers.registry.SeepersItems;
 import io.github.nullbrash.seepers.touch.BlowSilhouettes;
 import net.minecraft.resources.ResourceLocation;
@@ -50,6 +52,8 @@ public final class Seepers {
 
         SeepersAttachments.ATTACHMENT_TYPES.register(modBus);
         SeepersItems.ITEMS.register(modBus);
+        SeepersComponents.COMPONENTS.register(modBus);
+        NeoForge.EVENT_BUS.addListener(CaneItem::onAnvilUpdate);
         modBus.addListener(SeepersItems::addToCreativeTabs);
 
         modBus.addListener(SeepersNetwork::register);

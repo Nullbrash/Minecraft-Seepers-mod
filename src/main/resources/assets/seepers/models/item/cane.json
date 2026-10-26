@@ -2,5 +2,13 @@
   "parent": "minecraft:item/handheld",
   "textures": {
     "layer0": "seepers:item/cane"
-  }
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "seepers:iron_tip": 1
+      },
+      "model": "seepers:item/cane_tipped"
+    }
+  ]
 }

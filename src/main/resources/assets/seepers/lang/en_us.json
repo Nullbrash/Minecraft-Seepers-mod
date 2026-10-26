@@ -334,5 +334,8 @@
   "item.seepers.bound_cane": "Bound Cane",
   "seepers.configuration.cane.silhouetteSeconds": "Silhouette lifetime, seconds",
   "seepers.configuration.cane.silhouetteSeconds.tooltip": "Seconds a mob's silhouette lasts after a blow (it fades over the last third).",
-  "seepers.touch.empty": "Empty"
+  "seepers.touch.empty": "Empty",
+  "item.seepers.cane.iron_tip": "Iron tip",
+  "seepers.configuration.cane.lavaBurn": "Lava burn",
+  "seepers.configuration.cane.lavaBurn.tooltip": "Share of a wooden cane's full durability lost when it touches lava (an iron tip does not burn)."
 }

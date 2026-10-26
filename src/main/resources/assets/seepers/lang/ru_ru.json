@@ -334,5 +334,8 @@
   "item.seepers.bound_cane": "Перевязанная трость",
   "seepers.configuration.cane.silhouetteSeconds": "Жизнь силуэта, секунд",
   "seepers.configuration.cane.silhouetteSeconds.tooltip": "Сколько секунд держится силуэт моба после удара (последнюю треть гаснет).",
-  "seepers.touch.empty": "Пусто"
+  "seepers.touch.empty": "Пусто",
+  "item.seepers.cane.iron_tip": "Железный наконечник",
+  "seepers.configuration.cane.lavaBurn": "Обгорание в лаве",
+  "seepers.configuration.cane.lavaBurn.tooltip": "Доля полной прочности деревянной трости, теряемая при касании лавы (железный наконечник не горит)."
 }

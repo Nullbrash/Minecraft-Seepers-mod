@@ -57,13 +57,18 @@ public final class CaneTouch {
         int held = heldTicks++;
         if (held == 0) {
             tap(player, minecraft.level, cloud, hand, player.getEyePosition(), player.getViewVector(1.0F),
-                    ServerConfig.get(ServerConfig.CANE_REACH), ServerConfig.get(ServerConfig.CANE_POINTS), true);
+                    ServerConfig.get(ServerConfig.CANE_REACH) + tipBonus(player, hand), ServerConfig.get(ServerConfig.CANE_POINTS), true);
         } else if (held >= SWEEP_START_TICKS && (held - SWEEP_START_TICKS) % ServerConfig.get(ServerConfig.CANE_SWEEP_TICKS) == 0) {
             sweep(player, minecraft.level, cloud, hand);
         }
     }
 
     /** A cane in the off hand answers the use key only when the main hand is empty: seeds, blocks, food go first. */
+    /** An iron tip reaches one block further (CLAUDE.md 5.2). */
+    private static int tipBonus(LocalPlayer player, InteractionHand hand) {
+        return CaneItem.hasIronTip(player.getItemInHand(hand)) ? 1 : 0;
+    }
+
     private static @Nullable InteractionHand caneHand(LocalPlayer player) {
         if (player.getMainHandItem().getItem() instanceof CaneItem) return InteractionHand.MAIN_HAND;
         if (player.getOffhandItem().getItem() instanceof CaneItem && player.getMainHandItem().isEmpty()) return InteractionHand.OFF_HAND;
@@ -74,7 +79,7 @@ public final class CaneTouch {
     private static void sweep(LocalPlayer player, ClientLevel level, PointCloud cloud, InteractionHand hand) {
         double halfAngle = Math.toRadians(ServerConfig.get(ServerConfig.CANE_SWEEP_DEGREES) / 2);
         double min = ServerConfig.get(ServerConfig.CANE_SWEEP_MIN);
-        double max = ServerConfig.get(ServerConfig.CANE_SWEEP_MAX);
+        double max = ServerConfig.get(ServerConfig.CANE_SWEEP_MAX) + tipBonus(player, hand);
         int rays = ServerConfig.get(ServerConfig.CANE_SWEEP_RAYS);
         Vec3 eye = player.getEyePosition();
         Vec3 feet = player.position();
@@ -93,7 +98,7 @@ public final class CaneTouch {
                 if (empty == null && target.y < feet.y) empty = target;
                 continue;
             }
-            if (first == null) first = hit;
+            if (first == null || (hit.lava() && !first.lava())) first = hit; // lava is what the server must hear about
             add(cloud, hit);
         }
         if (empty != null) feelVoid(player, level, cloud, empty);
