@@ -17,7 +17,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * A blurred silhouette of a mob, frozen in the pose it had when a blow landed (CLAUDE.md 5.2). The entity's
+ * A blurred part of a mob's silhouette, frozen in the pose it had when a blow landed (CLAUDE.md 5.2): only what
+ * the blow touched — the legs for a cane, the torso of a mob that struck the player, the spot the player struck
+ * along the view. The entity's
  * renderer draws it into a vertex catcher instead of the screen, so the points follow its real model (head,
  * legs, tail); a renderer that draws nothing there falls back to the body's box. Peaceful and neutral mobs are
  * yellow, hostile ones red; visible in light too.
@@ -30,17 +32,49 @@ public final class Silhouettes {
     /** How far points stray off the surface: the outline is felt, not seen. */
     private static final double BLUR = 0.05;
     private static final RandomSource RANDOM = RandomSource.create();
+    /** Radius around the struck spot that is outlined, blocks. */
+    private static final double STRUCK_RADIUS = 0.6;
 
-    public static void of(Entity entity) {
+    /** Which part of the body a blow outlines. */
+    public enum Part { LEGS, TORSO, STRUCK }
+
+    public static void of(Entity entity, Part part) {
         PointCloud cloud = PointCloud.get();
         if (cloud == null || entity == Minecraft.getInstance().player) return;
         int material = (entity instanceof Enemy ? TouchMaterial.HOSTILE : TouchMaterial.CREATURE).ordinal();
+        java.util.function.Predicate<Vec3> keep = filter(entity, part);
         FloatArrayList quads = capture(entity);
         if (quads.size() >= 12) {
-            fromQuads(cloud, entity.position(), quads, material);
+            fromQuads(cloud, entity.position(), quads, material, keep);
         } else {
-            fromBox(cloud, entity.getBoundingBox(), material);
+            fromBox(cloud, entity.getBoundingBox(), material, keep);
         }
+    }
+
+    /** World-space test for the part: height bands for legs and torso, a ball around the struck spot. */
+    private static java.util.function.Predicate<Vec3> filter(Entity entity, Part part) {
+        AABB box = entity.getBoundingBox();
+        double h = box.getYsize();
+        return switch (part) {
+            case LEGS -> p -> p.y <= box.minY + h * 0.4;
+            case TORSO -> p -> p.y >= box.minY + h * 0.35 && p.y <= box.minY + h * 0.8;
+            case STRUCK -> {
+                Vec3 spot = struckSpot(entity);
+                yield p -> p.distanceToSqr(spot) <= STRUCK_RADIUS * STRUCK_RADIUS;
+            }
+        };
+    }
+
+    /** Where the player's view meets the mob's box; its centre if the player looks elsewhere (a ranged blow). */
+    private static Vec3 struckSpot(Entity entity) {
+        var player = Minecraft.getInstance().player;
+        AABB box = entity.getBoundingBox().inflate(0.1);
+        if (player != null) {
+            Vec3 eye = player.getEyePosition();
+            var hit = box.clip(eye, eye.add(player.getViewVector(1.0F).scale(64)));
+            if (hit.isPresent()) return hit.get();
+        }
+        return box.getCenter();
     }
 
     /** Model quads (4 corners × xyz each), relative to the entity's position. */
@@ -68,7 +102,8 @@ public final class Silhouettes {
         return out;
     }
 
-    private static void fromQuads(PointCloud cloud, Vec3 origin, FloatArrayList q, int material) {
+    private static void fromQuads(PointCloud cloud, Vec3 origin, FloatArrayList q, int material,
+                                  java.util.function.Predicate<Vec3> keep) {
         int quads = q.size() / 12;
         double[] area = new double[quads];
         double total = 0;
@@ -96,6 +131,7 @@ public final class Silhouettes {
             Vec3 p = a.scale((1 - u) * (1 - v)).add(b.scale(u * (1 - v))).add(c.scale(u * v)).add(d.scale((1 - u) * v));
             Vec3 normal = b.subtract(a).cross(d.subtract(a)).normalize();
             p = p.add(normal.scale((RANDOM.nextDouble() * 2 - 1) * BLUR)).add(origin);
+            if (!keep.test(p)) continue;
             Direction face = Direction.getNearest(normal.x, normal.y, normal.z);
             cloud.add(PointSource.SILHOUETTE, p.x, p.y, p.z, face, material);
         }
@@ -107,7 +143,7 @@ public final class Silhouettes {
     }
 
     /** Fallback: points over the body's box. */
-    private static void fromBox(PointCloud cloud, AABB box, int material) {
+    private static void fromBox(PointCloud cloud, AABB box, int material, java.util.function.Predicate<Vec3> keep) {
         int count = Mth.clamp((int) ((box.getXsize() * box.getYsize() + box.getYsize() * box.getZsize()) * 2 * DENSITY), MIN_POINTS, MAX_POINTS);
         for (int i = 0; i < count; i++) {
             Direction face = Direction.getRandom(RANDOM);
@@ -122,7 +158,7 @@ public final class Silhouettes {
                 case SOUTH -> z = box.maxZ;
                 case NORTH -> z = box.minZ;
             }
-            cloud.add(PointSource.SILHOUETTE, x, y, z, face, material);
+            if (keep.test(new Vec3(x, y, z))) cloud.add(PointSource.SILHOUETTE, x, y, z, face, material);
         }
     }
 

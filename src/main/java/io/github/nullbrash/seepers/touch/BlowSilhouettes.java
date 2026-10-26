@@ -17,10 +17,10 @@ public final class BlowSilhouettes {
         Entity attacker = event.getSource().getEntity();
         if (attacker == null || attacker == target || target.level().isClientSide) return;
         if (target instanceof ServerPlayer player) {
-            PacketDistributor.sendToPlayer(player, new SilhouettePayload(attacker.getId()));
+            PacketDistributor.sendToPlayer(player, new SilhouettePayload(attacker.getId(), false));
         }
         if (attacker instanceof ServerPlayer player) {
-            PacketDistributor.sendToPlayer(player, new SilhouettePayload(target.getId()));
+            PacketDistributor.sendToPlayer(player, new SilhouettePayload(target.getId(), true));
         }
     }
 

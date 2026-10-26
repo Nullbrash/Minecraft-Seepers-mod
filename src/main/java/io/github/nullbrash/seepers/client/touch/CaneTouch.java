@@ -118,7 +118,7 @@ public final class CaneTouch {
         if (hit == null) return false;
         if (struckThisPass) return true; // the ray still stops at the mob
         struckThisPass = true;
-        Silhouettes.of(hit.getEntity());
+        Silhouettes.of(hit.getEntity(), Silhouettes.Part.LEGS);
         Vec3 at = hit.getLocation();
         PacketDistributor.sendToServer(new CaneTapPayload(hand == InteractionHand.OFF_HAND, true,
                 BlockPos.containing(at), (float) at.x, (float) at.y, (float) at.z));

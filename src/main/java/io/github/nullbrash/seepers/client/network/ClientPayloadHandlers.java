@@ -37,7 +37,7 @@ public final class ClientPayloadHandlers {
     public static void handleSilhouette(SilhouettePayload payload, IPayloadContext context) {
         ClientLevel level = Minecraft.getInstance().level;
         Entity entity = level == null ? null : level.getEntity(payload.entityId());
-        if (entity != null) Silhouettes.of(entity);
+        if (entity != null) Silhouettes.of(entity, payload.playerStruck() ? Silhouettes.Part.STRUCK : Silhouettes.Part.TORSO);
     }
 
     public static void handleFogSeed(FogSeedPayload payload, IPayloadContext context) {
