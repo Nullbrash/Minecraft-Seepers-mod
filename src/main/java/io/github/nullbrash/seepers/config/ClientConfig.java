@@ -19,6 +19,9 @@ public final class ClientConfig {
     public static final ModConfigSpec.IntValue RENDER_SMOOTHING_SECONDS;
     public static final ModConfigSpec.IntValue RENDER_SETTLE_SECONDS;
     public static final ModConfigSpec.IntValue RENDER_RAISE_SECONDS;
+    public static final ModConfigSpec.IntValue RENDER_MOVING_MAX;
+    public static final ModConfigSpec.IntValue RENDER_STILL_SECONDS;
+    public static final ModConfigSpec.IntValue RENDER_STILL_RAISE_SECONDS;
     public static final ModConfigSpec.DoubleValue RENDER_TPS_LOWER;
     public static final ModConfigSpec.DoubleValue RENDER_TPS_RAISE;
     public static final ModConfigSpec.DoubleValue RENDER_FPS_LOWER;
@@ -46,6 +49,12 @@ public final class ClientConfig {
                 .translation("seepers.configuration.renderDistance.settleSeconds").defineInRange("settleSeconds", 10, 0, 60);
         RENDER_RAISE_SECONDS = builder.comment("The distance grows by at most one chunk this often.")
                 .translation("seepers.configuration.renderDistance.raiseSeconds").defineInRange("raiseSeconds", 15, 1, 300);
+        RENDER_MOVING_MAX = builder.comment("On the move the distance stays at most this many chunks (new chunks keep loading).")
+                .translation("seepers.configuration.renderDistance.movingMax").defineInRange("movingMax", 8, 2, 32);
+        RENDER_STILL_SECONDS = builder.comment("Standing this long counts as standing still: the distance may grow up to the slider.")
+                .translation("seepers.configuration.renderDistance.stillSeconds").defineInRange("stillSeconds", 3, 1, 60);
+        RENDER_STILL_RAISE_SECONDS = builder.comment("Standing still, the distance grows by one chunk this often.")
+                .translation("seepers.configuration.renderDistance.stillRaiseSeconds").defineInRange("stillRaiseSeconds", 5, 1, 60);
         RENDER_TPS_LOWER = builder.comment("Server ticks per second (20 = no lag) below which the distance drops. Checked first.")
                 .translation("seepers.configuration.renderDistance.tpsLower").defineInRange("tpsLower", 18.0, 0.0, 20.0);
         RENDER_TPS_RAISE = builder.comment("The distance grows only while the server keeps at least this TPS.")

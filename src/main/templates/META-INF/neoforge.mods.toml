@@ -11,6 +11,10 @@ description='''
 ${mod_description}
 '''
 
+# Optional Sodium integration: Sodium's config API loads this class by name, only when Sodium is installed.
+[modproperties.${mod_id}]
+"sodium:config_api_user" = "io.github.nullbrash.seepers.client.render.SodiumConfig"
+
 # Client-only mixins go to the "client" list (package ...seepers.mixin.client).
 [[mixins]]
 config="${mod_id}.mixins.json"

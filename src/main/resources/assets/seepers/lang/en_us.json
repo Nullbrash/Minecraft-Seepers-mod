@@ -358,5 +358,12 @@
   "seepers.configuration.renderDistance.fpsLower": "Lower below FPS",
   "seepers.configuration.renderDistance.fpsLower.tooltip": "Average frames per second below which the distance drops.",
   "seepers.configuration.renderDistance.fpsRaise": "Grow above FPS",
-  "seepers.configuration.renderDistance.fpsRaise.tooltip": "The distance grows only above this average frame rate (lowered to fit a frame rate limit)."
+  "seepers.configuration.renderDistance.fpsRaise.tooltip": "The distance grows only above this average frame rate (lowered to fit a frame rate limit).",
+  "seepers.renderDistance.caption": "%s (auto: %s)",
+  "seepers.configuration.renderDistance.movingMax": "On the move at most, chunks",
+  "seepers.configuration.renderDistance.movingMax.tooltip": "On the move the distance stays at most this many chunks (new chunks keep loading).",
+  "seepers.configuration.renderDistance.stillSeconds": "Standing still after, seconds",
+  "seepers.configuration.renderDistance.stillSeconds.tooltip": "Standing this long counts as standing still: the distance may grow up to the slider.",
+  "seepers.configuration.renderDistance.stillRaiseSeconds": "Standing, grow every, seconds",
+  "seepers.configuration.renderDistance.stillRaiseSeconds.tooltip": "Standing still, the distance grows by one chunk this often."
 }

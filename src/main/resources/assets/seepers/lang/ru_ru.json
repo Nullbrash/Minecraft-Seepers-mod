@@ -358,5 +358,12 @@
   "seepers.configuration.renderDistance.fpsLower": "Снижать при FPS ниже",
   "seepers.configuration.renderDistance.fpsLower.tooltip": "Средний FPS, ниже которого дальность снижается.",
   "seepers.configuration.renderDistance.fpsRaise": "Расти при FPS выше",
-  "seepers.configuration.renderDistance.fpsRaise.tooltip": "Дальность растёт, только когда средний FPS выше этого (снижается под ограничение FPS)."
+  "seepers.configuration.renderDistance.fpsRaise.tooltip": "Дальность растёт, только когда средний FPS выше этого (снижается под ограничение FPS).",
+  "seepers.renderDistance.caption": "%s (авто: %s)",
+  "seepers.configuration.renderDistance.movingMax": "На ходу не больше, чанков",
+  "seepers.configuration.renderDistance.movingMax.tooltip": "На ходу дальность не выше этого числа чанков (всё время грузятся новые чанки).",
+  "seepers.configuration.renderDistance.stillSeconds": "Стоишь на месте через, секунд",
+  "seepers.configuration.renderDistance.stillSeconds.tooltip": "Столько простоял — считается, что стоишь: дальность может расти до ползунка.",
+  "seepers.configuration.renderDistance.stillRaiseSeconds": "Стоя растёт раз в, секунд",
+  "seepers.configuration.renderDistance.stillRaiseSeconds.tooltip": "Пока стоишь, дальность растёт на 1 чанк за это время."
 }

@@ -118,6 +118,22 @@ tasks.named('runClient') {
     dependsOn syncClientRunMods
 }
 
+// Compile against Sodium's config API (optional integration) from the same Modrinth file; the classes sit in
+// a nested jar of the container, so it is extracted first. Never shipped or required at runtime.
+def extractSodiumApi = tasks.register('extractSodiumApi', Copy) {
+    from({ zipTree(configurations.clientRunMods.files.find { it.name.startsWith('sodium') }) }) {
+        include 'META-INF/jarjar/net.caffeinemc.sodium-neoforge-*-mod.jar'
+        eachFile { path = name }
+    }
+    includeEmptyDirs = false
+    into layout.buildDirectory.dir('sodium-api')
+}
+dependencies {
+    compileOnly files(layout.buildDirectory.dir('sodium-api').map { it.asFileTree.matching { include '*.jar' } }) {
+        builtBy extractSodiumApi
+    }
+}
+
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var replaceProperties = [
             minecraft_version      : minecraft_version,
