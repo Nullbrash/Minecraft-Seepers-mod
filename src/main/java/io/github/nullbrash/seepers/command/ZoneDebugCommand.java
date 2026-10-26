@@ -1,6 +1,7 @@
 package io.github.nullbrash.seepers.command;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import io.github.nullbrash.seepers.world.DistortedChunkGenerator;
 import io.github.nullbrash.seepers.world.Distortion;
 import java.util.Locale;
 import net.minecraft.commands.CommandSourceStack;
@@ -24,6 +25,10 @@ final class ZoneDebugCommand {
         String value = String.format(Locale.ROOT, "%.2f", level);
         source.sendSuccess(() -> Component.translatable("commands.seepers.debug.zone", pos.toShortString(),
                 Distortion.zone(level), value, zones.zone1(), zones.zone2(), zones.zone3()), false);
+        if (source.getLevel().getChunkSource().getGenerator() instanceof DistortedChunkGenerator generator) {
+            int seam = generator.seamOffset(source.getLevel().getChunkSource().randomState(), pos.getX() >> 4, pos.getZ() >> 4);
+            source.sendSuccess(() -> Component.translatable("commands.seepers.debug.zone.seam", pos.getX() >> 4, pos.getZ() >> 4, seam), false);
+        }
         return Distortion.zone(level);
     }
 

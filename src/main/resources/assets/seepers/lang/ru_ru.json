@@ -364,5 +364,6 @@
   "seepers.configuration.renderDistance.stillRaiseSeconds.tooltip": "Пока стоишь, дальность растёт на 1 чанк за это время.",
   "seepers.configuration.fog.perLevel": "На уровень искажённости",
   "seepers.configuration.fog.perLevel.tooltip": "Добавка плотности на каждый уровень искажённости.",
-  "commands.seepers.debug.zone": "%s: зона %s, искажённость %s (зоны начинаются на %s / %s / %s)"
+  "commands.seepers.debug.zone": "%s: зона %s, искажённость %s (зоны начинаются на %s / %s / %s)",
+  "commands.seepers.debug.zone.seam": "Чанк %s, %s: шов, сдвиг %s блоков"
 }
