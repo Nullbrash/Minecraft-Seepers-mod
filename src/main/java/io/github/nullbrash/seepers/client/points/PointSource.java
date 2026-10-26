@@ -17,7 +17,7 @@ public enum PointSource {
     /** {@code /seepers points test}: large share for render benchmarks. */
     DEBUG;
 
-    private static final int DEBUG_CAPACITY = 262_144;
+    private static final int DEBUG_CAPACITY = 1_048_576;
     private static final int SILHOUETTE_CAPACITY = 4096;
     private static final double DEBUG_LIFETIME_SECONDS = 600;
 

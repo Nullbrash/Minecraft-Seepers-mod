@@ -365,5 +365,5 @@
   "seepers.configuration.fog.perLevel": "Per distortion level",
   "seepers.configuration.fog.perLevel.tooltip": "Extra density per distortion level.",
   "commands.seepers.debug.zone": "%s: zone %s, distortion %s (zones start at %s / %s / %s)",
-  "commands.seepers.debug.zone.seam": "Chunk %s, %s: seam shift %s blocks"
+  "commands.seepers.debug.zone.seam": "Generator here: %s"
 }

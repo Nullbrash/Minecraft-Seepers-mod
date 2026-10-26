@@ -26,8 +26,8 @@ final class ZoneDebugCommand {
         source.sendSuccess(() -> Component.translatable("commands.seepers.debug.zone", pos.toShortString(),
                 Distortion.zone(level), value, zones.zone1(), zones.zone2(), zones.zone3()), false);
         if (source.getLevel().getChunkSource().getGenerator() instanceof DistortedChunkGenerator generator) {
-            int seam = generator.seamOffset(source.getLevel().getChunkSource().randomState(), pos.getX() >> 4, pos.getZ() >> 4);
-            source.sendSuccess(() -> Component.translatable("commands.seepers.debug.zone.seam", pos.getX() >> 4, pos.getZ() >> 4, seam), false);
+            String shape = generator.describe(source.getLevel().getChunkSource().randomState(), pos.getX(), pos.getZ());
+            source.sendSuccess(() -> Component.translatable("commands.seepers.debug.zone.seam", shape), false);
         }
         return Distortion.zone(level);
     }

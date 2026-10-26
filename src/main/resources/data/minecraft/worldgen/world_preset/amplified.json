@@ -10,10 +10,34 @@
         },
         "settings": "minecraft:amplified",
         "distortion": "seepers:distortion",
-        "seams": {
+        "islands": {
+          "cell_size": 88,
+          "warp": 14,
           "start_fraction": 0.25,
           "start_max": 3,
-          "full_max": 24
+          "full_max": 24,
+          "ramp_min": 8,
+          "ramp_max": 16,
+          "ramp_share_start": 0.9,
+          "ramp_share_end": 0.1,
+          "torn_start_level": 1.5,
+          "torn_share_full": 0.1,
+          "torn_share_far": 0.2,
+          "lift_min": 16,
+          "lift_max": 48,
+          "thickness_min": 8,
+          "thickness_max": 24
+        },
+        "lost_pockets": {
+          "cell_size": 64,
+          "chunks_per_pocket_start": 30,
+          "chunks_per_pocket_far": 10,
+          "width_min": 16,
+          "width_max": 48,
+          "height_min": 8,
+          "height_max": 24,
+          "min_y": -40,
+          "max_y": 90
         }
       }
     },
