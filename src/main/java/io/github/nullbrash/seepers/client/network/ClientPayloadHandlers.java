@@ -3,7 +3,10 @@ package io.github.nullbrash.seepers.client.network;
 import io.github.nullbrash.seepers.Seepers;
 import io.github.nullbrash.seepers.client.fog.ClientFog;
 import io.github.nullbrash.seepers.config.ClientConfig;
+import io.github.nullbrash.seepers.client.touch.Silhouettes;
 import io.github.nullbrash.seepers.network.payload.ClientCommandPayload;
+import io.github.nullbrash.seepers.network.payload.SilhouettePayload;
+import net.minecraft.world.entity.Entity;
 import io.github.nullbrash.seepers.network.payload.FogProbePayload;
 import io.github.nullbrash.seepers.network.payload.FogProbeReplyPayload;
 import io.github.nullbrash.seepers.network.payload.FogSeedPayload;
@@ -29,6 +32,12 @@ public final class ClientPayloadHandlers {
         if (payload.command().startsWith("seepers ")) {
             ClientCommandHandler.runCommand(payload.command());
         }
+    }
+
+    public static void handleSilhouette(SilhouettePayload payload, IPayloadContext context) {
+        ClientLevel level = Minecraft.getInstance().level;
+        Entity entity = level == null ? null : level.getEntity(payload.entityId());
+        if (entity != null) Silhouettes.of(entity);
     }
 
     public static void handleFogSeed(FogSeedPayload payload, IPayloadContext context) {

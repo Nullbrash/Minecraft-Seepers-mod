@@ -25,6 +25,7 @@ import io.github.nullbrash.seepers.mob.HostileSpawnControl;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
 import io.github.nullbrash.seepers.registry.SeepersAttachments;
 import io.github.nullbrash.seepers.registry.SeepersItems;
+import io.github.nullbrash.seepers.touch.BlowSilhouettes;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -69,6 +70,7 @@ public final class Seepers {
         FogField.addModifier(RoomField::densityAt);
         NeoForge.EVENT_BUS.addListener(RoomTracker::onServerTick);
         NeoForge.EVENT_BUS.addListener(RoomTracker::onNeighborNotify);
+        NeoForge.EVENT_BUS.addListener(BlowSilhouettes::onDamaged);
         NeoForge.EVENT_BUS.addListener(FireTracker::onNeighborNotify);
         NeoForge.EVENT_BUS.addListener(FireTracker::onChunkLoad);
         NeoForge.EVENT_BUS.addListener(FireTracker::onChunkUnload);

@@ -42,8 +42,13 @@ public final class CaneTaps {
         double reach = ServerConfig.get(ServerConfig.CANE_REACH) + 1.0;
         if (tap.hit() && player.getEyePosition().distanceToSqr(at) <= reach * reach && level.isLoaded(tap.pos())) {
             BlockState state = level.getBlockState(tap.pos());
-            SoundType sound = state.getSoundType(level, tap.pos(), player);
-            level.playSound(null, at.x, at.y, at.z, sound.getHitSound(), SoundSource.PLAYERS, KNOCK_VOLUME, sound.getPitch());
+            if (state.getShape(level, tap.pos()).isEmpty()) {
+                // Nothing solid there: the cane met a mob.
+                level.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_WEAK, SoundSource.PLAYERS, KNOCK_VOLUME, 0.8F);
+            } else {
+                SoundType sound = state.getSoundType(level, tap.pos(), player);
+                level.playSound(null, at.x, at.y, at.z, sound.getHitSound(), SoundSource.PLAYERS, KNOCK_VOLUME, sound.getPitch());
+            }
         } else {
             Vec3 eye = player.getEyePosition();
             level.playSound(null, eye.x, eye.y, eye.z, SoundEvents.PLAYER_ATTACK_NODAMAGE, SoundSource.PLAYERS, 0.4F, 1.3F);

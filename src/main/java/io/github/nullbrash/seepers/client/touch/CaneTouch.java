@@ -14,6 +14,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -76,6 +78,7 @@ public final class CaneTouch {
             Vec3 target = feet.add(-Mth.sin(yaw) * distance, RANDOM.nextDouble() * KNEE - 0.2, Mth.cos(yaw) * distance);
             Vec3 direction = target.subtract(eye);
             HandTouch.Hit hit = HandTouch.cast(player, level, eye, direction.normalize(), direction.length() + 0.3);
+            if (mob(player, eye, direction.normalize(), hit == null ? direction.length() + 0.3 : hit.location().distanceTo(eye), hand)) continue;
             if (hit == null) continue;
             if (first == null) first = hit;
             add(cloud, hit);
@@ -86,6 +89,7 @@ public final class CaneTouch {
     private static void tap(LocalPlayer player, ClientLevel level, PointCloud cloud, InteractionHand hand, Vec3 eye,
                             Vec3 direction, double reach, int points, boolean aimed) {
         HandTouch.Hit center = HandTouch.cast(player, level, eye, direction, reach);
+        if (mob(player, eye, direction, center == null ? reach : center.location().distanceTo(eye), hand)) return;
         if (center != null) {
             for (int i = 0; i < points; i++) {
                 HandTouch.Hit hit = i == 0 ? center : HandTouch.cast(player, level, eye, HandTouch.inCone(direction, PATCH_HALF_ANGLE), reach + 0.5);
@@ -99,6 +103,20 @@ public final class CaneTouch {
             if (!center.fluid()) TouchSounds.playFunctional(level, player, center.result().getBlockPos(), center.state(), center.location());
         }
         send(hand, center, eye);
+    }
+
+    /** The cane met a mob before any block: its silhouette, and a knock the server plays on the mob. */
+    private static boolean mob(LocalPlayer player, Vec3 eye, Vec3 direction, double distance, InteractionHand hand) {
+        Vec3 end = eye.add(direction.scale(distance));
+        EntityHitResult hit = ProjectileUtil.getEntityHitResult(player, eye, end,
+                player.getBoundingBox().expandTowards(direction.scale(distance)).inflate(1.0),
+                entity -> !entity.isSpectator() && entity.isPickable(), distance * distance);
+        if (hit == null) return false;
+        Silhouettes.of(hit.getEntity());
+        Vec3 at = hit.getLocation();
+        PacketDistributor.sendToServer(new CaneTapPayload(hand == InteractionHand.OFF_HAND, true,
+                BlockPos.containing(at), (float) at.x, (float) at.y, (float) at.z));
+        return true;
     }
 
     private static void add(PointCloud cloud, HandTouch.Hit hit) {

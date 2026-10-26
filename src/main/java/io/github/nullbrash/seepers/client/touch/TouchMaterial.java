@@ -19,7 +19,11 @@ public enum TouchMaterial {
     LOOSE(232, 212, 160),
     SOFT(172, 200, 168),
     WET(105, 145, 255),
-    WARM(255, 160, 90);
+    WARM(255, 160, 90),
+    /** Silhouettes of peaceful and neutral mobs (light lemon: yellow-orange stays for ores). */
+    CREATURE(240, 236, 120),
+    /** Silhouettes of hostile mobs. */
+    HOSTILE(230, 60, 55);
 
     public final int red;
     public final int green;
@@ -34,6 +38,11 @@ public enum TouchMaterial {
     /** Feet and body only tell water and warmth apart; the full palette is for the hands (CLAUDE.md 5.1). */
     public TouchMaterial forBody() {
         return this == WET || this == WARM ? this : SOLID;
+    }
+
+    /** Marks are data, not surfaces: light and fog never fade them (CLAUDE.md 5). */
+    public boolean isMark() {
+        return this == CREATURE || this == HOSTILE;
     }
 
     public static TouchMaterial byId(int id) {

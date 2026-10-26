@@ -161,8 +161,8 @@ public final class PointRenderer {
             int light = cloud.lightAt(section.key, ring, slot);
             hash = hash * 31 + light;
             float t = Mth.clamp((light - fadeStart) / (float) (fadeEnd - fadeStart), 0, 1);
-            // Lit surfaces still get points: fog may hide them, the shader decides.
-            int alpha = Math.round(t * t * (3 - 2 * t) * 255);
+            // Lit surfaces still get points: fog may hide them, the shader decides. Marks never fade.
+            int alpha = TouchMaterial.byId(ring.material[slot]).isMark() ? 0 : Math.round(t * t * (3 - 2 * t) * 255);
             Direction face = Direction.values()[ring.face[slot]];
             float x = ring.x[slot] + face.getStepX() * lift;
             float y = ring.y[slot] + face.getStepY() * lift;
