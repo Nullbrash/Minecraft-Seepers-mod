@@ -5,6 +5,7 @@ import io.github.nullbrash.seepers.item.CaneItem;
 import io.github.nullbrash.seepers.network.payload.CaneTapPayload;
 import java.util.Map;
 import java.util.WeakHashMap;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -15,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
@@ -25,6 +27,8 @@ public final class CaneTaps {
     /** Faster taps than a sweep can make are ignored (a modified client cannot drum for free). */
     private static final int MIN_TICKS_BETWEEN_TAPS = 3;
     private static final float KNOCK_VOLUME = 0.8F;
+    private static final float HOLLOW_VOLUME = 1.0F;
+    private static final float HOLLOW_PITCH = 0.55F;
     private static final Map<ServerPlayer, Long> LAST_TAP = new WeakHashMap<>();
 
     public static void handle(CaneTapPayload tap, IPayloadContext context) {
@@ -47,7 +51,13 @@ public final class CaneTaps {
                 level.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_WEAK, SoundSource.PLAYERS, KNOCK_VOLUME, 0.8F);
             } else {
                 SoundType sound = state.getSoundType(level, tap.pos(), player);
-                level.playSound(null, at.x, at.y, at.z, sound.getHitSound(), SoundSource.PLAYERS, KNOCK_VOLUME, sound.getPitch());
+                Direction face = tap.face();
+                // A wall with air right behind it sounds hollow (checked here, not taken from the client).
+                boolean hollow = face != null && face.getAxis().isHorizontal()
+                        && level.getBlockState(tap.pos().relative(face.getOpposite())).getCollisionShape(level, tap.pos().relative(face.getOpposite())).isEmpty();
+                level.playSound(null, at.x, at.y, at.z, sound.getHitSound(), SoundSource.PLAYERS,
+                        hollow ? HOLLOW_VOLUME : KNOCK_VOLUME, sound.getPitch() * (hollow ? HOLLOW_PITCH : 1.0F));
+                if (face == Direction.DOWN) NeoForge.EVENT_BUS.post(new CaneCeilingTapEvent(player, tap.pos()));
             }
         } else {
             Vec3 eye = player.getEyePosition();

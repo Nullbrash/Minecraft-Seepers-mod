@@ -257,7 +257,7 @@ public final class ClientTouch {
     }
 
     /** A line of points along the top edge of a ledge, corners included: the drop reads as a line. */
-    private static void touchEdge(PointCloud cloud, Level level, BlockPos pos, Direction side, boolean fullPalette) {
+    static void touchEdge(PointCloud cloud, Level level, BlockPos pos, Direction side, boolean fullPalette) {
         BlockState state = level.getBlockState(pos);
         AABB bounds = surfaceBounds(level, pos, state);
         if (bounds == null) return;
@@ -275,7 +275,7 @@ public final class ClientTouch {
     }
 
     /** The block in column (x, z) whose collision top lies within [y - below, y + above], searching down from above. */
-    private static @Nullable BlockPos surface(Level level, int x, int z, double y, double below, double above) {
+    static @Nullable BlockPos surface(Level level, int x, int z, double y, double below, double above) {
         for (int by = Mth.floor(y + above); by >= Mth.floor(y - below) - 1; by--) {
             BlockPos pos = new BlockPos(x, by, z);
             VoxelShape shape = level.getBlockState(pos).getCollisionShape(level, pos);

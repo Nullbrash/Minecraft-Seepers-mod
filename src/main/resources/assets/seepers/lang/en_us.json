@@ -333,5 +333,6 @@
   "seepers.configuration.exemptSpawnChance.tooltip": "Chance that a natural spawn attempt of an exempt hostile goes ahead (slows refilling).",
   "item.seepers.bound_cane": "Bound Cane",
   "seepers.configuration.cane.silhouetteSeconds": "Silhouette lifetime, seconds",
-  "seepers.configuration.cane.silhouetteSeconds.tooltip": "Seconds a mob's silhouette lasts after a blow (it fades over the last third)."
+  "seepers.configuration.cane.silhouetteSeconds.tooltip": "Seconds a mob's silhouette lasts after a blow (it fades over the last third).",
+  "seepers.touch.empty": "Empty"
 }

@@ -333,5 +333,6 @@
   "seepers.configuration.exemptSpawnChance.tooltip": "Шанс, что попытка естественного спавна моба-исключения пройдёт (замедляет пополнение).",
   "item.seepers.bound_cane": "Перевязанная трость",
   "seepers.configuration.cane.silhouetteSeconds": "Жизнь силуэта, секунд",
-  "seepers.configuration.cane.silhouetteSeconds.tooltip": "Сколько секунд держится силуэт моба после удара (последнюю треть гаснет)."
+  "seepers.configuration.cane.silhouetteSeconds.tooltip": "Сколько секунд держится силуэт моба после удара (последнюю треть гаснет).",
+  "seepers.touch.empty": "Пусто"
 }

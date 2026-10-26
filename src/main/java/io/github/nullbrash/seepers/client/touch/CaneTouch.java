@@ -10,7 +10,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
@@ -36,6 +39,8 @@ public final class CaneTouch {
 
     private static final RandomSource RANDOM = RandomSource.create();
     private static int heldTicks;
+    private static final int VOID_COOLDOWN_TICKS = 20;
+    private static long lastVoidTick = Long.MIN_VALUE / 2;
     /** One blow, one silhouette: only the first mob a tap or a sweep pass meets is outlined. */
     private static boolean struckThisPass;
 
@@ -75,6 +80,7 @@ public final class CaneTouch {
         Vec3 feet = player.position();
         HandTouch.Hit first = null;
         struckThisPass = false;
+        Vec3 empty = null;
         for (int i = 0; i < rays; i++) {
             float yaw = player.getYRot() * Mth.DEG_TO_RAD + (float) ((RANDOM.nextDouble() * 2 - 1) * halfAngle);
             double distance = Mth.lerp(RANDOM.nextDouble(), min, max);
@@ -82,10 +88,15 @@ public final class CaneTouch {
             Vec3 direction = target.subtract(eye);
             HandTouch.Hit hit = HandTouch.cast(player, level, eye, direction.normalize(), direction.length() + 0.3);
             if (mob(player, eye, direction.normalize(), hit == null ? direction.length() + 0.3 : hit.location().distanceTo(eye), hand)) continue;
-            if (hit == null) continue;
+            if (hit == null) {
+                // Only a ray aimed below floor level can tell a drop; one aimed at the knees may just pass over.
+                if (empty == null && target.y < feet.y) empty = target;
+                continue;
+            }
             if (first == null) first = hit;
             add(cloud, hit);
         }
+        if (empty != null) feelVoid(player, level, cloud, empty);
         send(hand, first, eye);
     }
 
@@ -105,6 +116,9 @@ public final class CaneTouch {
                         center.material());
             }
             if (!center.fluid()) TouchSounds.playFunctional(level, player, center.result().getBlockPos(), center.state(), center.location());
+        } else if (aimed && !struckThisPass) {
+            TouchCaption.show(null, Component.translatable("seepers.touch.empty"), TouchMaterial.SOLID);
+            feelVoid(player, level, cloud, eye.add(direction.scale(reach)));
         }
         send(hand, center, eye);
     }
@@ -120,9 +134,42 @@ public final class CaneTouch {
         struckThisPass = true;
         Silhouettes.of(hit.getEntity(), Silhouettes.Part.LEGS);
         Vec3 at = hit.getLocation();
-        PacketDistributor.sendToServer(new CaneTapPayload(hand == InteractionHand.OFF_HAND, true,
-                BlockPos.containing(at), (float) at.x, (float) at.y, (float) at.z));
+        PacketDistributor.sendToServer(CaneTapPayload.of(hand == InteractionHand.OFF_HAND, true, null,
+                BlockPos.containing(at), at.x, at.y, at.z));
         return true;
+    }
+
+    /**
+     * The cane found nothing to rest on toward target (CLAUDE.md 5.2): a falling swish, and the edge of the last
+     * floor before the drop gets its side face and a line of points along the rim. At most once a second.
+     */
+    private static void feelVoid(LocalPlayer player, ClientLevel level, PointCloud cloud, Vec3 target) {
+        long now = level.getGameTime();
+        if (now - lastVoidTick < VOID_COOLDOWN_TICKS) return;
+        Vec3 feet = player.position();
+        Vec3 flat = new Vec3(target.x - feet.x, 0, target.z - feet.z);
+        double length = flat.length();
+        if (length < 0.3) return;
+        Vec3 step = flat.scale(1 / length);
+        Direction side = Direction.getNearest(step.x, 0, step.z);
+        BlockPos lastFloor = null;
+        boolean gap = false;
+        for (double d = 0.3; d <= length + 0.5; d += 0.5) {
+            Vec3 p = feet.add(step.scale(d));
+            BlockPos floor = ClientTouch.surface(level, Mth.floor(p.x), Mth.floor(p.z), feet.y, 1.1, 0.6);
+            if (floor == null) {
+                gap = true;
+                break;
+            }
+            lastFloor = floor;
+        }
+        if (!gap) return; // the floor goes on: the ray just missed, no drop
+        lastVoidTick = now;
+        level.playLocalSound(target.x, target.y, target.z, SoundEvents.PLAYER_ATTACK_NODAMAGE, SoundSource.PLAYERS, 0.6F, 0.5F, false);
+        if (lastFloor != null && level.getBlockState(lastFloor.relative(side)).getCollisionShape(level, lastFloor.relative(side)).isEmpty()) {
+            ClientTouch.touchFace(cloud, level, lastFloor, side, 2, false);
+            ClientTouch.touchEdge(cloud, level, lastFloor, side, false);
+        }
     }
 
     private static void add(PointCloud cloud, HandTouch.Hit hit) {
@@ -134,8 +181,8 @@ public final class CaneTouch {
     private static void send(InteractionHand hand, @Nullable HandTouch.Hit hit, Vec3 eye) {
         Vec3 at = hit == null ? eye : hit.location();
         BlockPos pos = hit == null ? BlockPos.containing(eye) : hit.result().getBlockPos();
-        PacketDistributor.sendToServer(new CaneTapPayload(hand == InteractionHand.OFF_HAND, hit != null, pos,
-                (float) at.x, (float) at.y, (float) at.z));
+        PacketDistributor.sendToServer(CaneTapPayload.of(hand == InteractionHand.OFF_HAND, hit != null,
+                hit == null || hit.fluid() ? null : hit.result().getDirection(), pos, at.x, at.y, at.z));
     }
 
     private CaneTouch() {}
