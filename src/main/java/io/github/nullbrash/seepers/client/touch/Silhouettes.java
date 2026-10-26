@@ -26,9 +26,9 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class Silhouettes {
     /** Points per square block of model surface, and bounds per mob. */
-    private static final double DENSITY = 43;
-    private static final int MIN_POINTS = 17;
-    private static final int MAX_POINTS = 288;
+    private static final double DENSITY = 39;
+    private static final int MIN_POINTS = 15;
+    private static final int MAX_POINTS = 259;
     /** How far points stray off the surface: the outline is felt, not seen. */
     private static final double BLUR = 0.05;
     private static final RandomSource RANDOM = RandomSource.create();
