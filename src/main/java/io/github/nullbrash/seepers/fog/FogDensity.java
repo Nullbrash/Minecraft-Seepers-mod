@@ -1,5 +1,6 @@
 package io.github.nullbrash.seepers.fog;
 
+import io.github.nullbrash.seepers.world.Distortion;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
@@ -8,7 +9,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
  * Base fog density at a point (CLAUDE.md 4.4): layers, clear pockets, waves, storms, weather, the
- * layer above water and the temporary distortion. Pure function of position, day time, weather and
+ * layer above water and distortion. Pure function of position, day time, weather and
  * the fog seed, so client and server compute the same value.
  */
 public final class FogDensity {
@@ -21,7 +22,7 @@ public final class FogDensity {
      * keeps a sample down to a few noise lookups.
      */
     public record Context(Level level, FogNoise noise, FogSettings settings, double time, double driftX,
-                          double driftZ, double storm, double weather, double spawnX, double spawnZ) {
+                          double driftZ, double storm, double weather) {
         public static Context of(Level level, FogNoise noise) {
             return at(level, noise, level.getDayTime());
         }
@@ -30,11 +31,9 @@ public final class FogDensity {
         public static Context at(Level level, FogNoise noise, double time) {
             FogSettings s = FogSettings.current();
             double driftBlocks = time / 1200.0 * s.driftBlocksPerMinute();
-            BlockPos spawn = level.getSharedSpawnPos();
             return new Context(level, noise, s, time, noise.driftX * driftBlocks, noise.driftZ * driftBlocks,
                     StormSchedule.intensity(noise, s, time) * s.stormDensity(),
-                    level.getRainLevel(1.0F) * s.rainDensity() + level.getThunderLevel(1.0F) * s.thunderDensity(),
-                    spawn.getX(), spawn.getZ());
+                    level.getRainLevel(1.0F) * s.rainDensity() + level.getThunderLevel(1.0F) * s.thunderDensity());
         }
     }
 
@@ -52,7 +51,7 @@ public final class FogDensity {
         double wave = s.waveAmplitude() * Math.sin(Math.PI * 2
                 * (c.time() / (s.wavePeriodMinutes() * 1200.0) + c.noise().wavePhase.noise(x / 1024.0, 0, z / 1024.0)));
         double water = water(c.level(), s, x, y, z);
-        double distortion = distortion(c, x, z);
+        double distortion = s.distortionDensity() * Distortion.level(x, z);
 
         // Pockets clear the ambient fog but not a storm: storms reach everywhere.
         double ambient = Math.max(0, s.baseDensity() + layers + wave + c.weather() + water + distortion);
@@ -109,13 +108,6 @@ public final class FogDensity {
         }
         double fade = Mth.clamp(s.waterLayerHeight() + 1 - above, 0, 1);
         return s.waterDensity() * fade;
-    }
-
-    private static double distortion(Context c, double x, double z) {
-        FogSettings s = c.settings();
-        double distance = Math.sqrt(Mth.square(x - c.spawnX()) + Mth.square(z - c.spawnZ()));
-        double t = Mth.clamp((distance - s.distortionStart()) / Math.max(1, s.distortionFull() - s.distortionStart()), 0, 1);
-        return s.distortionDensity() * t;
     }
 
     private FogDensity() {}

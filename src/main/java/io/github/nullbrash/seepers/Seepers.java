@@ -23,6 +23,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import io.github.nullbrash.seepers.light.Relighter;
 import io.github.nullbrash.seepers.mob.HostileSpawnControl;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
+import io.github.nullbrash.seepers.registry.SeepersWorldgen;
+import io.github.nullbrash.seepers.world.WorldShape;
 import io.github.nullbrash.seepers.network.ServerLoad;
 import io.github.nullbrash.seepers.registry.SeepersAttachments;
 import io.github.nullbrash.seepers.item.CaneItem;
@@ -54,6 +56,10 @@ public final class Seepers {
         SeepersAttachments.ATTACHMENT_TYPES.register(modBus);
         SeepersItems.ITEMS.register(modBus);
         SeepersComponents.COMPONENTS.register(modBus);
+        SeepersWorldgen.DENSITY_FUNCTION_TYPES.register(modBus);
+        NeoForge.EVENT_BUS.addListener(WorldShape::onServerStarting);
+        NeoForge.EVENT_BUS.addListener(WorldShape::onLoggedIn);
+        NeoForge.EVENT_BUS.addListener(WorldShape::onCreateSpawn);
         NeoForge.EVENT_BUS.addListener(CaneItem::onAnvilUpdate);
         modBus.addListener(SeepersItems::addToCreativeTabs);
 

@@ -1,0 +1,8 @@
+{
+  "type": "seepers:distortion",
+  "zones": {
+    "zone1": 800,
+    "zone2": 2000,
+    "zone3": 4000
+  }
+}

@@ -50,8 +50,6 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue FOG_THUNDER_DENSITY;
     public static final ModConfigSpec.IntValue FOG_WATER_HEIGHT;
     public static final ModConfigSpec.DoubleValue FOG_WATER_DENSITY;
-    public static final ModConfigSpec.DoubleValue FOG_DISTORTION_START;
-    public static final ModConfigSpec.DoubleValue FOG_DISTORTION_FULL;
     public static final ModConfigSpec.DoubleValue FOG_DISTORTION_DENSITY;
     public static final ModConfigSpec.DoubleValue FOG_NEAR_FRACTION;
     public static final ModConfigSpec.DoubleValue FOG_HALO_STRENGTH;
@@ -192,11 +190,9 @@ public final class ServerConfig {
         FOG_WATER_HEIGHT = fogInt(builder, "height", "Height of the dense layer above open water, blocks.", 4, 0, 64);
         FOG_WATER_DENSITY = fogDouble(builder, "density", "Extra density in the layer above water.", 1.0, 0.0, 8.0);
         builder.pop();
-        builder.comment("Temporary distortion = distance from world spawn, until world generation adds real zones.")
+        builder.comment("Fog grows with distortion (level k where zone k starts; zone sizes are world generation data).")
                 .push("distortion");
-        FOG_DISTORTION_START = fogDouble(builder, "startDistance", "Distance from spawn where fog starts to grow.", 1000.0, 0.0, 1.0E7);
-        FOG_DISTORTION_FULL = fogDouble(builder, "fullDistance", "Distance where the extra density reaches its maximum.", 10000.0, 1.0, 1.0E7);
-        FOG_DISTORTION_DENSITY = fogDouble(builder, "density", "Extra density at full distortion.", 1.0, 0.0, 8.0);
+        FOG_DISTORTION_DENSITY = fogDouble(builder, "perLevel", "Extra density per distortion level.", 0.33, 0.0, 4.0);
         builder.pop();
         builder.push("render");
         FOG_NEAR_FRACTION = fogDouble(builder, "nearFraction", "Fog starts at this fraction of the visibility distance.", 0.15, 0.0, 1.0);

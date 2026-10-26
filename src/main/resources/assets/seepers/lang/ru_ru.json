@@ -98,7 +98,7 @@
   "seepers.configuration.water.tooltip": "Плотный слой над открытой водой.",
   "seepers.configuration.distortion": "Искажённость",
   "seepers.configuration.distortion.button": "Искажённость...",
-  "seepers.configuration.distortion.tooltip": "Временно: расстояние от спавна мира.",
+  "seepers.configuration.distortion.tooltip": "Туман растёт с искажённостью (уровень k — начало зоны k).",
   "seepers.configuration.performance": "Производительность",
   "seepers.configuration.performance.button": "Производительность...",
   "seepers.configuration.performance.tooltip": "Производительность",
@@ -144,10 +144,6 @@
   "seepers.configuration.fog.thunder.tooltip": "Добавка плотности в грозу (сверх дождя).",
   "seepers.configuration.fog.height": "Высота",
   "seepers.configuration.fog.height.tooltip": "Высота плотного слоя над открытой водой, блоков.",
-  "seepers.configuration.fog.startDistance": "Начало",
-  "seepers.configuration.fog.startDistance.tooltip": "Расстояние от спавна, где туман начинает расти.",
-  "seepers.configuration.fog.fullDistance": "Максимум",
-  "seepers.configuration.fog.fullDistance.tooltip": "Расстояние, где добавка плотности максимальна.",
   "seepers.configuration.fogCellsPerTick": "Клеток тумана за тик",
   "seepers.configuration.fogCellsPerTick.tooltip": "Сколько клеток сетки тумана пересчитывать за тик клиента (в сетке около 8000 клеток).",
   "seepers.configuration.render": "Отрисовка",
@@ -365,5 +361,8 @@
   "seepers.configuration.renderDistance.stillSeconds": "Стоишь на месте через, секунд",
   "seepers.configuration.renderDistance.stillSeconds.tooltip": "Столько простоял — считается, что стоишь: дальность может расти до ползунка.",
   "seepers.configuration.renderDistance.stillRaiseSeconds": "Стоя растёт раз в, секунд",
-  "seepers.configuration.renderDistance.stillRaiseSeconds.tooltip": "Пока стоишь, дальность растёт на 1 чанк за это время."
+  "seepers.configuration.renderDistance.stillRaiseSeconds.tooltip": "Пока стоишь, дальность растёт на 1 чанк за это время.",
+  "seepers.configuration.fog.perLevel": "На уровень искажённости",
+  "seepers.configuration.fog.perLevel.tooltip": "Добавка плотности на каждый уровень искажённости.",
+  "commands.seepers.debug.zone": "%s: зона %s, искажённость %s (зоны начинаются на %s / %s / %s)"
 }

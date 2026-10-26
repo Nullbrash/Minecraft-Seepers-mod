@@ -27,6 +27,8 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
+import io.github.nullbrash.seepers.world.Distortion;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
@@ -57,6 +59,12 @@ public final class SeepersClient {
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onClientTick);
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onDebugText);
+        NeoForge.EVENT_BUS.addListener((CustomizeGuiOverlayEvent.DebugText event) -> {
+            var player = net.minecraft.client.Minecraft.getInstance().player;
+            if (player == null) return;
+            double level = Distortion.level(player.getX(), player.getZ());
+            event.getLeft().add(String.format(java.util.Locale.ROOT, "Seepers zone: %d (distortion %.2f)", Distortion.zone(level), level));
+        });
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::register);
         modBus.addListener((FMLClientSetupEvent event) -> event.enqueueWork(() -> {
             for (var cane : java.util.List.of(SeepersItems.CANE.get(), SeepersItems.BOUND_CANE.get())) {
@@ -70,6 +78,7 @@ public final class SeepersClient {
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> {
             PointCloud.reset();
             HandTouch.onLoggingOut();
+            Distortion.set(Distortion.DEFAULT);
         });
         // Chunk-mesh regions carry no level: tell the light overrides which dimension the client is in.
         NeoForge.EVENT_BUS.addListener((LevelEvent.Load event) -> {

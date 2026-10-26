@@ -98,7 +98,7 @@
   "seepers.configuration.water.tooltip": "Dense layer above open water.",
   "seepers.configuration.distortion": "Distortion",
   "seepers.configuration.distortion.button": "Distortion...",
-  "seepers.configuration.distortion.tooltip": "Temporary: distance from world spawn.",
+  "seepers.configuration.distortion.tooltip": "Fog grows with distortion (level k where zone k starts).",
   "seepers.configuration.performance": "Performance",
   "seepers.configuration.performance.button": "Performance...",
   "seepers.configuration.performance.tooltip": "Performance",
@@ -144,10 +144,6 @@
   "seepers.configuration.fog.thunder.tooltip": "Extra density in a thunderstorm (on top of rain).",
   "seepers.configuration.fog.height": "Height",
   "seepers.configuration.fog.height.tooltip": "Height of the dense layer above open water, blocks.",
-  "seepers.configuration.fog.startDistance": "Start distance",
-  "seepers.configuration.fog.startDistance.tooltip": "Distance from spawn where fog starts to grow.",
-  "seepers.configuration.fog.fullDistance": "Full distance",
-  "seepers.configuration.fog.fullDistance.tooltip": "Distance where the extra density reaches its maximum.",
   "seepers.configuration.fogCellsPerTick": "Fog cells per tick",
   "seepers.configuration.fogCellsPerTick.tooltip": "Fog grid cells recomputed per client tick (the grid around the player has ~8000 cells).",
   "seepers.configuration.render": "Rendering",
@@ -365,5 +361,8 @@
   "seepers.configuration.renderDistance.stillSeconds": "Standing still after, seconds",
   "seepers.configuration.renderDistance.stillSeconds.tooltip": "Standing this long counts as standing still: the distance may grow up to the slider.",
   "seepers.configuration.renderDistance.stillRaiseSeconds": "Standing, grow every, seconds",
-  "seepers.configuration.renderDistance.stillRaiseSeconds.tooltip": "Standing still, the distance grows by one chunk this often."
+  "seepers.configuration.renderDistance.stillRaiseSeconds.tooltip": "Standing still, the distance grows by one chunk this often.",
+  "seepers.configuration.fog.perLevel": "Per distortion level",
+  "seepers.configuration.fog.perLevel.tooltip": "Extra density per distortion level.",
+  "commands.seepers.debug.zone": "%s: zone %s, distortion %s (zones start at %s / %s / %s)"
 }

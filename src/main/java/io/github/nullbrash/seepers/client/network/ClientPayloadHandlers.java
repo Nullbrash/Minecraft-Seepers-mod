@@ -3,7 +3,9 @@ package io.github.nullbrash.seepers.client.network;
 import io.github.nullbrash.seepers.Seepers;
 import io.github.nullbrash.seepers.client.fog.ClientFog;
 import io.github.nullbrash.seepers.client.render.AutoRenderDistance;
+import io.github.nullbrash.seepers.network.payload.DistortionPayload;
 import io.github.nullbrash.seepers.network.payload.ServerLoadPayload;
+import io.github.nullbrash.seepers.world.Distortion;
 import io.github.nullbrash.seepers.config.ClientConfig;
 import io.github.nullbrash.seepers.client.touch.Silhouettes;
 import io.github.nullbrash.seepers.network.payload.ClientCommandPayload;
@@ -40,6 +42,10 @@ public final class ClientPayloadHandlers {
         ClientLevel level = Minecraft.getInstance().level;
         Entity entity = level == null ? null : level.getEntity(payload.entityId());
         if (entity != null) Silhouettes.of(entity, payload.playerStruck() ? Silhouettes.Part.STRUCK : Silhouettes.Part.TORSO);
+    }
+
+    public static void handleDistortion(DistortionPayload payload, IPayloadContext context) {
+        Distortion.set(payload.zones());
     }
 
     public static void handleServerLoad(ServerLoadPayload payload, IPayloadContext context) {
