@@ -10,7 +10,8 @@
   ],
   "client": [
     "client.EntityRenderDispatcherMixin",
-    "client.LightTextureMixin"
+    "client.LightTextureMixin",
+    "client.OptionsMixin"
   ],
   "server": [],
   "injectors": {

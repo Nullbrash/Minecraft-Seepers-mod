@@ -6,6 +6,7 @@ import io.github.nullbrash.seepers.client.fog.ClientFog;
 import io.github.nullbrash.seepers.client.fog.ClientFogRenderer;
 import io.github.nullbrash.seepers.client.fog.ClientRooms;
 import io.github.nullbrash.seepers.client.points.PointCloud;
+import io.github.nullbrash.seepers.client.render.AutoRenderDistance;
 import io.github.nullbrash.seepers.client.points.PointCommands;
 import io.github.nullbrash.seepers.client.points.PointRenderer;
 import io.github.nullbrash.seepers.client.touch.CaneTouch;
@@ -53,6 +54,10 @@ public final class SeepersClient {
         NeoForge.EVENT_BUS.addListener(HandTouch::onClientTick);
         NeoForge.EVENT_BUS.addListener(CaneTouch::onClientTick);
         modBus.addListener(TouchCaption::register);
+        NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onClientTick);
+        NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onDebugText);
+        NeoForge.EVENT_BUS.addListener(AutoRenderDistance::register);
         modBus.addListener((FMLClientSetupEvent event) -> event.enqueueWork(() -> {
             for (var cane : java.util.List.of(SeepersItems.CANE.get(), SeepersItems.BOUND_CANE.get())) {
                 ItemProperties.register(cane, Seepers.id("iron_tip"), (stack, level, entity, seed) -> CaneItem.hasIronTip(stack) ? 1 : 0);

@@ -8,6 +8,7 @@ import io.github.nullbrash.seepers.network.payload.FogProbeReplyPayload;
 import io.github.nullbrash.seepers.network.payload.FogSeedPayload;
 import io.github.nullbrash.seepers.network.payload.PingPayload;
 import io.github.nullbrash.seepers.network.payload.PongPayload;
+import io.github.nullbrash.seepers.network.payload.ServerLoadPayload;
 import io.github.nullbrash.seepers.network.payload.SilhouettePayload;
 import io.github.nullbrash.seepers.network.payload.TouchLavaPayload;
 import io.github.nullbrash.seepers.touch.CaneTaps;
@@ -17,7 +18,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class SeepersNetwork {
     /** Bump on any incompatible payload change: NeoForge refuses connections with a different version. */
-    public static final String PROTOCOL_VERSION = "7";
+    public static final String PROTOCOL_VERSION = "8";
 
     public static void register(RegisterPayloadHandlersEvent event) {
         // Handlers run on the main thread (registrar default).
@@ -40,6 +41,8 @@ public final class SeepersNetwork {
         registrar.playToServer(CaneTapPayload.TYPE, CaneTapPayload.STREAM_CODEC, CaneTaps::handle);
         registrar.playToClient(SilhouettePayload.TYPE, SilhouettePayload.STREAM_CODEC,
                 (payload, context) -> ClientPayloadHandlers.handleSilhouette(payload, context));
+        registrar.playToClient(ServerLoadPayload.TYPE, ServerLoadPayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandlers.handleServerLoad(payload, context));
         registrar.playToServer(FogProbeReplyPayload.TYPE, FogProbeReplyPayload.STREAM_CODEC, FogProbeTracker::handleReply);
     }
 

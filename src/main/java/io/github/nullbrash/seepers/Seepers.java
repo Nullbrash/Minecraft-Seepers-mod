@@ -23,6 +23,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import io.github.nullbrash.seepers.light.Relighter;
 import io.github.nullbrash.seepers.mob.HostileSpawnControl;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
+import io.github.nullbrash.seepers.network.ServerLoad;
 import io.github.nullbrash.seepers.registry.SeepersAttachments;
 import io.github.nullbrash.seepers.item.CaneItem;
 import io.github.nullbrash.seepers.registry.SeepersComponents;
@@ -79,6 +80,7 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener(FireTracker::onChunkLoad);
         NeoForge.EVENT_BUS.addListener(FireTracker::onChunkUnload);
         NeoForge.EVENT_BUS.addListener(FireTracker::onServerTick);
+        NeoForge.EVENT_BUS.addListener(ServerLoad::onServerTick);
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
             if (event.getEntity() instanceof ServerPlayer player) {
                 PacketDistributor.sendToPlayer(player, new FogSeedPayload(FogField.serverSeed()));

@@ -14,6 +14,15 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue TOUCH_CAPTION;
     public static final ModConfigSpec.BooleanValue TOUCH_CAPTION_NAMES;
     public static final ModConfigSpec.EnumValue<io.github.nullbrash.seepers.client.touch.TouchCaption.Position> TOUCH_CAPTION_POSITION;
+    public static final ModConfigSpec.BooleanValue RENDER_AUTO;
+    public static final ModConfigSpec.IntValue RENDER_MIN;
+    public static final ModConfigSpec.IntValue RENDER_SMOOTHING_SECONDS;
+    public static final ModConfigSpec.IntValue RENDER_SETTLE_SECONDS;
+    public static final ModConfigSpec.IntValue RENDER_RAISE_SECONDS;
+    public static final ModConfigSpec.DoubleValue RENDER_TPS_LOWER;
+    public static final ModConfigSpec.DoubleValue RENDER_TPS_RAISE;
+    public static final ModConfigSpec.DoubleValue RENDER_FPS_LOWER;
+    public static final ModConfigSpec.DoubleValue RENDER_FPS_RAISE;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -23,6 +32,28 @@ public final class ClientConfig {
                 .comment("Fog grid cells recomputed per client tick (the grid around the player has ~8000 cells).")
                 .translation("seepers.configuration.fogCellsPerTick")
                 .defineInRange("fogCellsPerTick", 400, 0, 8125);
+        builder.pop();
+
+        builder.comment("Automatic render distance: from the minimum up to the slider, never past the server")
+                .translation("seepers.configuration.renderDistance").push("renderDistance");
+        RENDER_AUTO = builder.comment("Lower the render distance on steady lag and raise it back when the game keeps up.")
+                .translation("seepers.configuration.renderDistance.auto").define("auto", true);
+        RENDER_MIN = builder.comment("Never below this many chunks.")
+                .translation("seepers.configuration.renderDistance.min").defineInRange("min", 2, 2, 32);
+        RENDER_SMOOTHING_SECONDS = builder.comment("Frame rate is averaged over this many seconds; single hitches do not count.")
+                .translation("seepers.configuration.renderDistance.smoothingSeconds").defineInRange("smoothingSeconds", 5, 1, 30);
+        RENDER_SETTLE_SECONDS = builder.comment("After any change, measurements are ignored this long (rebuilding the world mesh is a hitch itself).")
+                .translation("seepers.configuration.renderDistance.settleSeconds").defineInRange("settleSeconds", 10, 0, 60);
+        RENDER_RAISE_SECONDS = builder.comment("The distance grows by at most one chunk this often.")
+                .translation("seepers.configuration.renderDistance.raiseSeconds").defineInRange("raiseSeconds", 15, 1, 300);
+        RENDER_TPS_LOWER = builder.comment("Server ticks per second (20 = no lag) below which the distance drops. Checked first.")
+                .translation("seepers.configuration.renderDistance.tpsLower").defineInRange("tpsLower", 18.0, 0.0, 20.0);
+        RENDER_TPS_RAISE = builder.comment("The distance grows only while the server keeps at least this TPS.")
+                .translation("seepers.configuration.renderDistance.tpsRaise").defineInRange("tpsRaise", 19.5, 0.0, 20.0);
+        RENDER_FPS_LOWER = builder.comment("Average frames per second below which the distance drops.")
+                .translation("seepers.configuration.renderDistance.fpsLower").defineInRange("fpsLower", 30.0, 0.0, 1000.0);
+        RENDER_FPS_RAISE = builder.comment("The distance grows only above this average frame rate (lowered to fit a frame rate limit).")
+                .translation("seepers.configuration.renderDistance.fpsRaise").defineInRange("fpsRaise", 50.0, 0.0, 1000.0);
         builder.pop();
 
         builder.comment("Point cloud (touch, later cane and lidar)").translation("seepers.configuration.points").push("points");
