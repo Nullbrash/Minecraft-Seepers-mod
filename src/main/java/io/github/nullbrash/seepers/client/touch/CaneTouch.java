@@ -54,9 +54,10 @@ public final class CaneTouch {
         }
     }
 
+    /** A cane in the off hand answers the use key only when the main hand is empty: seeds, blocks, food go first. */
     private static @Nullable InteractionHand caneHand(LocalPlayer player) {
         if (player.getMainHandItem().getItem() instanceof CaneItem) return InteractionHand.MAIN_HAND;
-        if (player.getOffhandItem().getItem() instanceof CaneItem) return InteractionHand.OFF_HAND;
+        if (player.getOffhandItem().getItem() instanceof CaneItem && player.getMainHandItem().isEmpty()) return InteractionHand.OFF_HAND;
         return null;
     }
 

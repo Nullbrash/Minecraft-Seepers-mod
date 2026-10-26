@@ -216,8 +216,8 @@ public final class ServerConfig {
                 .translation("seepers.configuration.touch.pointLifetimeSeconds").defineInRange("pointLifetimeSeconds", 60.0, 1.0, 3600.0);
         TOUCH_WARM_HEAT = builder.comment("Heat (fog density cleared by heat sources) from which a surface feels warm.")
                 .translation("seepers.configuration.touch.warmHeat").defineInRange("warmHeat", 0.4, 0.0, 16.0);
-        TOUCH_FEET_RADIUS = builder.comment("Floor felt by the feet around a crouching player, blocks (0 = only what is underfoot).")
-                .translation("seepers.configuration.touch.feetRadius").defineInRange("feetRadius", 2, 0, 4);
+        TOUCH_FEET_RADIUS = builder.comment("Floor felt by the feet around a walking or crouching player, blocks (running: only underfoot).")
+                .translation("seepers.configuration.touch.feetRadius").defineInRange("feetRadius", 1, 0, 4);
         TOUCH_HAND_REACH = builder.comment("How far a click reaches with the hand, blocks.")
                 .translation("seepers.configuration.touch.handReach").defineInRange("handReach", 3.0, 0.5, 6.0);
         TOUCH_HAND_CONE_DEGREES = builder.comment("Full angle of the cone a click feels along the view, degrees.")

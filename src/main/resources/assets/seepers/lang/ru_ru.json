@@ -293,7 +293,7 @@
   "seepers.touch.hint": "Кликайте %s, чтобы ощупать",
   "seepers.touch.hint.unbound": "Клавиша атаки не назначена — назначьте её, чтобы ощупывать",
   "seepers.configuration.touch.feetRadius": "Радиус ног, блоков",
-  "seepers.configuration.touch.feetRadius.tooltip": "Сколько пола вокруг игрока ощупывают ноги, блоков (0 — только под ногами).",
+  "seepers.configuration.touch.feetRadius.tooltip": "Сколько пола вокруг ощупывают ноги при шаге и в присяде, блоков (на бегу — только под ногами).",
   "seepers.configuration.touchCaption": "Подпись ощупи",
   "seepers.configuration.touchCaption.button": "Подпись ощупи...",
   "seepers.configuration.touchCaption.tooltip": "Что нащупала рука — на экране",

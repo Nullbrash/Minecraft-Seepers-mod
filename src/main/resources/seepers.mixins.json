@@ -9,6 +9,7 @@
     "ServerLevelMixin"
   ],
   "client": [
+    "client.EntityRenderDispatcherMixin",
     "client.LightTextureMixin"
   ],
   "server": [],

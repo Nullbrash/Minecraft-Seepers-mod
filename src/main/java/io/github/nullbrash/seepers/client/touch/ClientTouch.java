@@ -53,7 +53,7 @@ public final class ClientTouch {
         boolean wading = player.isInWater() && !onGround;
 
         if (onGround || wading) {
-            feet(cloud, level, box, ticks % (REFRESH_TICKS * 2) == 0, wading ? 1.5 : 0.1, player.isCrouching());
+            feet(cloud, level, box, ticks % (REFRESH_TICKS * 2) == 0, wading ? 1.5 : 0.1, player.isSprinting(), player.isCrouching());
         } else {
             footprint.clear();
         }
@@ -71,12 +71,15 @@ public final class ClientTouch {
     }
 
     /**
-     * The floor underfoot, and around the player while crouching (touch.feetRadius): top faces, denser right
-     * underfoot, plus side faces and a line along the top edge where the floor drops away, so ledges read.
-     * New blocks at once, all now and then.
+     * The floor the feet feel (CLAUDE.md 5.1): running — only what is underfoot; walking — also the blocks around
+     * (touch.feetRadius); crouching — the same area, but precisely: the full material palette, and only blocks
+     * connected to what the player stands on (no floating blocks, no far side of a gap). Top faces, denser right
+     * underfoot, plus side faces and a line along the top edge where the floor drops away. New blocks at once,
+     * all now and then.
      */
-    private static void feet(PointCloud cloud, ClientLevel level, AABB box, boolean refreshAll, double below, boolean crouching) {
-        int radius = crouching ? ServerConfig.get(ServerConfig.TOUCH_FEET_RADIUS) : 0;
+    private static void feet(PointCloud cloud, ClientLevel level, AABB box, boolean refreshAll, double below,
+                             boolean running, boolean crouching) {
+        int radius = running ? 0 : ServerConfig.get(ServerConfig.TOUCH_FEET_RADIUS);
         int centerX = Mth.floor((box.minX + box.maxX) / 2);
         int centerZ = Mth.floor((box.minZ + box.maxZ) / 2);
         LongOpenHashSet underfoot = new LongOpenHashSet();
@@ -95,17 +98,21 @@ public final class ClientTouch {
                 if (floor != null) current.add(floor.asLong());
             }
         }
+        if (crouching && !underfoot.isEmpty()) {
+            current.retainAll(connected(level, underfoot, centerX - radius - 1, Mth.floor(box.minY) - 3,
+                    centerZ - radius - 1, centerX + radius + 1, Mth.floor(box.minY) + 1, centerZ + radius + 1));
+        }
         var it = current.iterator();
         while (it.hasNext()) {
             long key = it.nextLong();
             if (!refreshAll && footprint.contains(key)) continue;
             BlockPos pos = BlockPos.of(key);
-            touchFace(cloud, level, pos, Direction.UP, underfoot.contains(key) ? 3 : 2);
+            touchFace(cloud, level, pos, Direction.UP, underfoot.contains(key) ? 3 : 2, crouching);
             for (Direction side : Direction.Plane.HORIZONTAL) {
                 BlockPos next = pos.relative(side);
                 if (level.getBlockState(next).getCollisionShape(level, next).isEmpty()) {
-                    touchFace(cloud, level, pos, side, 2);
-                    touchEdge(cloud, level, pos, side);
+                    touchFace(cloud, level, pos, side, 2, crouching);
+                    touchEdge(cloud, level, pos, side, crouching);
                 }
             }
         }
@@ -193,6 +200,37 @@ public final class ClientTouch {
     private static final int EDGE_POINTS = 5;
 
     /**
+     * Solid blocks reachable from the seeds through faces and edges, inside the box: what the crouching feet can
+     * trace from where they stand. Floating blocks and the far side of a gap stay out (they join only outside).
+     */
+    private static LongOpenHashSet connected(Level level, LongOpenHashSet seeds, int minX, int minY, int minZ,
+                                             int maxX, int maxY, int maxZ) {
+        LongOpenHashSet visited = new LongOpenHashSet(seeds);
+        it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue queue = new it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue();
+        seeds.forEach(queue::enqueue);
+        BlockPos.MutableBlockPos next = new BlockPos.MutableBlockPos();
+        while (!queue.isEmpty()) {
+            BlockPos pos = BlockPos.of(queue.dequeueLong());
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        int manhattan = Math.abs(dx) + Math.abs(dy) + Math.abs(dz);
+                        if (manhattan == 0 || manhattan == 3) continue; // faces and edges, not corners
+                        next.set(pos.getX() + dx, pos.getY() + dy, pos.getZ() + dz);
+                        if (next.getX() < minX || next.getX() > maxX || next.getY() < minY || next.getY() > maxY
+                                || next.getZ() < minZ || next.getZ() > maxZ) continue;
+                        long key = next.asLong();
+                        if (visited.contains(key) || level.getBlockState(next).getCollisionShape(level, next).isEmpty()) continue;
+                        visited.add(key);
+                        queue.enqueue(key);
+                    }
+                }
+            }
+        }
+        return visited;
+    }
+
+    /**
      * Where points on a block go: the union of its collision and visible shapes. Mud and soul sand collide
      * lower than they are drawn; points at the collision top would sit inside the drawn block, hidden.
      */
@@ -219,11 +257,12 @@ public final class ClientTouch {
     }
 
     /** A line of points along the top edge of a ledge, corners included: the drop reads as a line. */
-    private static void touchEdge(PointCloud cloud, Level level, BlockPos pos, Direction side) {
+    private static void touchEdge(PointCloud cloud, Level level, BlockPos pos, Direction side, boolean fullPalette) {
         BlockState state = level.getBlockState(pos);
         AABB bounds = surfaceBounds(level, pos, state);
         if (bounds == null) return;
-        int material = TouchMaterial.of(level, pos, state, side).forBody().ordinal();
+        TouchMaterial felt = TouchMaterial.of(level, pos, state, side);
+        int material = (fullPalette ? felt : felt.forBody()).ordinal();
         Direction.Axis along = side.getAxis() == Direction.Axis.X ? Direction.Axis.Z : Direction.Axis.X;
         double out = side.getAxisDirection() == Direction.AxisDirection.POSITIVE ? bounds.max(side.getAxis()) : bounds.min(side.getAxis());
         double top = pos.getY() + bounds.maxY;
@@ -257,10 +296,16 @@ public final class ClientTouch {
 
     /** A grid×grid jittered set of points over the face; see {@link #touchFace(PointCloud, Level, BlockPos, Direction)}. */
     static void touchFace(PointCloud cloud, Level level, BlockPos pos, Direction face, int grid) {
+        touchFace(cloud, level, pos, face, grid, false);
+    }
+
+    /** fullPalette: all touch materials (crouching feet, hands); otherwise only wet and warm stand out. */
+    static void touchFace(PointCloud cloud, Level level, BlockPos pos, Direction face, int grid, boolean fullPalette) {
         BlockState state = level.getBlockState(pos);
         AABB bounds = surfaceBounds(level, pos, state);
         if (bounds == null) return;
-        int material = TouchMaterial.of(level, pos, state, face).forBody().ordinal();
+        TouchMaterial felt = TouchMaterial.of(level, pos, state, face);
+        int material = (fullPalette ? felt : felt.forBody()).ordinal();
         Direction.Axis axis = face.getAxis();
         Direction.Axis uAxis = axis == Direction.Axis.X ? Direction.Axis.Y : Direction.Axis.X;
         Direction.Axis vAxis = axis == Direction.Axis.Z ? Direction.Axis.Y : Direction.Axis.Z;
