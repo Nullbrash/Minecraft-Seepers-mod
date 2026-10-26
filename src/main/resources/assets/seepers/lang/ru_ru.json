@@ -324,5 +324,11 @@
   "seepers.configuration.cane.sweepDegrees": "Ширина подметания, градусов",
   "seepers.configuration.cane.sweepDegrees.tooltip": "Ширина веера прямо по взгляду, который сканирует подметание, градусов.",
   "seepers.configuration.cane.sweepRays": "Точек за проход",
-  "seepers.configuration.cane.sweepRays.tooltip": "Лучей (точек) за проход подметания, от пола до колен."
+  "seepers.configuration.cane.sweepRays.tooltip": "Лучей (точек) за проход подметания, от пола до колен.",
+  "seepers.configuration.exemptMaxNearby": "Исключений рядом, не больше",
+  "seepers.configuration.exemptMaxNearby.tooltip": "Сколько враждебных мобов-исключений (утопленников) может естественно появиться в радиусе.",
+  "seepers.configuration.exemptRadius": "Радиус для исключений",
+  "seepers.configuration.exemptRadius.tooltip": "Радиус, в котором считается предел исключений, блоков.",
+  "seepers.configuration.exemptSpawnChance": "Шанс спавна исключений",
+  "seepers.configuration.exemptSpawnChance.tooltip": "Шанс, что попытка естественного спавна моба-исключения пройдёт (замедляет пополнение)."
 }

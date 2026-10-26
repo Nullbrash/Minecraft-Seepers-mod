@@ -324,5 +324,11 @@
   "seepers.configuration.cane.sweepDegrees": "Sweep width, degrees",
   "seepers.configuration.cane.sweepDegrees.tooltip": "Width of the fan a sweep scans straight ahead, degrees.",
   "seepers.configuration.cane.sweepRays": "Points per sweep",
-  "seepers.configuration.cane.sweepRays.tooltip": "Rays (points) per sweep, floor to knee."
+  "seepers.configuration.cane.sweepRays.tooltip": "Rays (points) per sweep, floor to knee.",
+  "seepers.configuration.exemptMaxNearby": "Exempt hostiles nearby, max",
+  "seepers.configuration.exemptMaxNearby.tooltip": "Exempt hostiles (drowned) that may spawn naturally: at most this many within the radius.",
+  "seepers.configuration.exemptRadius": "Exempt hostiles radius",
+  "seepers.configuration.exemptRadius.tooltip": "Radius for the exempt hostile limit, blocks.",
+  "seepers.configuration.exemptSpawnChance": "Exempt hostiles spawn chance",
+  "seepers.configuration.exemptSpawnChance.tooltip": "Chance that a natural spawn attempt of an exempt hostile goes ahead (slows refilling)."
 }

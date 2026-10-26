@@ -18,6 +18,9 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue MAX_GAMMA;
     public static final ModConfigSpec.BooleanValue NIGHT_VISION_BRIGHTENS;
     public static final ModConfigSpec.BooleanValue DISABLE_NATURAL_HOSTILE_SPAWNS;
+    public static final ModConfigSpec.IntValue EXEMPT_MAX_NEARBY;
+    public static final ModConfigSpec.DoubleValue EXEMPT_RADIUS;
+    public static final ModConfigSpec.DoubleValue EXEMPT_SPAWN_CHANCE;
     public static final ModConfigSpec.IntValue LIGHT_UNCATEGORIZED_MAX;
     public static final ModConfigSpec.DoubleValue LIGHT_WATERLOGGED_FACTOR;
     public static final ModConfigSpec.IntValue LIGHT_WATER_ABSORPTION;
@@ -117,6 +120,12 @@ public final class ServerConfig {
                 .comment("Block natural spawning of hostile mobs (also patrols and phantoms). Exceptions: entity tag #seepers:natural_spawn_exempt.")
                 .translation("seepers.configuration.disableNaturalHostileSpawns")
                 .define("disableNaturalHostileSpawns", true);
+        EXEMPT_MAX_NEARBY = builder.comment("Exempt hostiles (drowned) that may spawn naturally: at most this many within exemptRadius.")
+                .translation("seepers.configuration.exemptMaxNearby").defineInRange("exemptMaxNearby", 2, 0, 70);
+        EXEMPT_RADIUS = builder.comment("Radius for exemptMaxNearby, blocks.")
+                .translation("seepers.configuration.exemptRadius").defineInRange("exemptRadius", 48.0, 8.0, 128.0);
+        EXEMPT_SPAWN_CHANCE = builder.comment("Chance that a natural spawn attempt of an exempt hostile goes ahead (slows refilling).")
+                .translation("seepers.configuration.exemptSpawnChance").defineInRange("exemptSpawnChance", 0.3, 0.0, 1.0);
         builder.pop();
 
         builder.comment("Block light. Changes apply where light is recomputed (new chunks, changed blocks).")
