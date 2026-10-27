@@ -227,7 +227,10 @@ public final class Collapses {
             cracks.put(section, now);
             level.playSound(null, pos, SoundEvents.DRIPSTONE_BLOCK_BREAK, SoundSource.BLOCKS, 0.7F, 0.5F + level.random.nextFloat() * 0.2F);
         }
-        level.playSound(null, pos, state.getSoundType(level, pos, null).getHitSound(), SoundSource.BLOCKS, 0.4F, 0.6F);
+        // A quiet trickle (a brush's rustle), not the block's hit sound: for sand and gravel that sounded like a step.
+        var trickle = state.is(net.minecraft.tags.BlockTags.SAND) ? SoundEvents.BRUSH_SAND
+                : state.is(net.minecraft.world.level.block.Blocks.GRAVEL) ? SoundEvents.BRUSH_GRAVEL : SoundEvents.BRUSH_GENERIC;
+        level.playSound(null, pos, trickle, SoundSource.BLOCKS, 0.35F, 0.8F);
         for (ServerPlayer player : level.players()) {
             if (player.distanceToSqr(pos.getCenter()) > SHAKE_RADIUS * SHAKE_RADIUS) continue;
             Long last = SHAKEN.get(player);

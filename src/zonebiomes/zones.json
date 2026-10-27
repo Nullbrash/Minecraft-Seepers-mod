@@ -46,7 +46,7 @@
       "particle": "minecraft:falling_dust",
       "particle_block": "minecraft:dirt",
       "particle_probability": 0.02,
-      "additions_sound": "minecraft:block.gravel.fall",
+      "additions_sound": "minecraft:item.brush.brushing.gravel",
       "additions_chance": 0.002,
       "mood_delay": 4000
     }

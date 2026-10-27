@@ -382,13 +382,13 @@ public final class ServerConfig {
         TREMOR_ENABLED = builder.comment("Tremors now and then around players shake hanging blocks loose.")
                 .translation("seepers.configuration.collapse.tremorEnabled").define("tremorEnabled", true);
         TREMOR_INTERVAL_NEAR_MIN = builder.comment("Minutes between tremors near spawn (zone 0): shortest.")
-                .translation("seepers.configuration.collapse.tremorIntervalNearMin").defineInRange("tremorIntervalNearMin", 20.0, 0.1, 1440.0);
+                .translation("seepers.configuration.collapse.tremorIntervalNearMin").defineInRange("tremorIntervalNearMin", 40.0, 0.1, 1440.0);
         TREMOR_INTERVAL_NEAR_MAX = builder.comment("Minutes between tremors near spawn: longest.")
-                .translation("seepers.configuration.collapse.tremorIntervalNearMax").defineInRange("tremorIntervalNearMax", 30.0, 0.1, 1440.0);
+                .translation("seepers.configuration.collapse.tremorIntervalNearMax").defineInRange("tremorIntervalNearMax", 60.0, 0.1, 1440.0);
         TREMOR_INTERVAL_FAR_MIN = builder.comment("Minutes between tremors from zone 3 on: shortest (linear in distortion between).")
-                .translation("seepers.configuration.collapse.tremorIntervalFarMin").defineInRange("tremorIntervalFarMin", 3.0, 0.1, 1440.0);
+                .translation("seepers.configuration.collapse.tremorIntervalFarMin").defineInRange("tremorIntervalFarMin", 20.0, 0.1, 1440.0);
         TREMOR_INTERVAL_FAR_MAX = builder.comment("Minutes between tremors from zone 3 on: longest.")
-                .translation("seepers.configuration.collapse.tremorIntervalFarMax").defineInRange("tremorIntervalFarMax", 5.0, 0.1, 1440.0);
+                .translation("seepers.configuration.collapse.tremorIntervalFarMax").defineInRange("tremorIntervalFarMax", 20.0, 0.1, 1440.0);
         TREMOR_RADIUS_NEAR = builder.comment("Blocks around the player a tremor reaches near spawn.")
                 .translation("seepers.configuration.collapse.tremorRadiusNear").defineInRange("tremorRadiusNear", 16, 1, 64);
         TREMOR_RADIUS_FAR = builder.comment("Blocks around the player a tremor reaches from zone 3 on.")

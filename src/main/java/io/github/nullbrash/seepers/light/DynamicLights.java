@@ -76,7 +76,8 @@ public final class DynamicLights {
     public static int brightness(Entity entity) {
         int level = DEBUG.getOrDefault(entity.getUUID(), 0);
         for (ToIntFunction<Entity> provider : PROVIDERS) level = Math.max(level, provider.applyAsInt(entity));
-        return Math.min(15, level);
+        // Levels up to the black threshold draw nothing (4.1): no light block for a dropped mushroom.
+        return level <= ServerConfig.get(ServerConfig.BLACK_LIGHT_LEVEL) ? 0 : Math.min(15, level);
     }
 
     public static void onServerTick(ServerTickEvent.Post event) {
@@ -88,6 +89,9 @@ public final class DynamicLights {
         if (enabled) {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (!player.isSpectator() && player.isAlive()) carriers.put(player.getUUID(), player);
+            }
+            for (Entity item : CarriedLights.droppedItems()) {
+                if (item.isAlive() && !item.isRemoved()) carriers.put(item.getUUID(), item);
             }
         }
         // Gone, dead, spectating, in another dimension or switched off: take the light out first.
