@@ -1,0 +1,14 @@
+{
+  "type": "seepers:warp",
+  "distortion": "seepers:distortion",
+  "noise": "seepers:warp",
+  "settings": {
+    "region_size": 512,
+    "stretch_max": 4.0,
+    "repeat_cell": 128,
+    "repeat_share_max": 0.5,
+    "repeat_min_cells": 2,
+    "repeat_max_cells": 3,
+    "repeat_warp": 48
+  }
+}

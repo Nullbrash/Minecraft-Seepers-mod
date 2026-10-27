@@ -6,6 +6,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class ClientConfig {
     public static final ModConfigSpec SPEC;
     public static final ModConfigSpec.BooleanValue LOG_NETWORK;
+    public static final ModConfigSpec.BooleanValue DIAGNOSTICS;
     public static final ModConfigSpec.IntValue FOG_CELLS_PER_TICK;
     public static final ModConfigSpec.DoubleValue POINT_SIZE;
     public static final ModConfigSpec.DoubleValue POINT_MIN_PIXELS;
@@ -91,6 +92,10 @@ public final class ClientConfig {
                 .comment("Log Seepers packets received by the client.")
                 .translation("seepers.configuration.logNetwork")
                 .define("logNetwork", false);
+        DIAGNOSTICS = builder
+                .comment("Keep logs/seepers-diagnostics.log (system, frame rate, warnings; personal data replaced). /seepers report packs it for sending.")
+                .translation("seepers.configuration.diagnostics")
+                .define("diagnostics", true);
         builder.pop();
 
         SPEC = builder.build();

@@ -365,5 +365,9 @@
   "seepers.configuration.fog.perLevel": "Per distortion level",
   "seepers.configuration.fog.perLevel.tooltip": "Extra density per distortion level.",
   "commands.seepers.debug.zone": "%s: zone %s, distortion %s (zones start at %s / %s / %s)",
-  "commands.seepers.debug.zone.seam": "Generator here: %s"
+  "commands.seepers.debug.zone.seam": "Generator here: %s",
+  "seepers.configuration.diagnostics": "Diagnostics journal",
+  "seepers.configuration.diagnostics.tooltip": "Keep logs/seepers-diagnostics.log (system, frame rate, warnings; personal data replaced). /seepers report packs it for sending.",
+  "commands.seepers.report.done": "Report saved (no personal data): %s — click to open the folder, then send the file.",
+  "commands.seepers.report.failed": "Report failed: %s"
 }

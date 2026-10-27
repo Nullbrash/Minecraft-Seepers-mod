@@ -365,5 +365,9 @@
   "seepers.configuration.fog.perLevel": "На уровень искажённости",
   "seepers.configuration.fog.perLevel.tooltip": "Добавка плотности на каждый уровень искажённости.",
   "commands.seepers.debug.zone": "%s: зона %s, искажённость %s (зоны начинаются на %s / %s / %s)",
-  "commands.seepers.debug.zone.seam": "Генератор здесь: %s"
+  "commands.seepers.debug.zone.seam": "Генератор здесь: %s",
+  "seepers.configuration.diagnostics": "Журнал диагностики",
+  "seepers.configuration.diagnostics.tooltip": "Вести logs/seepers-diagnostics.log (система, FPS, предупреждения; личные данные заменены). /seepers report упаковывает его для отправки.",
+  "commands.seepers.report.done": "Отчёт сохранён (без личных данных): %s — нажмите, чтобы открыть папку, и отправьте файл.",
+  "commands.seepers.report.failed": "Не удалось сохранить отчёт: %s"
 }

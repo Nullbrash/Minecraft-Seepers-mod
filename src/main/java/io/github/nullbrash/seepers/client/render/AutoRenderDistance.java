@@ -1,6 +1,7 @@
 package io.github.nullbrash.seepers.client.render;
 
 import com.mojang.brigadier.arguments.FloatArgumentType;
+import io.github.nullbrash.seepers.client.diagnostics.Diagnostics;
 import io.github.nullbrash.seepers.config.ClientConfig;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import java.util.Locale;
@@ -147,12 +148,20 @@ public final class AutoRenderDistance {
 
     private static void change(Minecraft minecraft, int distance, String reason) {
         boolean asked = distance != current;
+        if (asked && current != OFF && distance != OFF) Diagnostics.event("render distance " + current + " -> " + distance + " (" + reason + ")");
         current = distance;
         lastChange = ticks;
         sampleCount = 0;
         lastReason = reason;
         // The server sends chunks by the distance the client reports.
         if (asked) minecraft.options.broadcastOptions();
+    }
+
+    /** For the diagnostics journal. */
+    public static String summary() {
+        float tps = tps();
+        return current == OFF ? "render distance auto off" : String.format(Locale.ROOT, "render distance %d/%d, server tps %s",
+                current, ceiling, Float.isNaN(tps) ? "?" : String.format(Locale.ROOT, "%.1f", tps));
     }
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {

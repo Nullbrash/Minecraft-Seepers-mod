@@ -2,6 +2,7 @@ package io.github.nullbrash.seepers.registry;
 
 import com.mojang.serialization.MapCodec;
 import io.github.nullbrash.seepers.Seepers;
+import io.github.nullbrash.seepers.world.CoordinateWarp;
 import io.github.nullbrash.seepers.world.DistortedChunkGenerator;
 import io.github.nullbrash.seepers.world.DistortionFunction;
 import net.minecraft.core.registries.Registries;
@@ -17,6 +18,9 @@ public final class SeepersWorldgen {
 
     public static final DeferredHolder<MapCodec<? extends DensityFunction>, MapCodec<DistortionFunction>> DISTORTION =
             DENSITY_FUNCTION_TYPES.register("distortion", () -> DistortionFunction.MAP_CODEC);
+
+    public static final DeferredHolder<MapCodec<? extends DensityFunction>, MapCodec<CoordinateWarp>> WARP =
+            DENSITY_FUNCTION_TYPES.register("warp", () -> CoordinateWarp.MAP_CODEC);
 
     public static final DeferredRegister<MapCodec<? extends ChunkGenerator>> CHUNK_GENERATORS =
             DeferredRegister.create(Registries.CHUNK_GENERATOR, Seepers.MOD_ID);

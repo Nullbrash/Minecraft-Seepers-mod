@@ -30,6 +30,7 @@ public final class SeepersCommands {
                         .then(LightDebugCommand.relight())
                         .then(FogDebugCommand.build())
                         .then(ZoneDebugCommand.build())
+                        .then(HeightmapDebugCommand.build())
                         .then(RoomDebugCommand.build())
                         .then(FireDebugCommand.build())
                         .then(ClientDebugCommand.build())));

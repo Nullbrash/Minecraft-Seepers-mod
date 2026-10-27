@@ -10,6 +10,7 @@
         },
         "settings": "minecraft:amplified",
         "distortion": "seepers:distortion",
+        "warp": "seepers:warp",
         "islands": {
           "cell_size": 88,
           "warp": 14,
@@ -38,6 +39,23 @@
           "height_max": 24,
           "min_y": -40,
           "max_y": 90
+        },
+        "far_lands": {
+          "region_size": 384,
+          "spacing_min": 48,
+          "spacing_max": 96,
+          "thickness_min": 8,
+          "thickness_max": 16,
+          "height_max": 100,
+          "layer_period": 7,
+          "layer_solid": 4,
+          "rib_period": 9,
+          "rib_width": 2,
+          "passage_every": 64,
+          "passage_width": 5,
+          "passage_height": 4,
+          "void_share": 0.3,
+          "void_bottom": -40
         }
       }
     },
