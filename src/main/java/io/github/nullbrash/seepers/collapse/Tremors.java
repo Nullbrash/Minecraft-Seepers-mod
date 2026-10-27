@@ -13,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import io.github.nullbrash.seepers.registry.SeepersSounds;
+import io.github.nullbrash.seepers.registry.SeepersTags;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.FallingBlock;
@@ -165,7 +166,7 @@ public final class Tremors {
                 LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
                 if (chunk == null) continue;
                 LevelChunkSection section = chunk.getSection(chunk.getSectionIndex(y));
-                if (section.hasOnlyAir() || !section.maybeHas(state -> state.getBlock() instanceof FallingBlock)) continue;
+                if (section.hasOnlyAir() || !section.maybeHas(Tremors::mayFall)) continue;
                 int x0 = Math.max(cx - r, chunkX << 4);
                 int x1 = Math.min(cx + r, (chunkX << 4) + 15);
                 int z0 = Math.max(cz - r, chunkZ << 4);
@@ -173,14 +174,19 @@ public final class Tremors {
                 for (int x = x0; x <= x1; x++) {
                     for (int z = z0; z <= z1; z++) {
                         BlockState state = section.getBlockState(x & 15, y & 15, z & 15);
-                        if (!(state.getBlock() instanceof FallingBlock)) continue;
+                        if (!mayFall(state)) continue;
                         pos.set(x, y, z);
-                        if (!FallingBlock.isFree(level.getBlockState(pos.below()))) continue;
+                        if (!Collapses.isFallable(level, pos, state) || !FallingBlock.isFree(level.getBlockState(pos.below()))) continue;
                         if (level.random.nextDouble() < tremor.share) tremor.picked.add(pos.immutable());
                     }
                 }
             }
         }
+    }
+
+    /** Cheap test before the biome one: could this state fall at all. */
+    private static boolean mayFall(BlockState state) {
+        return state.getBlock() instanceof FallingBlock || state.is(SeepersTags.Blocks.BROKEN_GRAVITY_UNSTABLE);
     }
 
     private Tremors() {}

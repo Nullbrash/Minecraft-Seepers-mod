@@ -32,6 +32,12 @@ public final class WorldShape {
             Seepers.LOGGER.warn("Density function seepers:distortion missing or replaced; default zones used");
             Distortion.set(Distortion.DEFAULT);
         }
+        // Broken gravity patches are otherwise bound only when a new chunk generates: /locate saw none before that.
+        for (net.minecraft.server.level.ServerLevel level : event.getServer().getAllLevels()) {
+            if (level.getChunkSource().getGenerator().getBiomeSource() instanceof ZonedBiomeSource zoned) {
+                zoned.bind(level.getChunkSource().randomState());
+            }
+        }
     }
 
     public static void onLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {

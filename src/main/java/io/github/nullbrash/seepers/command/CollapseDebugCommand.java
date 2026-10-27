@@ -68,17 +68,20 @@ final class CollapseDebugCommand {
         ServerLevel level = source.getLevel();
         int hanging = 0;
         int held = 0;
+        BlockPos nearest = null;
         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-RADIUS, -RADIUS, -RADIUS), center.offset(RADIUS, RADIUS, RADIUS))) {
-            if (!(level.getBlockState(pos).getBlock() instanceof FallingBlock)) continue;
-            if (!FallingBlock.isFree(level.getBlockState(pos.below()))) continue;
+            if (!Collapses.isHanging(level, pos)) continue;
             hanging++;
+            if (nearest == null || pos.distSqr(center) < nearest.distSqr(center)) nearest = pos.immutable();
             if (Supports.holds(level, pos)) held++;
         }
+        BlockPos nearestHanging = nearest;
         int hangingCount = hanging;
         int heldCount = held;
         BlockPos holder = Supports.holder(level, center);
         source.sendSuccess(() -> Component.literal("Hanging within " + RADIUS + ": " + hangingCount + ", held by props: " + heldCount
-                + ", warning now: " + Collapses.pendingCount(level)), false);
+                + ", warning now: " + Collapses.pendingCount(level)
+                + (nearestHanging == null ? "" : ", nearest " + nearestHanging.toShortString() + " " + level.getBlockState(nearestHanging).getBlock().getName().getString())), false);
         source.sendSuccess(() -> Component.literal("At " + center.toShortString() + ": "
                 + (holder == null ? "no prop holds here" : "held by the prop topped at " + holder.toShortString())), false);
         return hangingCount;

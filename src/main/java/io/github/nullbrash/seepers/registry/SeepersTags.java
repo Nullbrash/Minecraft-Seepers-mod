@@ -34,6 +34,9 @@ public final class SeepersTags {
         public static final TagKey<Block> SUPPORT_FENCE = TagKey.create(Registries.BLOCK, Seepers.id("collapse/support/fence"));
         public static final TagKey<Block> SUPPORT_WALL = TagKey.create(Registries.BLOCK, Seepers.id("collapse/support/wall"));
 
+        /** Ground that hangs and falls like sand in the broken gravity biome (CLAUDE.md 4.10). */
+        public static final TagKey<Block> BROKEN_GRAVITY_UNSTABLE = TagKey.create(Registries.BLOCK, Seepers.id("broken_gravity/unstable"));
+
         private Blocks() {}
     }
 

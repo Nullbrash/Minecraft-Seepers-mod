@@ -26,7 +26,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * Collapses (CLAUDE.md 4.10): a hanging block that is due to fall first asks the props, then warns — dust, a crack,
  * a light shake nearby — for 1–2 s, and only then falls. Blocks just placed and blocks above one that already fell
  * (the same column) fall at once, as in vanilla. Falling sand and gravel hurt; past a per-chunk limit of falling
- * blocks the rest is set straight where it would land.
+ * blocks the rest is set straight where it would land. Loose ground of broken gravity takes the same path
+ * ({@link LooseGround}).
  */
 public final class Collapses {
     /** Blocks may skip the warning this long after being placed or losing the block under them to a collapse. */
@@ -47,12 +48,24 @@ public final class Collapses {
      */
     public static boolean onFallTick(BlockState state, ServerLevel level, BlockPos pos) {
         if (!ServerConfig.get(ServerConfig.COLLAPSE_ENABLED)) return false;
-        if (!FallingBlock.isFree(level.getBlockState(pos.below())) || pos.getY() < level.getMinBuildHeight()) return false;
+        long wait = decide(state, level, pos);
+        // Neighbour updates may tick it early; ticks of one block do not stack, so ask again for the due one.
+        if (wait > 0) level.scheduleTick(pos, state.getBlock(), (int) wait);
+        return wait != 0;
+    }
+
+    /**
+     * The one path for every hanging block (sand and gravel, loose ground of broken gravity): props, warning, limit.
+     * Returns 0 to fall now, a positive number of ticks to look again, or -1 when nothing is to be done (held, not
+     * hanging, or already set where it lands).
+     */
+    static long decide(BlockState state, ServerLevel level, BlockPos pos) {
+        if (!FallingBlock.isFree(level.getBlockState(pos.below())) || pos.getY() < level.getMinBuildHeight()) return -1;
         long key = pos.asLong();
         Long2LongOpenHashMap pending = PENDING.computeIfAbsent(level, l -> new Long2LongOpenHashMap());
         if (Supports.holds(level, pos)) {
             pending.remove(key);
-            return true;
+            return -1;
         }
         long now = level.getGameTime();
         if (!isFresh(level, key, now)) {
@@ -64,19 +77,25 @@ public final class Collapses {
                 pending.put(key, due);
                 warn(level, pos, state);
             }
-            if (now < due) {
-                // Neighbour updates may tick it early; ticks of one block do not stack, so ask again for the due one.
-                level.scheduleTick(pos, state.getBlock(), (int) (due - now));
-                return true;
-            }
+            if (now < due) return due - now;
             pending.remove(key);
         }
         markColumnAbove(level, pos, now);
         if (fallingInChunk(level, pos) >= ServerConfig.get(ServerConfig.COLLAPSE_MAX_FALLING_PER_CHUNK)) {
             setWhereItLands(level, pos, state);
-            return true;
+            return -1;
         }
-        return false;
+        return 0;
+    }
+
+    /** Drops a block that has no falling tick of its own (loose ground), as vanilla drops sand. */
+    static void fall(ServerLevel level, BlockPos pos, BlockState state) {
+        onFalling(FallingBlockEntity.fall(level, pos, state));
+    }
+
+    /** Sand, gravel and the like, or loose ground of broken gravity. */
+    public static boolean isFallable(ServerLevel level, BlockPos pos, BlockState state) {
+        return state.getBlock() instanceof FallingBlock || LooseGround.isLoose(level, pos, state);
     }
 
     /**
@@ -109,10 +128,14 @@ public final class Collapses {
 
     /** Starts a collapse at this spot through the normal path (debug, tremors, the cane). */
     public static boolean trigger(ServerLevel level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        if (!(state.getBlock() instanceof FallingBlock) || !FallingBlock.isFree(level.getBlockState(pos.below()))) return false;
-        level.scheduleTick(pos, state.getBlock(), 1);
+        if (!isHanging(level, pos)) return false;
+        wake(level, pos, level.getBlockState(pos));
         return true;
+    }
+
+    private static void wake(ServerLevel level, BlockPos pos, BlockState state) {
+        if (state.getBlock() instanceof FallingBlock) level.scheduleTick(pos, state.getBlock(), 1);
+        else LooseGround.wake(level, pos, 1);
     }
 
     /**
@@ -131,16 +154,15 @@ public final class Collapses {
         }
     }
 
-    private static boolean isHanging(ServerLevel level, BlockPos pos) {
-        return level.getBlockState(pos).getBlock() instanceof FallingBlock && FallingBlock.isFree(level.getBlockState(pos.below()));
+    public static boolean isHanging(ServerLevel level, BlockPos pos) {
+        return isFallable(level, pos, level.getBlockState(pos)) && FallingBlock.isFree(level.getBlockState(pos.below()));
     }
 
     /** Drops a hanging block now, without its own warning (a tremor at its peak; the rumble was the warning). */
     public static void drop(ServerLevel level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        if (!(state.getBlock() instanceof FallingBlock) || !FallingBlock.isFree(level.getBlockState(pos.below()))) return;
+        if (!isHanging(level, pos)) return;
         FRESH.computeIfAbsent(level, l -> new Long2LongOpenHashMap()).put(pos.asLong(), level.getGameTime());
-        level.scheduleTick(pos, state.getBlock(), 1);
+        wake(level, pos, level.getBlockState(pos));
     }
 
     public static int pendingCount(ServerLevel level) {
@@ -149,6 +171,7 @@ public final class Collapses {
     }
 
     public static void onServerTick(ServerTickEvent.Post event) {
+        for (ServerLevel level : event.getServer().getAllLevels()) LooseGround.tick(level);
         if (event.getServer().getTickCount() % DUST_EVERY != 0) return;
         for (ServerLevel level : event.getServer().getAllLevels()) {
             long now = level.getGameTime();
@@ -164,7 +187,7 @@ public final class Collapses {
                         continue;
                     }
                     BlockState state = level.getBlockState(pos);
-                    if (state.getBlock() instanceof FallingBlock) dust(level, pos, state, 2);
+                    if (isFallable(level, pos, state)) dust(level, pos, state, 2);
                 }
             }
             Long2LongOpenHashMap fresh = FRESH.get(level);
@@ -189,7 +212,7 @@ public final class Collapses {
         BlockPos.MutableBlockPos above = pos.mutable();
         for (int i = 0; i < 64; i++) {
             above.move(0, 1, 0);
-            if (!(level.getBlockState(above).getBlock() instanceof FallingBlock)) break;
+            if (!isFallable(level, above, level.getBlockState(above))) break;
             fresh.put(above.asLong(), now);
         }
     }
