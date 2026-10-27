@@ -18,6 +18,11 @@ final class ZoneDebugCommand {
                 .executes(context -> show(context.getSource(), BlockPos.containing(context.getSource().getPosition())))
                 .then(Commands.literal("gravity").executes(context -> gravityShares(context.getSource())))
                 .then(Commands.literal("walls").executes(context -> wallBreaches(context.getSource())))
+                .then(Commands.literal("regrowth").executes(context -> {
+                    String text = io.github.nullbrash.seepers.world.AnomalyRegrowth.summary(context.getSource().getLevel());
+                    context.getSource().sendSuccess(() -> Component.literal(text), false);
+                    return 1;
+                }))
                 .then(Commands.argument("pos", BlockPosArgument.blockPos())
                         .executes(context -> show(context.getSource(), BlockPosArgument.getBlockPos(context, "pos"))));
     }

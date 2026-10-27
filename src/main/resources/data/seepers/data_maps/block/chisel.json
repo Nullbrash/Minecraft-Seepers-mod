@@ -1,0 +1,76 @@
+{
+  "values": {
+    "minecraft:andesite": {
+      "result": "minecraft:polished_andesite"
+    },
+    "minecraft:diorite": {
+      "result": "minecraft:polished_diorite"
+    },
+    "minecraft:granite": {
+      "result": "minecraft:polished_granite"
+    },
+    "minecraft:cobbled_deepslate": {
+      "result": "minecraft:polished_deepslate"
+    },
+    "minecraft:deepslate": {
+      "result": "minecraft:polished_deepslate"
+    },
+    "minecraft:polished_deepslate": {
+      "result": "minecraft:deepslate_tiles"
+    },
+    "minecraft:deepslate_bricks": {
+      "result": "minecraft:chiseled_deepslate"
+    },
+    "minecraft:blackstone": {
+      "result": "minecraft:polished_blackstone"
+    },
+    "minecraft:polished_blackstone": {
+      "result": "minecraft:chiseled_polished_blackstone"
+    },
+    "minecraft:basalt": {
+      "result": "minecraft:polished_basalt"
+    },
+    "minecraft:stone": {
+      "result": "minecraft:smooth_stone"
+    },
+    "minecraft:stone_bricks": {
+      "result": "minecraft:chiseled_stone_bricks"
+    },
+    "minecraft:sandstone": {
+      "result": "minecraft:cut_sandstone"
+    },
+    "minecraft:cut_sandstone": {
+      "result": "minecraft:chiseled_sandstone"
+    },
+    "minecraft:red_sandstone": {
+      "result": "minecraft:cut_red_sandstone"
+    },
+    "minecraft:cut_red_sandstone": {
+      "result": "minecraft:chiseled_red_sandstone"
+    },
+    "minecraft:tuff": {
+      "result": "minecraft:polished_tuff"
+    },
+    "minecraft:polished_tuff": {
+      "result": "minecraft:tuff_bricks"
+    },
+    "minecraft:tuff_bricks": {
+      "result": "minecraft:chiseled_tuff_bricks"
+    },
+    "minecraft:nether_bricks": {
+      "result": "minecraft:chiseled_nether_bricks"
+    },
+    "minecraft:quartz_block": {
+      "result": "minecraft:chiseled_quartz_block"
+    },
+    "minecraft:copper_block": {
+      "result": "minecraft:chiseled_copper"
+    },
+    "minecraft:purpur_block": {
+      "result": "minecraft:purpur_pillar"
+    },
+    "minecraft:end_stone": {
+      "result": "minecraft:end_stone_bricks"
+    }
+  }
+}

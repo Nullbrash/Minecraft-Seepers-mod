@@ -5,6 +5,9 @@
     },
     "kind=geode": {
       "model": "seepers:block/anomaly_rock"
+    },
+    "kind=hewn": {
+      "model": "seepers:block/anomaly_rock_hewn"
     }
   }
 }

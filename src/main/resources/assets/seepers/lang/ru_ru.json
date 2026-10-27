@@ -378,5 +378,20 @@
   "seepers.configuration.anomaly.resistanceNear": "Стойкость к взрыву вблизи",
   "seepers.configuration.anomaly.resistanceNear.tooltip": "Стойкость к взрыву в начале зоны 1 (у камня 6: ТНТ и крипер берут).",
   "seepers.configuration.anomaly.resistanceFar": "Стойкость к взрыву вдали",
-  "seepers.configuration.anomaly.resistanceFar.tooltip": "Стойкость к взрыву с зоны 3 (около 14: только центр взрыва ТНТ)."
+  "seepers.configuration.anomaly.resistanceFar.tooltip": "Стойкость к взрыву с зоны 3 (около 14: только центр взрыва ТНТ).",
+  "item.seepers.chisel": "Зубило",
+  "seepers.configuration.anomaly.regrowth": "Зарастание",
+  "seepers.configuration.anomaly.regrowth.tooltip": "Взорванная порода зарастает слоями от целых соседей.",
+  "seepers.configuration.anomaly.wallLayerSeconds": "Слой стены, секунд",
+  "seepers.configuration.anomaly.wallLayerSeconds.tooltip": "Секунд на один слой зарастания стены и сколов.",
+  "seepers.configuration.anomaly.geodeLayerSeconds": "Слой жеоды, секунд",
+  "seepers.configuration.anomaly.geodeLayerSeconds.tooltip": "Секунд на один слой зарастания жеоды.",
+  "seepers.configuration.anomaly.maxCatchUp": "Догонка, слоёв не больше",
+  "seepers.configuration.anomaly.maxCatchUp.tooltip": "Сколько слоёв за раз догоняется после отсутствия.",
+  "seepers.configuration.anomaly.chiselRockSeconds": "Зубило по породе, секунд",
+  "seepers.configuration.anomaly.chiselRockSeconds.tooltip": "Столько держать зубило, чтобы обтесать блок аномальной породы (0 — сразу).",
+  "seepers.configuration.anomaly.chiselBlockSeconds": "Зубило по блокам, секунд",
+  "seepers.configuration.anomaly.chiselBlockSeconds.tooltip": "Столько держать зубило, чтобы сделать обычный блок полированным или резным (0 — сразу).",
+  "emi.seepers.hewn": "Обтёсанная: не зарастает и не даёт зарастать",
+  "emi.seepers.chisel_hold": "Удерживайте [%s] на блоке"
 }

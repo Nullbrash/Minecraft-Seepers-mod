@@ -25,6 +25,7 @@ import io.github.nullbrash.seepers.mob.HostileSpawnControl;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
 import io.github.nullbrash.seepers.registry.SeepersBlocks;
 import io.github.nullbrash.seepers.registry.SeepersWorldgen;
+import io.github.nullbrash.seepers.world.AnomalyRegrowth;
 import io.github.nullbrash.seepers.world.WorldShape;
 import io.github.nullbrash.seepers.network.ServerLoad;
 import io.github.nullbrash.seepers.registry.SeepersAttachments;
@@ -66,6 +67,7 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener(WorldShape::onCreateSpawn);
         NeoForge.EVENT_BUS.addListener(CaneItem::onAnvilUpdate);
         modBus.addListener(SeepersItems::addToCreativeTabs);
+        modBus.addListener(io.github.nullbrash.seepers.item.ChiselItem::registerDataMaps);
 
         modBus.addListener(SeepersNetwork::register);
         modBus.addListener(SeepersDataGen::gatherData);
@@ -91,6 +93,9 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener(FireTracker::onChunkUnload);
         NeoForge.EVENT_BUS.addListener(FireTracker::onServerTick);
         NeoForge.EVENT_BUS.addListener(ServerLoad::onServerTick);
+        NeoForge.EVENT_BUS.addListener(AnomalyRegrowth::onServerTick);
+        NeoForge.EVENT_BUS.addListener(AnomalyRegrowth::onChunkLoad);
+        NeoForge.EVENT_BUS.addListener(AnomalyRegrowth::onChunkUnload);
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {
             if (event.getEntity() instanceof ServerPlayer player) {
                 PacketDistributor.sendToPlayer(player, new FogSeedPayload(FogField.serverSeed()));

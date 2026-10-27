@@ -89,6 +89,12 @@ public final class ServerConfig {
     public static final ModConfigSpec.IntValue HEAT_MAX_SOURCES_PER_CHUNK;
     public static final ModConfigSpec.DoubleValue ANOMALY_RESISTANCE_NEAR;
     public static final ModConfigSpec.DoubleValue ANOMALY_RESISTANCE_FAR;
+    public static final ModConfigSpec.BooleanValue REGROWTH_ENABLED;
+    public static final ModConfigSpec.DoubleValue REGROWTH_WALL_SECONDS;
+    public static final ModConfigSpec.DoubleValue REGROWTH_GEODE_SECONDS;
+    public static final ModConfigSpec.IntValue REGROWTH_MAX_CATCH_UP;
+    public static final ModConfigSpec.DoubleValue CHISEL_ROCK_SECONDS;
+    public static final ModConfigSpec.DoubleValue CHISEL_BLOCK_SECONDS;
     public static final Map<HeatCategory, ModConfigSpec.DoubleValue> HEAT_STRENGTH = new EnumMap<>(HeatCategory.class);
     public static final Map<HeatCategory, ModConfigSpec.DoubleValue> HEAT_RADIUS = new EnumMap<>(HeatCategory.class);
 
@@ -300,6 +306,18 @@ public final class ServerConfig {
                 .translation("seepers.configuration.anomaly.resistanceNear").defineInRange("resistanceNear", 6.0, 0.0, 3600000.0);
         ANOMALY_RESISTANCE_FAR = builder.comment("Explosion resistance from zone 3 on (about 14: only the core of a TNT blast).")
                 .translation("seepers.configuration.anomaly.resistanceFar").defineInRange("resistanceFar", 14.0, 0.0, 3600000.0);
+        REGROWTH_ENABLED = builder.comment("Blasted rock grows back, layer by layer from intact neighbours.")
+                .translation("seepers.configuration.anomaly.regrowth").define("regrowth", true);
+        REGROWTH_WALL_SECONDS = builder.comment("Seconds per regrown layer of wall and cliff rock.")
+                .translation("seepers.configuration.anomaly.wallLayerSeconds").defineInRange("wallLayerSeconds", 300.0, 1.0, 86400.0);
+        REGROWTH_GEODE_SECONDS = builder.comment("Seconds per regrown layer of geode rock.")
+                .translation("seepers.configuration.anomaly.geodeLayerSeconds").defineInRange("geodeLayerSeconds", 150.0, 1.0, 86400.0);
+        REGROWTH_MAX_CATCH_UP = builder.comment("At most this many layers are caught up at once after time away.")
+                .translation("seepers.configuration.anomaly.maxCatchUp").defineInRange("maxCatchUp", 64, 1, 4096);
+        CHISEL_ROCK_SECONDS = builder.comment("Holding the chisel this long hews a block of anomalous rock (0 = at once).")
+                .translation("seepers.configuration.anomaly.chiselRockSeconds").defineInRange("chiselRockSeconds", 1.0, 0.0, 60.0);
+        CHISEL_BLOCK_SECONDS = builder.comment("Holding the chisel this long turns an ordinary block into its polished or chiseled form (0 = at once).")
+                .translation("seepers.configuration.anomaly.chiselBlockSeconds").defineInRange("chiselBlockSeconds", 0.5, 0.0, 60.0);
         builder.pop();
 
         SPEC = builder.build();

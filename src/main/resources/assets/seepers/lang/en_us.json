@@ -378,5 +378,20 @@
   "seepers.configuration.anomaly.resistanceNear": "Blast resistance near",
   "seepers.configuration.anomaly.resistanceNear.tooltip": "Explosion resistance at the start of zone 1 (stone is 6: TNT and creepers break it).",
   "seepers.configuration.anomaly.resistanceFar": "Blast resistance far",
-  "seepers.configuration.anomaly.resistanceFar.tooltip": "Explosion resistance from zone 3 on (about 14: only the core of a TNT blast)."
+  "seepers.configuration.anomaly.resistanceFar.tooltip": "Explosion resistance from zone 3 on (about 14: only the core of a TNT blast).",
+  "item.seepers.chisel": "Chisel",
+  "seepers.configuration.anomaly.regrowth": "Regrowth",
+  "seepers.configuration.anomaly.regrowth.tooltip": "Blasted rock grows back, layer by layer from intact neighbours.",
+  "seepers.configuration.anomaly.wallLayerSeconds": "Wall layer, seconds",
+  "seepers.configuration.anomaly.wallLayerSeconds.tooltip": "Seconds per regrown layer of wall and cliff rock.",
+  "seepers.configuration.anomaly.geodeLayerSeconds": "Geode layer, seconds",
+  "seepers.configuration.anomaly.geodeLayerSeconds.tooltip": "Seconds per regrown layer of geode rock.",
+  "seepers.configuration.anomaly.maxCatchUp": "Catch-up layers at most",
+  "seepers.configuration.anomaly.maxCatchUp.tooltip": "At most this many layers are caught up at once after time away.",
+  "seepers.configuration.anomaly.chiselRockSeconds": "Chisel on rock, seconds",
+  "seepers.configuration.anomaly.chiselRockSeconds.tooltip": "Holding the chisel this long hews a block of anomalous rock (0 = at once).",
+  "seepers.configuration.anomaly.chiselBlockSeconds": "Chisel on blocks, seconds",
+  "seepers.configuration.anomaly.chiselBlockSeconds.tooltip": "Holding the chisel this long turns an ordinary block into its polished or chiseled form (0 = at once).",
+  "emi.seepers.hewn": "Hewn: never regrows, feeds no regrowth",
+  "emi.seepers.chisel_hold": "Hold [%s] on the block"
 }

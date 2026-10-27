@@ -77,7 +77,7 @@ final class StorageDebugCommand {
         fire.put(pos.above(fire.size()), FireSources.Kind.TORCH);
         fire.setLastCheckedTime(now);
         AnomalyBlocks anomaly = SeepersData.anomalyBlocks(chunk);
-        anomaly.markBlasted(pos.below(10 + anomaly.blastedCount()), now);
+        anomaly.markBlasted(pos.below(10 + anomaly.blastedCount()), now, false);
         anomaly.markChiseled(pos.below(20 + anomaly.chiseledCount()));
 
         SeepersData.chunkActivity(level).add(chunk.getPos(), 1);

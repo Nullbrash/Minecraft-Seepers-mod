@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    {
+      "item": "minecraft:stick"
+    },
+    {
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "item": "seepers:anomaly_shard"
+    }
+  ],
+  "result": {
+    "id": "seepers:chisel",
+    "count": 1
+  }
+}
