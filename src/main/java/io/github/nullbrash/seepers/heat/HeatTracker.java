@@ -69,11 +69,10 @@ public final class HeatTracker {
         if (found.isEmpty() && existing == null) return;
 
         HeatSources sources = chunk.getData(SeepersAttachments.HEAT_SOURCES);
-        boolean changed = false;
         for (BlockPos pos : found) {
             HeatSources.Source known = sources.get(pos);
             long litSince = known != null && known.outSince() == HeatSources.LIT ? known.litSince() : HeatSources.LONG_AGO;
-            changed |= sources.light(pos, categoryOf(chunk.getBlockState(pos)), litSince, settings.maxSourcesPerChunk());
+            sources.light(pos, categoryOf(chunk.getBlockState(pos)), litSince, settings.maxSourcesPerChunk());
         }
         // Burning entries whose block is gone (changed while we could not see it): start cooling now.
         List<BlockPos> stale = new ArrayList<>();
@@ -83,12 +82,10 @@ public final class HeatTracker {
             }
         });
         for (BlockPos pos : stale) {
-            changed |= sources.extinguish(pos, now);
+            sources.extinguish(pos, now);
         }
-        changed |= sources.forgetCooled(now, settings.cooldownTicks());
-        if (changed) {
-            chunk.syncData(SeepersAttachments.HEAT_SOURCES.get());
-        }
+        sources.forgetCooled(now, settings.cooldownTicks());
+        // No syncData here: the chunk has not reached any client yet, and its attachments travel with it.
     }
 
     private HeatTracker() {}

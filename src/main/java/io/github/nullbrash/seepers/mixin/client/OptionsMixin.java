@@ -14,7 +14,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Automatic render distance (CLAUDE.md 4.7) without touching the slider: the slider stays the player's ceiling and
- * is saved as set. No event exists for this; everything that renders reads the distance from here.
+ * is saved as set, and the renderer keeps it (changing the renderer's distance rebuilds every chunk mesh). Only the
+ * distance asked from the server is automatic. No event exists for either.
  */
 @Mixin(Options.class)
 public abstract class OptionsMixin {
@@ -22,9 +23,9 @@ public abstract class OptionsMixin {
     @Final
     private OptionInstance<Integer> renderDistance;
 
-    @Inject(method = "getEffectiveRenderDistance", at = @At("RETURN"), cancellable = true)
-    private void seepers$autoDistance(CallbackInfoReturnable<Integer> cir) {
-        cir.setReturnValue(AutoRenderDistance.limit(cir.getReturnValueI()));
+    @Inject(method = "getEffectiveRenderDistance", at = @At("RETURN"))
+    private void seepers$observeDistance(CallbackInfoReturnable<Integer> cir) {
+        AutoRenderDistance.observe(cir.getReturnValueI());
     }
 
     /** The server sends chunks only as far as the client asks: ask for the automatic distance, not the slider. */

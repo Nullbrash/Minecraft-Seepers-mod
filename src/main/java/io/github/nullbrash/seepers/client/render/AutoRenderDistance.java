@@ -21,8 +21,9 @@ import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 /**
  * Automatic render distance (CLAUDE.md 4.7): from the minimum up to the slider (and never past the server), one
  * chunk at a time. Server lag (TPS) decides first, frame rate second; averages over a few seconds, so single
- * hitches do not count. Every change rebuilds all chunk meshes — a hitch of its own — so the measurement restarts
- * after it.
+ * hitches do not count. Only the distance asked from the server changes: it sends and drops chunks by it, so the
+ * client draws less without its renderer ever changing distance — that rebuilt every chunk mesh, the world went
+ * black for a frame and the fog end jumped. The fog follows the loaded distance smoothly instead.
  */
 public final class AutoRenderDistance {
     private static final int OFF = Integer.MAX_VALUE;
@@ -46,9 +47,13 @@ public final class AutoRenderDistance {
     private static float simulatedTps = Float.NaN;
     private static float simulatedFps = Float.NaN;
 
-    /** Render distance actually used; raw = the vanilla value. Called by the options mixin, every frame. */
-    public static int limit(int raw) {
+    /** Sees the vanilla render distance (slider capped by the server). Called by the options mixin, every frame. */
+    public static void observe(int raw) {
         ceiling = raw;
+    }
+
+    /** Chunks loaded around the player: the automatic distance, or the vanilla one when it is off. */
+    public static int loaded(int raw) {
         return Math.min(raw, current);
     }
 

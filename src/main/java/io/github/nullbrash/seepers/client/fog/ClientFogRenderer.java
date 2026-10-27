@@ -1,5 +1,6 @@
 package io.github.nullbrash.seepers.client.fog;
 
+import io.github.nullbrash.seepers.client.render.AutoRenderDistance;
 import com.mojang.blaze3d.shaders.FogShape;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import io.github.nullbrash.seepers.fog.FogSettings;
@@ -31,6 +32,9 @@ public final class ClientFogRenderer {
     private static FogType smoothedType;
     private static double smoothedVisibility;
     private static double smoothedEdge;
+    /** Fog end limit from the loaded distance, eased so a change of the automatic distance never steps. */
+    private static double smoothedLimit = Double.NaN;
+    private static long limitMillis;
     private static long lastUpdateNanos;
 
     public static void onRenderFog(ViewportEvent.RenderFog event) {
@@ -66,7 +70,8 @@ public final class ClientFogRenderer {
         double alpha = smoothingStep(type);
         smoothedVisibility += (target - smoothedVisibility) * alpha;
         smoothedEdge += (edge - smoothedEdge) * alpha;
-        double renderLimit = minecraft.options.getEffectiveRenderDistance() * 16.0 - settings.renderDistanceMargin();
+        double renderLimit = easedLimit(AutoRenderDistance.loaded(minecraft.options.getEffectiveRenderDistance()) * 16.0
+                - settings.renderDistanceMargin());
         float far = (float) Math.max(1.0, Math.min(Math.min(smoothedVisibility, renderLimit), event.getFarPlaneDistance()));
         float near = (float) Math.min(far, Math.max(far * settings.nearFraction(), smoothedEdge));
         event.setFarPlaneDistance(far);
@@ -100,6 +105,16 @@ public final class ClientFogRenderer {
      * Fraction to move toward the targets this call. Time-based, so the two fog events per frame
      * (sky and terrain) do not step twice; 1 (snap) when entering or leaving water.
      */
+    /** About 3 s to settle (time constant 1 s), whatever the frame rate. */
+    private static double easedLimit(double target) {
+        long now = net.minecraft.Util.getMillis();
+        double dt = Math.min(1.0, (now - limitMillis) / 1000.0);
+        limitMillis = now;
+        if (Double.isNaN(smoothedLimit) || dt >= 1.0) smoothedLimit = target;
+        else smoothedLimit += (target - smoothedLimit) * (1 - Math.exp(-dt));
+        return smoothedLimit;
+    }
+
     private static double smoothingStep(FogType type) {
         long now = System.nanoTime();
         double alpha;
