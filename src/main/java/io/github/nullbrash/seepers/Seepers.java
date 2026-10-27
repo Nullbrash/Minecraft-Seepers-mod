@@ -95,6 +95,10 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener(FireTracker::onServerTick);
         NeoForge.EVENT_BUS.addListener(ServerLoad::onServerTick);
         NeoForge.EVENT_BUS.addListener(AnomalyRegrowth::onServerTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.light.DynamicLights::onServerTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.light.DynamicLights::onChunkLoad);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.light.DynamicLights::onServerStopping);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.light.DynamicLights::onStartTracking);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.collapse.Collapses::onServerTick);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.collapse.Collapses::onCaneCeilingTap);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.collapse.LooseGround::onNeighborNotify);

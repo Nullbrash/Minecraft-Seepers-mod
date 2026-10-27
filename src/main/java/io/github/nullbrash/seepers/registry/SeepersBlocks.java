@@ -21,6 +21,10 @@ public final class SeepersBlocks {
             () -> new AnomalyRockBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(-1.0F, 6.0F)
                     .sound(SoundType.DEEPSLATE).pushReaction(PushReaction.BLOCK)));
 
+    /** Server half of dynamic light: an invisible light block of our own (no item). */
+    public static final DeferredBlock<io.github.nullbrash.seepers.block.DynamicLightBlock> DYNAMIC_LIGHT = BLOCKS.register("dynamic_light",
+            () -> new io.github.nullbrash.seepers.block.DynamicLightBlock(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.LIGHT)));
+
     public static final DeferredItem<BlockItem> ANOMALY_ROCK_ITEM = SeepersItems.ITEMS.registerSimpleBlockItem(ANOMALY_ROCK);
     public static final DeferredItem<Item> ANOMALY_SHARD = SeepersItems.ITEMS.registerSimpleItem("anomaly_shard");
 

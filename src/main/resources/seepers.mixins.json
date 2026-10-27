@@ -11,6 +11,8 @@
   ],
   "client": [
     "client.EntityRenderDispatcherMixin",
+    "client.EntityRendererLightMixin",
+    "client.LevelRendererLightMixin",
     "client.LightTextureMixin",
     "client.OptionInstanceSliderButtonMixin",
     "client.OptionsMixin"

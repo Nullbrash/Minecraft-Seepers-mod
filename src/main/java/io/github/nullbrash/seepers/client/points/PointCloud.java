@@ -212,7 +212,8 @@ public final class PointCloud {
         double x = SectionPos.sectionToBlockCoord(SectionPos.x(sectionKey)) + ring.x[slot] + face.getStepX() * 0.5;
         double y = SectionPos.sectionToBlockCoord(SectionPos.y(sectionKey)) + ring.y[slot] + face.getStepY() * 0.5;
         double z = SectionPos.sectionToBlockCoord(SectionPos.z(sectionKey)) + ring.z[slot] + face.getStepZ() * 0.5;
-        return level.getBrightness(LightLayer.BLOCK, BlockPos.containing(x, y, z));
+        BlockPos at = BlockPos.containing(x, y, z);
+        return Math.max(level.getBrightness(LightLayer.BLOCK, at), io.github.nullbrash.seepers.client.light.ClientDynamicLights.level(at));
     }
 
     int lightHash(Section section) {

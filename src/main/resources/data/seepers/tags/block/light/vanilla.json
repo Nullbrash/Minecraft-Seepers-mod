@@ -1,6 +1,7 @@
 {
   "values": [
     "minecraft:respawn_anchor",
-    "minecraft:light"
+    "minecraft:light",
+    "seepers:dynamic_light"
   ]
 }

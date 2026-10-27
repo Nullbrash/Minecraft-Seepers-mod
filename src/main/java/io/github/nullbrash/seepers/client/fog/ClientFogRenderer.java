@@ -96,7 +96,10 @@ public final class ClientFogRenderer {
     /** 0 in darkness, up to haloStrength when the camera stands in full block light. */
     private static double halo(ClientLevel level, Vec3 camera) {
         int black = ServerConfig.get(ServerConfig.BLACK_LIGHT_LEVEL);
-        int light = level.getBrightness(LightLayer.BLOCK, BlockPos.containing(camera));
+        // Dynamic light at the camera itself, unrounded: rounded per block it stepped as the camera moved in it,
+        // and the halo tints the whole screen.
+        double light = Math.max(level.getBrightness(LightLayer.BLOCK, BlockPos.containing(camera)),
+                io.github.nullbrash.seepers.client.light.ClientDynamicLights.value(camera.x, camera.y, camera.z));
         double t = Mth.clamp((light - black) / (double) Math.max(1, 15 - black), 0.0, 1.0);
         return FogSettings.current().haloStrength() * t * t;
     }

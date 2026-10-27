@@ -447,5 +447,18 @@
   "seepers.configuration.collapse.spreadChance.tooltip": "Chance a hanging block comes down when a neighbour beside or above it changes (1 = vanilla: a whole sheet goes).",
   "subtitles.seepers.tremor.rumble": "Deep rumble",
   "seepers.configuration.tremorVolume": "Tremor rumble volume",
-  "seepers.configuration.tremorVolume.tooltip": "Volume of the tremor rumble: 1 = as designed, 0.2 = 80% quieter, 1.2 = 20% louder."
+  "seepers.configuration.tremorVolume.tooltip": "Volume of the tremor rumble: 1 = as designed, 0.2 = 80% quieter, 1.2 = 20% louder.",
+  "seepers.configuration.dynamicLight": "Dynamic light",
+  "seepers.configuration.dynamicLight.tooltip": "Dynamic light: lights carried by players (held items, helmet lamp) and flares, as invisible light blocks.",
+  "seepers.configuration.dynamicLightMinMoveTicks": "Dynamic light: ticks between moves",
+  "seepers.configuration.dynamicLightMinMoveTicks.tooltip": "Dynamic light follows its carrier into the next block at most this often, in ticks (0 = at once).",
+  "seepers.configuration.dynamicLightMaxSources": "Dynamic light: most lights",
+  "seepers.configuration.dynamicLightMaxSources.tooltip": "At most this many dynamic lights in the world at once.",
+  "seepers.configuration.dynamicLightOverlapTicks": "Dynamic light: overlap after a step (ticks)",
+  "seepers.configuration.dynamicLightOverlapTicks.tooltip": "After a step the old dynamic light stays this many ticks: the new one is in before the old goes (no dark blink).",
+  "seepers.configuration.dynamicLightKeepDistance": "Dynamic light: stays within (blocks)",
+  "seepers.configuration.dynamicLightKeepDistance.tooltip": "Dynamic light stays put until its carrier's eyes are this far from it, in blocks (fewer steps).",
+  "block.seepers.dynamic_light": "Dynamic Light",
+  "seepers.configuration.dynamicLightSmooth": "Smooth dynamic light",
+  "seepers.configuration.dynamicLightSmooth.tooltip": "Draw dynamic light smoothly (by exact distance). Off: the server's stepped block light is shown. Takes effect after re-entering the world."
 }

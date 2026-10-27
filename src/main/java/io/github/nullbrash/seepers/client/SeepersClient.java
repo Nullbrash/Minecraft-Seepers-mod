@@ -94,6 +94,7 @@ public final class SeepersClient {
         });
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::register);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.CameraShake::onClientTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.light.ClientDynamicLights::onClientTick);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.CameraShake::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(Diagnostics::onClientTick);
         NeoForge.EVENT_BUS.addListener(ReportCommand::register);

@@ -447,5 +447,18 @@
   "seepers.configuration.collapse.spreadChance.tooltip": "Шанс, что висящий блок сорвётся, когда меняется сосед сбоку или сверху (1 — как в ванили: рушится весь пласт).",
   "subtitles.seepers.tremor.rumble": "Глубинный рокот",
   "seepers.configuration.tremorVolume": "Громкость гула толчков",
-  "seepers.configuration.tremorVolume.tooltip": "Громкость гула толчков: 1 — как задумано, 0,2 — на 80% тише, 1,2 — на 20% громче."
+  "seepers.configuration.tremorVolume.tooltip": "Громкость гула толчков: 1 — как задумано, 0,2 — на 80% тише, 1,2 — на 20% громче.",
+  "seepers.configuration.dynamicLight": "Динамический свет",
+  "seepers.configuration.dynamicLight.tooltip": "Динамический свет: свет, который несут игроки (в руке, фонарь на шлеме), и шашки — невидимыми блоками света.",
+  "seepers.configuration.dynamicLightMinMoveTicks": "Динамический свет: тиков между шагами",
+  "seepers.configuration.dynamicLightMinMoveTicks.tooltip": "Как часто свет догоняет носителя в соседнем блоке, не чаще чем раз в столько тиков (0 — сразу).",
+  "seepers.configuration.dynamicLightMaxSources": "Динамический свет: больше всего огней",
+  "seepers.configuration.dynamicLightMaxSources.tooltip": "Сколько динамических огней может быть в мире одновременно.",
+  "seepers.configuration.dynamicLightOverlapTicks": "Динамический свет: перехлёст после шага (тиков)",
+  "seepers.configuration.dynamicLightOverlapTicks.tooltip": "После шага старый свет держится столько тиков: новый загорается раньше, чем гаснет старый (без тёмного мигания).",
+  "seepers.configuration.dynamicLightKeepDistance": "Динамический свет: держится в пределах (блоков)",
+  "seepers.configuration.dynamicLightKeepDistance.tooltip": "Свет остаётся на месте, пока глаза носителя не отошли от него дальше этого расстояния (меньше шагов).",
+  "block.seepers.dynamic_light": "Динамический свет",
+  "seepers.configuration.dynamicLightSmooth": "Плавный динамический свет",
+  "seepers.configuration.dynamicLightSmooth.tooltip": "Рисовать динамический свет плавно (по точному расстоянию). Выключено — виден ступенчатый свет сервера. Действует после перезахода в мир."
 }

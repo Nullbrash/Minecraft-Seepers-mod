@@ -3,6 +3,7 @@ package io.github.nullbrash.seepers.registry;
 import io.github.nullbrash.seepers.Seepers;
 import io.github.nullbrash.seepers.data.chunk.AnomalyBlocks;
 import io.github.nullbrash.seepers.data.chunk.ChunkData;
+import io.github.nullbrash.seepers.data.chunk.DynamicLightMarks;
 import io.github.nullbrash.seepers.data.chunk.FireSources;
 import io.github.nullbrash.seepers.data.chunk.HeatSources;
 import io.github.nullbrash.seepers.data.chunk.PlayerPlacedBlocks;
@@ -24,6 +25,8 @@ public final class SeepersAttachments {
             chunk("fire_sources", FireSources::new);
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<AnomalyBlocks>> ANOMALY_BLOCKS =
             chunk("anomaly_blocks", AnomalyBlocks::new);
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<DynamicLightMarks>> DYNAMIC_LIGHT_MARKS =
+            chunk("dynamic_light_marks", DynamicLightMarks::new);
     /** Synced to clients: they render heated fog from it. */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<HeatSources>> HEAT_SOURCES =
             ATTACHMENT_TYPES.register("heat_sources", () -> AttachmentType.builder(HeatSources::new)

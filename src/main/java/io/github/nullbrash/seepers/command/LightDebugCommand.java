@@ -17,11 +17,29 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** {@code /seepers debug light [pos]} and {@code /seepers debug relight <radius>}. */
+/**
+ * {@code /seepers debug light [pos]}, {@code /seepers debug light dynamic [<players> <level>]} (dynamic lights; a debug
+ * light on players) and {@code /seepers debug relight <radius>}.
+ */
 final class LightDebugCommand {
     static LiteralArgumentBuilder<CommandSourceStack> light() {
         return Commands.literal("light")
                 .executes(context -> show(context.getSource(), BlockPos.containing(context.getSource().getPosition())))
+                .then(Commands.literal("dynamic")
+                        .executes(context -> {
+                            var lines = io.github.nullbrash.seepers.light.DynamicLights.describe();
+                            context.getSource().sendSuccess(() -> Component.literal("Dynamic lights: " + lines.size()), false);
+                            for (String line : lines) context.getSource().sendSuccess(() -> Component.literal(line), false);
+                            return lines.size();
+                        })
+                        .then(Commands.argument("targets", net.minecraft.commands.arguments.EntityArgument.players())
+                                .then(Commands.argument("level", IntegerArgumentType.integer(0, 15)).executes(context -> {
+                                    int level = IntegerArgumentType.getInteger(context, "level");
+                                    var players = net.minecraft.commands.arguments.EntityArgument.getPlayers(context, "targets");
+                                    for (var player : players) io.github.nullbrash.seepers.light.DynamicLights.setDebug(player, level);
+                                    context.getSource().sendSuccess(() -> Component.literal("Debug light " + level + " on " + players.size() + " player(s)"), false);
+                                    return players.size();
+                                }))))
                 .then(Commands.argument("pos", BlockPosArgument.blockPos())
                         .executes(context -> show(context.getSource(), BlockPosArgument.getLoadedBlockPos(context, "pos"))));
     }

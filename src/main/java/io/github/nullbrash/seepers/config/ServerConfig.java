@@ -23,6 +23,11 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue EXEMPT_SPAWN_CHANCE;
     public static final ModConfigSpec.IntValue LIGHT_UNCATEGORIZED_MAX;
     public static final ModConfigSpec.DoubleValue LIGHT_WATERLOGGED_FACTOR;
+    public static final ModConfigSpec.BooleanValue DYNAMIC_LIGHT_ENABLED;
+    public static final ModConfigSpec.IntValue DYNAMIC_LIGHT_MIN_MOVE_TICKS;
+    public static final ModConfigSpec.IntValue DYNAMIC_LIGHT_MAX_SOURCES;
+    public static final ModConfigSpec.IntValue DYNAMIC_LIGHT_OVERLAP_TICKS;
+    public static final ModConfigSpec.DoubleValue DYNAMIC_LIGHT_KEEP_DISTANCE;
     public static final ModConfigSpec.IntValue LIGHT_WATER_ABSORPTION;
     public static final Map<LightCategory, ModConfigSpec.ConfigValue<List<? extends Integer>>> LIGHT_LEVELS =
             new EnumMap<>(LightCategory.class);
@@ -173,6 +178,16 @@ public final class ServerConfig {
                 .comment("Light levels lost per block of water (vanilla: 1).")
                 .translation("seepers.configuration.waterAbsorption")
                 .defineInRange("waterAbsorption", 3, 1, 15);
+        DYNAMIC_LIGHT_ENABLED = builder.comment("Dynamic light: lights carried by players (held items, helmet lamp) and flares, as invisible light blocks.")
+                .translation("seepers.configuration.dynamicLight").define("dynamicLight", true);
+        DYNAMIC_LIGHT_MIN_MOVE_TICKS = builder.comment("Dynamic light follows its carrier into the next block at most this often, in ticks (0 = at once).")
+                .translation("seepers.configuration.dynamicLightMinMoveTicks").defineInRange("dynamicLightMinMoveTicks", 0, 0, 40);
+        DYNAMIC_LIGHT_MAX_SOURCES = builder.comment("At most this many dynamic lights in the world at once.")
+                .translation("seepers.configuration.dynamicLightMaxSources").defineInRange("dynamicLightMaxSources", 256, 0, 4096);
+        DYNAMIC_LIGHT_OVERLAP_TICKS = builder.comment("After a step the old dynamic light stays this many ticks: the new one is in before the old goes (no dark blink).")
+                .translation("seepers.configuration.dynamicLightOverlapTicks").defineInRange("dynamicLightOverlapTicks", 3, 0, 40);
+        DYNAMIC_LIGHT_KEEP_DISTANCE = builder.comment("Dynamic light stays put until its carrier's eyes are this far from it, in blocks (fewer steps).")
+                .translation("seepers.configuration.dynamicLightKeepDistance").defineInRange("dynamicLightKeepDistance", 1.5, 0.0, 4.0);
         builder.comment("Light level of each tag #seepers:light/<name> as [overworld, nether, end]; candle: [1, 2, 3, 4 candles].")
                 .translation("seepers.configuration.categories").push("categories");
         for (LightCategory category : LightCategory.values()) {

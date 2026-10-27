@@ -68,6 +68,10 @@ public final class ClientPayloadHandlers {
         }
     }
 
+    public static void handleDynamicLight(io.github.nullbrash.seepers.network.payload.DynamicLightPayload payload, IPayloadContext context) {
+        io.github.nullbrash.seepers.client.light.ClientDynamicLights.set(payload.entityId(), payload.level());
+    }
+
     public static void handleServerLoad(ServerLoadPayload payload, IPayloadContext context) {
         AutoRenderDistance.onServerLoad(payload.tps());
     }

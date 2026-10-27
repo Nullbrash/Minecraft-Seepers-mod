@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "seepers:block/dynamic_light" }
+  }
+}

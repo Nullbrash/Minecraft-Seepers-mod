@@ -98,7 +98,8 @@ public final class HandTouch {
         attackWasDown = minecraft.options.keyAttack.isDown();
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.level == null || usedThisSession || player.isSpectator()) return;
-        int light = minecraft.level.getBrightness(LightLayer.BLOCK, BlockPos.containing(player.getEyePosition()));
+        BlockPos eye = BlockPos.containing(player.getEyePosition());
+        int light = Math.max(minecraft.level.getBrightness(LightLayer.BLOCK, eye), io.github.nullbrash.seepers.client.light.ClientDynamicLights.level(eye));
         darkTicks = light <= DARK_LIGHT ? darkTicks + 1 : 0;
         if (darkTicks >= HINT_DELAY_TICKS && (darkTicks - HINT_DELAY_TICKS) % HINT_REPEAT_TICKS == 0) {
             minecraft.gui.setOverlayMessage(hint(minecraft.options.keyAttack), false);

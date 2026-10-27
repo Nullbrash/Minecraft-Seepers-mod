@@ -9,6 +9,7 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue DIAGNOSTICS;
     public static final ModConfigSpec.DoubleValue CAMERA_SHAKE;
     public static final ModConfigSpec.DoubleValue TREMOR_VOLUME;
+    public static final ModConfigSpec.BooleanValue DYNAMIC_LIGHT_SMOOTH;
     public static final ModConfigSpec.IntValue FOG_CELLS_PER_TICK;
     public static final ModConfigSpec.DoubleValue POINT_SIZE;
     public static final ModConfigSpec.DoubleValue POINT_MIN_PIXELS;
@@ -93,6 +94,8 @@ public final class ClientConfig {
                 .translation("seepers.configuration.cameraShake").defineInRange("cameraShake", 1.0, 0.0, 2.0);
         TREMOR_VOLUME = builder.comment("Volume of the tremor rumble: 1 = as designed, 0.2 = 80% quieter, 1.2 = 20% louder.")
                 .translation("seepers.configuration.tremorVolume").defineInRange("tremorVolume", 1.0, 0.2, 1.2);
+        DYNAMIC_LIGHT_SMOOTH = builder.comment("Draw dynamic light smoothly (by exact distance). Off: the server's stepped block light is shown. Takes effect after re-entering the world.")
+                .translation("seepers.configuration.dynamicLightSmooth").define("dynamicLightSmooth", true);
 
         builder.comment("Debugging and diagnostics").translation("seepers.configuration.debug").push("debug");
         LOG_NETWORK = builder

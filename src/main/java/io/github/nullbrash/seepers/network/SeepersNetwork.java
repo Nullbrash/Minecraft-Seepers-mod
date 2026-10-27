@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class SeepersNetwork {
     /** Bump on any incompatible payload change: NeoForge refuses connections with a different version. */
-    public static final String PROTOCOL_VERSION = "12";
+    public static final String PROTOCOL_VERSION = "13";
 
     public static void register(RegisterPayloadHandlersEvent event) {
         // Handlers run on the main thread (registrar default).
@@ -52,6 +52,9 @@ public final class SeepersNetwork {
         registrar.playToClient(io.github.nullbrash.seepers.network.payload.TremorRumblePayload.TYPE,
                 io.github.nullbrash.seepers.network.payload.TremorRumblePayload.STREAM_CODEC,
                 (payload, context) -> ClientPayloadHandlers.handleTremorRumble(payload, context));
+        registrar.playToClient(io.github.nullbrash.seepers.network.payload.DynamicLightPayload.TYPE,
+                io.github.nullbrash.seepers.network.payload.DynamicLightPayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandlers.handleDynamicLight(payload, context));
         registrar.playToServer(FogProbeReplyPayload.TYPE, FogProbeReplyPayload.STREAM_CODEC, FogProbeTracker::handleReply);
     }
 

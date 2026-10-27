@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "io.github.nullbrash.seepers.mixin.sodium",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "SodiumLightPipelineMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

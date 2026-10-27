@@ -18,6 +18,9 @@ ${mod_description}
 # Client-only mixins go to the "client" list (package ...seepers.mixin.client).
 [[mixins]]
 config="${mod_id}.mixins.json"
+# Optional Sodium integration (smooth dynamic light in its light pipelines): skipped when Sodium is absent.
+[[mixins]]
+config="${mod_id}.sodium.mixins.json"
 
 [[dependencies.${mod_id}]]
     modId="neoforge"

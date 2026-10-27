@@ -23,7 +23,10 @@ public abstract class EntityRenderDispatcherMixin {
         if (!original || entity == Minecraft.getInstance().getCameraEntity()) return original;
         if (entity.isOnFire() || entity.isCurrentlyGlowing()) return true;
         int black = ServerConfig.get(ServerConfig.BLACK_LIGHT_LEVEL);
-        return entity.level().getBrightness(LightLayer.BLOCK, entity.blockPosition()) > black
-                || entity.level().getBrightness(LightLayer.BLOCK, entity.blockPosition().above()) > black;
+        return light(entity, entity.blockPosition()) > black || light(entity, entity.blockPosition().above()) > black;
+    }
+
+    private static int light(Entity entity, net.minecraft.core.BlockPos pos) {
+        return Math.max(entity.level().getBrightness(LightLayer.BLOCK, pos), io.github.nullbrash.seepers.client.light.ClientDynamicLights.level(pos));
     }
 }
