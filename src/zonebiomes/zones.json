@@ -1,0 +1,54 @@
+{
+  "_comment": "Distorted biome twins, generated at build time from the game's overworld biomes (gradle/zone-biomes.gradle). Colours: hue shift in degrees or invert; particle and sounds are vanilla ids.",
+  "zones": [
+    {
+      "name": "seams",
+      "hue_shift": 25,
+      "invert": false,
+      "particle": "minecraft:mycelium",
+      "particle_probability": 0.002,
+      "additions_sound": "minecraft:ambient.cave",
+      "additions_chance": 0.0007,
+      "mood_delay": 5000,
+      "ambient_loop": null
+    },
+    {
+      "name": "repeats",
+      "hue_shift": 140,
+      "invert": false,
+      "particle": "minecraft:white_ash",
+      "particle_probability": 0.01,
+      "additions_sound": "minecraft:ambient.basalt_deltas.additions",
+      "additions_chance": 0.0015,
+      "mood_delay": 4000,
+      "ambient_loop": null
+    },
+    {
+      "name": "far_lands",
+      "hue_shift": 0,
+      "invert": true,
+      "particle": "minecraft:ash",
+      "particle_probability": 0.03,
+      "additions_sound": "minecraft:ambient.soul_sand_valley.additions",
+      "additions_chance": 0.003,
+      "mood_delay": 3000,
+      "ambient_loop": "minecraft:ambient.basalt_deltas.loop"
+    }
+  ],
+  "specials": [
+    {
+      "name": "broken_gravity",
+      "base": "plains",
+      "grass_color": 8355641,
+      "foliage_color": 7369553,
+      "water_color": 6116432,
+      "water_fog_color": 2302755,
+      "particle": "minecraft:falling_dust",
+      "particle_block": "minecraft:dirt",
+      "particle_probability": 0.02,
+      "additions_sound": "minecraft:block.gravel.fall",
+      "additions_chance": 0.002,
+      "mood_delay": 4000
+    }
+  ]
+}

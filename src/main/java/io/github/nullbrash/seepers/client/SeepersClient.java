@@ -30,6 +30,7 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
+import io.github.nullbrash.seepers.world.BrokenNames;
 import io.github.nullbrash.seepers.world.Distortion;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
@@ -61,6 +62,28 @@ public final class SeepersClient {
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onClientTick);
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onDebugText);
+        // Distorted twins show a broken vanilla-looking name in F3 (CLAUDE.md 4.8); the real id: /seepers debug zone.
+        NeoForge.EVENT_BUS.addListener((CustomizeGuiOverlayEvent.DebugText event) -> {
+            var left = event.getLeft();
+            for (int i = 0; i < left.size(); i++) {
+                String line = left.get(i);
+                if (!line.startsWith("Biome: seepers:")) continue;
+                String id = line.substring("Biome: seepers:".length());
+                int slash = id.indexOf('/');
+                if (slash > 0) {
+                    left.set(i, "Biome: minecraft:" + BrokenNames.of(id.substring(0, slash), id.substring(slash + 1)));
+                } else if (net.minecraft.client.Minecraft.getInstance().player != null) {
+                    // Special biomes (broken gravity) break in the style of the zone they lie in.
+                    var player = net.minecraft.client.Minecraft.getInstance().player;
+                    String zone = switch (Distortion.zone(Distortion.level(player.getX(), player.getZ()))) {
+                        case 1 -> "seams";
+                        case 2 -> "repeats";
+                        default -> "far_lands";
+                    };
+                    left.set(i, "Biome: minecraft:" + BrokenNames.of(zone, id));
+                }
+            }
+        });
         NeoForge.EVENT_BUS.addListener((CustomizeGuiOverlayEvent.DebugText event) -> {
             var player = net.minecraft.client.Minecraft.getInstance().player;
             if (player == null) return;

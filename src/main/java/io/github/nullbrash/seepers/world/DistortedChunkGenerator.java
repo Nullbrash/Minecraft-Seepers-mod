@@ -9,7 +9,15 @@ import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 import java.util.WeakHashMap;
+import io.github.nullbrash.seepers.Seepers;
 import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.levelgen.blending.Blender;
+import net.minecraft.world.level.levelgen.synth.SimplexNoise;
+import java.util.concurrent.CompletableFuture;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import java.util.Set;
@@ -70,6 +78,8 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
     private final Map<RandomState, Islands> islandFields = Collections.synchronizedMap(new WeakHashMap<>());
     private final Map<RandomState, LostPockets> pocketFields = Collections.synchronizedMap(new WeakHashMap<>());
     private final Map<RandomState, FarLands> farLandFields = Collections.synchronizedMap(new WeakHashMap<>());
+    private final Map<RandomState, SimplexNoise> undercutNoises = Collections.synchronizedMap(new WeakHashMap<>());
+    private static final ResourceKey<Biome> BROKEN_GRAVITY = ResourceKey.create(Registries.BIOME, Seepers.id("broken_gravity"));
 
     public DistortedChunkGenerator(BiomeSource biomeSource, Holder<NoiseGeneratorSettings> settings, DensityFunction distortion,
                                    Optional<DensityFunction> warp, Islands.Settings islands, LostPockets.Settings pockets,
@@ -143,6 +153,12 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
     }
 
     @Override
+    public CompletableFuture<ChunkAccess> createBiomes(RandomState random, Blender blender, StructureManager structureManager, ChunkAccess chunk) {
+        if (getBiomeSource() instanceof ZonedBiomeSource zoned) zoned.bind(random);
+        return super.createBiomes(random, blender, structureManager, chunk);
+    }
+
+    @Override
     public void buildSurface(WorldGenRegion level, StructureManager structureManager, RandomState random, ChunkAccess chunk) {
         super.buildSurface(level, structureManager, random, chunk);
         Islands field = islands(random);
@@ -159,10 +175,12 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
                 int wz = chunk.getPos().getMinBlockZ() + z;
                 Islands.Column shape = field.column(wx, wz, cache);
                 FarLands.Column farShape = far == null ? FarLands.Column.NONE : far.column(wx, wz);
-                if (shape.offset() == 0 && shape.lift() == 0 && farShape == FarLands.Column.NONE) continue;
+                boolean loose = isBrokenGravity(chunk, x, z, min);
+                if (shape.offset() == 0 && shape.lift() == 0 && farShape == FarLands.Column.NONE && !loose) continue;
                 for (int y = min; y < max; y++) column[y - min] = get(chunk, x, y, z);
                 transform(column, moved, shape);
                 if (far != null) far.apply(moved, min, farShape);
+                if (loose) undercut(moved, wx, wz, random);
                 for (int y = min; y < max; y++) {
                     if (moved[y - min] != column[y - min]) set(chunk, x, y, z, moved[y - min]);
                 }
@@ -172,6 +190,33 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
         if (changed) {
             Heightmap.primeHeightmaps(chunk, EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG, Heightmap.Types.WORLD_SURFACE_WG));
         }
+    }
+
+    private boolean isBrokenGravity(ChunkAccess chunk, int x, int z, int min) {
+        if (!(getBiomeSource() instanceof ZonedBiomeSource)) return false;
+        int top = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z);
+        return chunk.getNoiseBiome(QuartPos.fromBlock(x), QuartPos.fromBlock(Math.max(min, top)), QuartPos.fromBlock(z)).is(BROKEN_GRAVITY);
+    }
+
+    /**
+     * Broken gravity (CLAUDE.md 4.10): the top crust is undercut in places, so slabs of loose ground hang over hollows
+     * until someone disturbs them (falling itself: milestone 8). Columns where the noise is low stay as pillars.
+     */
+    private void undercut(BlockState[] column, int x, int z, RandomState random) {
+        int top = column.length - 1;
+        while (top >= 0 && column[top].isAir()) top--;
+        if (top < 8 || !column[top].getFluidState().isEmpty()) return;
+        double n = undercutNoise(random).getValue(x / 9.0, z / 9.0);
+        if (n < -0.15) return;
+        int crust = 3;
+        int hollow = 1 + (int) Math.round(3 * (n + 0.15) / 1.15);
+        for (int i = top - crust; i > top - crust - hollow && i >= 0; i--) {
+            if (column[i].getFluidState().isEmpty()) column[i] = AIR;
+        }
+    }
+
+    private SimplexNoise undercutNoise(RandomState random) {
+        return undercutNoises.computeIfAbsent(random, r -> new SimplexNoise(r.getOrCreateRandomFactory(Seepers.id("undercut")).at(0, 0, 0)));
     }
 
     /**

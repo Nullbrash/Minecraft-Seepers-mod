@@ -153,6 +153,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
     into "build/generated/sources/modMetadata"
 }
 sourceSets.main.resources.srcDir generateModMetadata
+apply from: 'gradle/zone-biomes.gradle'
 neoForge.ideSyncTask generateModMetadata
 
 // Copies the built jar into the Prism test instance (path from the user-level property seepers.instanceDir).

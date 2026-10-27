@@ -58,6 +58,7 @@ public final class Seepers {
         SeepersComponents.COMPONENTS.register(modBus);
         SeepersWorldgen.DENSITY_FUNCTION_TYPES.register(modBus);
         SeepersWorldgen.CHUNK_GENERATORS.register(modBus);
+        SeepersWorldgen.BIOME_SOURCES.register(modBus);
         NeoForge.EVENT_BUS.addListener(WorldShape::onServerStarting);
         NeoForge.EVENT_BUS.addListener(WorldShape::onLoggedIn);
         NeoForge.EVENT_BUS.addListener(WorldShape::onCreateSpawn);

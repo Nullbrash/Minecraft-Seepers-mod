@@ -5,6 +5,8 @@ import io.github.nullbrash.seepers.Seepers;
 import io.github.nullbrash.seepers.world.CoordinateWarp;
 import io.github.nullbrash.seepers.world.DistortedChunkGenerator;
 import io.github.nullbrash.seepers.world.DistortionFunction;
+import io.github.nullbrash.seepers.world.ZonedBiomeSource;
+import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.DensityFunction;
@@ -27,6 +29,12 @@ public final class SeepersWorldgen {
 
     public static final DeferredHolder<MapCodec<? extends ChunkGenerator>, MapCodec<DistortedChunkGenerator>> DISTORTED =
             CHUNK_GENERATORS.register("distorted", () -> DistortedChunkGenerator.CODEC);
+
+    public static final DeferredRegister<MapCodec<? extends BiomeSource>> BIOME_SOURCES =
+            DeferredRegister.create(Registries.BIOME_SOURCE, Seepers.MOD_ID);
+
+    public static final DeferredHolder<MapCodec<? extends BiomeSource>, MapCodec<ZonedBiomeSource>> ZONED =
+            BIOME_SOURCES.register("zoned", () -> ZonedBiomeSource.CODEC);
 
     private SeepersWorldgen() {}
 }

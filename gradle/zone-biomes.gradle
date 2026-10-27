@@ -1,0 +1,125 @@
+// Distorted biome twins (CLAUDE.md 4.8): built from the game's own overworld biomes at build time, so no copy of
+// vanilla data is kept in the repository. Settings: src/zonebiomes/zones.json. Output is a generated resource dir.
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.awt.Color
+import java.util.zip.ZipFile
+import javax.imageio.ImageIO
+
+def zoneBiomesOut = layout.buildDirectory.dir('generated/zoneBiomes')
+
+def generateZoneBiomes = tasks.register('generateZoneBiomes') {
+    dependsOn 'createMinecraftArtifacts'
+    def vanillaJar = layout.buildDirectory.file("moddev/artifacts/neoforge-${neo_version}-client-extra-aka-minecraft-resources.jar")
+    def neoJar = layout.buildDirectory.file("moddev/artifacts/neoforge-${neo_version}.jar")
+    def spec = file('src/zonebiomes/zones.json')
+    inputs.file spec
+    inputs.file vanillaJar
+    inputs.file neoJar
+    outputs.dir zoneBiomesOut
+    doLast {
+        def out = zoneBiomesOut.get().asFile
+        out.deleteDir()
+        def zones = new JsonSlurper().parse(spec).zones
+        def vanilla = new ZipFile(vanillaJar.get().asFile)
+        def neo = new ZipFile(neoJar.get().asFile)
+        def read = { ZipFile zip, String path -> def e = zip.getEntry(path); e == null ? null : new JsonSlurper().parse(zip.getInputStream(e)) }
+
+        // Biomes of the overworld: the vanilla tag, nested tags resolved.
+        Set<String> overworld = new TreeSet<>()
+        def resolve
+        resolve = { String tag ->
+            def (ns, path) = tag.split(':')
+            def json = read(vanilla, "data/${ns}/tags/worldgen/biome/${path}.json")
+            json?.values?.each { v ->
+                String id = v instanceof Map ? v.id : v
+                if (id.startsWith('#')) resolve(id.substring(1)) else overworld << id
+            }
+        }
+        resolve('minecraft:is_overworld')
+
+        def grass = ImageIO.read(vanilla.getInputStream(vanilla.getEntry('assets/minecraft/textures/colormap/grass.png')))
+        def foliage = ImageIO.read(vanilla.getInputStream(vanilla.getEntry('assets/minecraft/textures/colormap/foliage.png')))
+        // Same lookup as vanilla GrassColor/FoliageColor.
+        def colormap = { img, temperature, rain ->
+            double t = Math.max(0d, Math.min(1d, temperature as double))
+            double d = Math.max(0d, Math.min(1d, rain as double)) * t
+            int i = (int) ((1 - t) * 255)
+            int j = (int) ((1 - d) * 255)
+            img.getRGB(i, j) & 0xFFFFFF
+        }
+        def broken = { int rgb, zone ->
+            if (zone.invert) return 0xFFFFFF - rgb
+            float[] hsb = Color.RGBtoHSB((rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255, null)
+            (Color.HSBtoRGB((float) (hsb[0] + zone.hue_shift / 360.0), hsb[1], hsb[2]) & 0xFFFFFF)
+        }
+
+        overworld.each { String id ->
+            def path = id.split(':')[1]
+            def biome = read(vanilla, "data/minecraft/worldgen/biome/${path}.json")
+            if (biome == null) return
+            zones.each { zone ->
+                def twin = new JsonSlurper().parseText(JsonOutput.toJson(biome))
+                def fx = twin.effects
+                int grassColor = fx.grass_color ?: colormap(grass, biome.temperature, biome.downfall)
+                int foliageColor = fx.foliage_color ?: colormap(foliage, biome.temperature, biome.downfall)
+                fx.grass_color = broken(grassColor, zone)
+                fx.foliage_color = broken(foliageColor, zone)
+                fx.water_color = broken(fx.water_color as int, zone)
+                fx.water_fog_color = broken(fx.water_fog_color as int, zone)
+                fx.remove('grass_color_modifier') // swamp/dark forest would override the broken colour
+                fx.particle = [options: [type: zone.particle], probability: zone.particle_probability]
+                fx.additions_sound = [sound: zone.additions_sound, tick_chance: zone.additions_chance]
+                if (fx.mood_sound) fx.mood_sound.tick_delay = zone.mood_delay
+                if (zone.ambient_loop) fx.ambient_sound = zone.ambient_loop
+                def file = new File(out, "data/seepers/worldgen/biome/${zone.name}/${path}.json")
+                file.parentFile.mkdirs()
+                file.text = JsonOutput.prettyPrint(JsonOutput.toJson(twin))
+            }
+        }
+
+        // Special biomes (broken gravity …): built from a base biome with their own colours and air.
+        def specials = new JsonSlurper().parse(spec).specials ?: []
+        specials.each { special ->
+            def biome = read(vanilla, "data/minecraft/worldgen/biome/${special.base}.json")
+            def fx = biome.effects
+            fx.grass_color = special.grass_color
+            fx.foliage_color = special.foliage_color
+            fx.water_color = special.water_color
+            fx.water_fog_color = special.water_fog_color
+            fx.remove('grass_color_modifier')
+            def options = [type: special.particle]
+            if (special.particle_block) options.block_state = [Name: special.particle_block]
+            fx.particle = [options: options, probability: special.particle_probability]
+            fx.additions_sound = [sound: special.additions_sound, tick_chance: special.additions_chance]
+            if (fx.mood_sound) fx.mood_sound.tick_delay = special.mood_delay
+            def file = new File(out, "data/seepers/worldgen/biome/${special.name}.json")
+            file.parentFile.mkdirs()
+            file.text = JsonOutput.prettyPrint(JsonOutput.toJson(biome))
+        }
+
+        // Twins join every biome tag their original is in (villages, spawns, mod compat tags …).
+        [vanilla, neo].each { ZipFile zip ->
+            zip.entries().findAll { !it.directory && it.name ==~ /data\/[^\/]+\/tags\/worldgen\/biome\/.+\.json/ }.each { entry ->
+                def json = new JsonSlurper().parse(zip.getInputStream(entry))
+                def added = []
+                json.values.each { v ->
+                    String id = v instanceof Map ? v.id : v
+                    if (!id.startsWith('#') && overworld.contains(id)) {
+                        zones.each { zone -> added << "seepers:${zone.name}/${id.split(':')[1]}".toString() }
+                    }
+                    specials.findAll { "minecraft:${it.base}".toString() == id }.each { added << "seepers:${it.name}".toString() }
+                }
+                if (added) {
+                    def file = new File(out, entry.name)
+                    file.parentFile.mkdirs()
+                    file.text = JsonOutput.prettyPrint(JsonOutput.toJson([replace: false, values: added]))
+                }
+            }
+        }
+        vanilla.close(); neo.close()
+        logger.lifecycle("Zone biomes: ${overworld.size()} overworld biomes x ${zones.size()} zones")
+    }
+}
+
+sourceSets.main.resources.srcDir generateZoneBiomes
