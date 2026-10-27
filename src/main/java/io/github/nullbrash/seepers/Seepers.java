@@ -59,6 +59,7 @@ public final class Seepers {
         SeepersBlocks.BLOCKS.register(modBus);
         SeepersItems.ITEMS.register(modBus);
         SeepersComponents.COMPONENTS.register(modBus);
+        io.github.nullbrash.seepers.registry.SeepersSounds.SOUNDS.register(modBus);
         SeepersWorldgen.DENSITY_FUNCTION_TYPES.register(modBus);
         SeepersWorldgen.CHUNK_GENERATORS.register(modBus);
         SeepersWorldgen.BIOME_SOURCES.register(modBus);
@@ -95,6 +96,10 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener(ServerLoad::onServerTick);
         NeoForge.EVENT_BUS.addListener(AnomalyRegrowth::onServerTick);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.collapse.Collapses::onServerTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.collapse.Collapses::onCaneCeilingTap);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.collapse.Tremors::onServerTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.collapse.Tremors::onLoggedIn);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.collapse.Tremors::onLoggedOut);
         NeoForge.EVENT_BUS.addListener(AnomalyRegrowth::onChunkLoad);
         NeoForge.EVENT_BUS.addListener(AnomalyRegrowth::onChunkUnload);
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {

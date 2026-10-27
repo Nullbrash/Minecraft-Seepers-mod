@@ -1,0 +1,10 @@
+{
+  "tremor.rumble": {
+    "subtitle": "subtitles.seepers.tremor.rumble",
+    "sounds": [
+      {
+        "name": "seepers:tremor/rumble"
+      }
+    ]
+  }
+}

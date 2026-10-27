@@ -2,6 +2,9 @@ package io.github.nullbrash.seepers.mixin;
 
 import io.github.nullbrash.seepers.collapse.Collapses;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.LevelAccessor;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.item.FallingBlockEntity;
@@ -15,7 +18,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Collapses (CLAUDE.md 4.10): there is no event for a block starting to fall, so the scheduled tick that drops it
- * asks props and the warning first; placement marks blocks that fall at once; the base falling() hook (blocks that
+ * asks props and the warning first; a change beside or above wakes it only by chance (updateShape); placement marks
+ * blocks that fall at once; the base falling() hook (blocks that
  * do not override it — sand, gravel, concrete powder) gives the falling block its damage.
  */
 @Mixin(FallingBlock.class)
@@ -23,6 +27,13 @@ public abstract class FallingBlockMixin {
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     private void seepers$collapse(BlockState state, ServerLevel level, BlockPos pos, RandomSource random, CallbackInfo ci) {
         if (Collapses.onFallTick(state, level, pos)) ci.cancel();
+    }
+
+    /** A neighbour beside or above changing wakes a hanging block only sometimes: collapses spread in patches. */
+    @Inject(method = "updateShape", at = @At("HEAD"), cancellable = true)
+    private void seepers$spread(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos pos,
+                                BlockPos facingPos, CallbackInfoReturnable<BlockState> cir) {
+        if (facing != Direction.DOWN && level instanceof ServerLevel server && !Collapses.spreads(server, pos)) cir.setReturnValue(state);
     }
 
     @Inject(method = "onPlace", at = @At("HEAD"))

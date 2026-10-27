@@ -104,6 +104,20 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue COLLAPSE_DAMAGE_PER_BLOCK;
     public static final ModConfigSpec.IntValue COLLAPSE_DAMAGE_MAX;
     public static final ModConfigSpec.IntValue COLLAPSE_MAX_FALLING_PER_CHUNK;
+    public static final ModConfigSpec.DoubleValue COLLAPSE_SPREAD_CHANCE;
+    public static final ModConfigSpec.BooleanValue TREMOR_ENABLED;
+    public static final ModConfigSpec.DoubleValue TREMOR_INTERVAL_NEAR_MIN;
+    public static final ModConfigSpec.DoubleValue TREMOR_INTERVAL_NEAR_MAX;
+    public static final ModConfigSpec.DoubleValue TREMOR_INTERVAL_FAR_MIN;
+    public static final ModConfigSpec.DoubleValue TREMOR_INTERVAL_FAR_MAX;
+    public static final ModConfigSpec.IntValue TREMOR_RADIUS_NEAR;
+    public static final ModConfigSpec.IntValue TREMOR_RADIUS_FAR;
+    public static final ModConfigSpec.DoubleValue TREMOR_SHARE_NEAR;
+    public static final ModConfigSpec.DoubleValue TREMOR_SHARE_FAR;
+    public static final ModConfigSpec.IntValue TREMOR_SHAKE_MIN_TICKS;
+    public static final ModConfigSpec.IntValue TREMOR_SHAKE_MAX_TICKS;
+    public static final ModConfigSpec.DoubleValue CANE_NEAR_SHARE;
+    public static final ModConfigSpec.DoubleValue CANE_DIRECT_SHARE;
     public static final Map<HeatCategory, ModConfigSpec.DoubleValue> HEAT_STRENGTH = new EnumMap<>(HeatCategory.class);
     public static final Map<HeatCategory, ModConfigSpec.DoubleValue> HEAT_RADIUS = new EnumMap<>(HeatCategory.class);
 
@@ -348,6 +362,34 @@ public final class ServerConfig {
                 .translation("seepers.configuration.collapse.damageMax").defineInRange("damageMax", 6, 0, 40);
         COLLAPSE_MAX_FALLING_PER_CHUNK = builder.comment("Falling blocks at once per chunk; the rest is set straight where it lands.")
                 .translation("seepers.configuration.collapse.maxFallingPerChunk").defineInRange("maxFallingPerChunk", 32, 0, 1024);
+        COLLAPSE_SPREAD_CHANCE = builder.comment("Chance a hanging block comes down when a neighbour beside or above it changes (1 = vanilla: a whole sheet goes).")
+                .translation("seepers.configuration.collapse.spreadChance").defineInRange("spreadChance", 0.25, 0.0, 1.0);
+        TREMOR_ENABLED = builder.comment("Tremors now and then around players shake hanging blocks loose.")
+                .translation("seepers.configuration.collapse.tremorEnabled").define("tremorEnabled", true);
+        TREMOR_INTERVAL_NEAR_MIN = builder.comment("Minutes between tremors near spawn (zone 0): shortest.")
+                .translation("seepers.configuration.collapse.tremorIntervalNearMin").defineInRange("tremorIntervalNearMin", 20.0, 0.1, 1440.0);
+        TREMOR_INTERVAL_NEAR_MAX = builder.comment("Minutes between tremors near spawn: longest.")
+                .translation("seepers.configuration.collapse.tremorIntervalNearMax").defineInRange("tremorIntervalNearMax", 30.0, 0.1, 1440.0);
+        TREMOR_INTERVAL_FAR_MIN = builder.comment("Minutes between tremors from zone 3 on: shortest (linear in distortion between).")
+                .translation("seepers.configuration.collapse.tremorIntervalFarMin").defineInRange("tremorIntervalFarMin", 3.0, 0.1, 1440.0);
+        TREMOR_INTERVAL_FAR_MAX = builder.comment("Minutes between tremors from zone 3 on: longest.")
+                .translation("seepers.configuration.collapse.tremorIntervalFarMax").defineInRange("tremorIntervalFarMax", 5.0, 0.1, 1440.0);
+        TREMOR_RADIUS_NEAR = builder.comment("Blocks around the player a tremor reaches near spawn.")
+                .translation("seepers.configuration.collapse.tremorRadiusNear").defineInRange("tremorRadiusNear", 16, 1, 64);
+        TREMOR_RADIUS_FAR = builder.comment("Blocks around the player a tremor reaches from zone 3 on.")
+                .translation("seepers.configuration.collapse.tremorRadiusFar").defineInRange("tremorRadiusFar", 32, 1, 64);
+        TREMOR_SHARE_NEAR = builder.comment("Share of hanging blocks a tremor shakes loose near spawn.")
+                .translation("seepers.configuration.collapse.tremorShareNear").defineInRange("tremorShareNear", 0.05, 0.0, 1.0);
+        TREMOR_SHARE_FAR = builder.comment("Share of hanging blocks a tremor shakes loose from zone 3 on.")
+                .translation("seepers.configuration.collapse.tremorShareFar").defineInRange("tremorShareFar", 0.30, 0.0, 1.0);
+        TREMOR_SHAKE_MIN_TICKS = builder.comment("The shake itself: shortest, in ticks.")
+                .translation("seepers.configuration.collapse.tremorShakeMinTicks").defineInRange("tremorShakeMinTicks", 40, 1, 1200);
+        TREMOR_SHAKE_MAX_TICKS = builder.comment("The shake itself: longest, in ticks.")
+                .translation("seepers.configuration.collapse.tremorShakeMaxTicks").defineInRange("tremorShakeMaxTicks", 80, 1, 1200);
+        CANE_NEAR_SHARE = builder.comment("Chance a cane tap on rock brings down the hanging blocks within 2 of it.")
+                .translation("seepers.configuration.collapse.caneNearShare").defineInRange("caneNearShare", 0.10, 0.0, 1.0);
+        CANE_DIRECT_SHARE = builder.comment("Chance a cane tap on a hanging block itself brings it and its neighbours down.")
+                .translation("seepers.configuration.collapse.caneDirectShare").defineInRange("caneDirectShare", 0.50, 0.0, 1.0);
         builder.pop();
 
         SPEC = builder.build();

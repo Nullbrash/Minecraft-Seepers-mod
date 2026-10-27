@@ -1,7 +1,9 @@
 package io.github.nullbrash.seepers.client.points;
 
 import com.mojang.blaze3d.vertex.VertexBuffer;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import java.util.EnumMap;
@@ -13,6 +15,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -118,6 +122,15 @@ public final class PointCloud {
      * replaces the old point.
      */
     public void add(PointSource source, double x, double y, double z, Direction face, int material) {
+        add(source, x, y, z, face, material, -1);
+    }
+
+    /**
+     * As {@link #add(PointSource, double, double, double, Direction, int)}, for a coarse touch that knows the precise
+     * material but shows less: a point already showing {@code precise} keeps it — walking upright over ground felt
+     * while crouching must not blur what was learned (and a changed block no longer matches, so it is redrawn).
+     */
+    public void add(PointSource source, double x, double y, double z, Direction face, int material, int precise) {
         Ring ring = ring(source);
         if (ring == null) return;
         long sectionKey = SectionPos.asLong(Mth.floor(x) >> 4, Mth.floor(y) >> 4, Mth.floor(z) >> 4);
@@ -134,6 +147,7 @@ public final class PointCloud {
         float now = now(0);
         if (existing != -1) {
             Ring owner = ringOf(existing);
+            if (precise >= 0 && owner.material[existing & 0xFFFFFF] == precise) material = precise;
             if (owner == ring && now - ring.born[existing & 0xFFFFFF] < REFRESH_MIN_AGE_SECONDS) return;
             section.points.remove(local); // its slot turns dead now, before any eviction below
             owner.live--;
@@ -221,8 +235,43 @@ public final class PointCloud {
             Section section = sections.get(lightQueue.dequeueLong());
             if (section == null || section.dirty) continue;
             budget -= section.points.size();
-            if (lightHash(section) != section.lightHash) section.dirty = true;
+            if (dropBuried(section) || lightHash(section) != section.lightHash) section.dirty = true;
         }
+    }
+
+    /**
+     * Points on a block face that another block now covers whole (sand fell on the felt floor) go before their time:
+     * they share the plane with the new block's face and would flicker through it. Only points lying on the block
+     * boundary — the top of a slab inside its block is never covered by the block above.
+     */
+    private boolean dropBuried(Section section) {
+        IntArrayList buried = null;
+        double ox = SectionPos.sectionToBlockCoord(SectionPos.x(section.key));
+        double oy = SectionPos.sectionToBlockCoord(SectionPos.y(section.key));
+        double oz = SectionPos.sectionToBlockCoord(SectionPos.z(section.key));
+        BlockPos.MutableBlockPos front = new BlockPos.MutableBlockPos();
+        for (Int2IntMap.Entry entry : section.points.int2IntEntrySet()) {
+            int packed = entry.getIntValue();
+            Ring ring = ringOf(packed);
+            int slot = packed & 0xFFFFFF;
+            Direction face = Direction.values()[ring.face[slot]];
+            double x = ox + ring.x[slot];
+            double y = oy + ring.y[slot];
+            double z = oz + ring.z[slot];
+            double along = face.getAxis().choose(x, y, z);
+            if (Math.abs(along - Math.rint(along)) > 1.0E-3) continue;
+            front.set(Mth.floor(x + face.getStepX() * 0.5), Mth.floor(y + face.getStepY() * 0.5), Mth.floor(z + face.getStepZ() * 0.5));
+            BlockState state = level.getBlockState(front);
+            if (!Block.isFaceFull(state.getCollisionShape(level, front), face.getOpposite())) continue;
+            if (buried == null) buried = new IntArrayList();
+            buried.add(entry.getIntKey());
+        }
+        if (buried == null) return false;
+        for (int i = 0; i < buried.size(); i++) {
+            int packed = section.points.remove(buried.getInt(i));
+            ringOf(packed).live--;
+        }
+        return true;
     }
 
     private @Nullable Ring ring(PointSource source) {

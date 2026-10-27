@@ -270,7 +270,7 @@ public final class ClientTouch {
             double t = Mth.lerp(i / (double) (EDGE_POINTS - 1), bounds.min(along), bounds.max(along));
             double x = pos.getX() + (side.getAxis() == Direction.Axis.X ? out : t);
             double z = pos.getZ() + (side.getAxis() == Direction.Axis.Z ? out : t);
-            cloud.add(PointSource.TOUCH, x, top, z, side, material);
+            cloud.add(PointSource.TOUCH, x, top, z, side, material, felt.ordinal());
         }
     }
 
@@ -319,7 +319,7 @@ public final class ClientTouch {
                 local[axis.ordinal()] = plane;
                 local[uAxis.ordinal()] = u;
                 local[vAxis.ordinal()] = v;
-                cloud.add(PointSource.TOUCH, pos.getX() + local[0], pos.getY() + local[1], pos.getZ() + local[2], face, material);
+                cloud.add(PointSource.TOUCH, pos.getX() + local[0], pos.getY() + local[1], pos.getZ() + local[2], face, material, felt.ordinal());
             }
         }
     }

@@ -33,10 +33,12 @@ public final class Collapses {
     private static final int FRESH_TICKS = 4;
     private static final int DUST_EVERY = 5;
     private static final double SHAKE_RADIUS = 8;
+    private static final int SETTLE_TICKS = 200;
 
     private static final Map<ServerLevel, Long2LongOpenHashMap> PENDING = new WeakHashMap<>();
     private static final Map<ServerLevel, Long2LongOpenHashMap> FRESH = new WeakHashMap<>();
     private static final Map<ServerLevel, Long2LongOpenHashMap> CRACKS = new WeakHashMap<>();
+    private static final Map<ServerLevel, Long2LongOpenHashMap> SETTLED = new WeakHashMap<>();
     private static final Map<ServerPlayer, Long> SHAKEN = new WeakHashMap<>();
 
     /**
@@ -77,6 +79,23 @@ public final class Collapses {
         return false;
     }
 
+    /**
+     * Vanilla wakes a falling block on any neighbour change, so one touch drops a whole connected sheet. A change
+     * beside or above a hanging block passes it on only by chance.
+     */
+    public static boolean spreads(ServerLevel level, BlockPos pos) {
+        if (!ServerConfig.get(ServerConfig.COLLAPSE_ENABLED) || !FallingBlock.isFree(level.getBlockState(pos.below()))) return true;
+        // A block that held once stays put a while: rolled again by every falling neighbour, a full sheet would
+        // still avalanche (four neighbours x 25% = one new fall per fall).
+        Long2LongOpenHashMap settled = SETTLED.computeIfAbsent(level, l -> new Long2LongOpenHashMap());
+        long now = level.getGameTime();
+        long key = pos.asLong();
+        if (now - settled.getOrDefault(key, Long.MIN_VALUE / 2) < SETTLE_TICKS) return false;
+        if (level.random.nextDouble() < ServerConfig.get(ServerConfig.COLLAPSE_SPREAD_CHANCE)) return true;
+        settled.put(key, now);
+        return false;
+    }
+
     /** Placed blocks fall without a warning, as in vanilla. */
     public static void onPlace(ServerLevel level, BlockPos pos) {
         FRESH.computeIfAbsent(level, l -> new Long2LongOpenHashMap()).put(pos.asLong(), level.getGameTime());
@@ -94,6 +113,34 @@ public final class Collapses {
         if (!(state.getBlock() instanceof FallingBlock) || !FallingBlock.isFree(level.getBlockState(pos.below()))) return false;
         level.scheduleTick(pos, state.getBlock(), 1);
         return true;
+    }
+
+    /**
+     * A cane strikes a ceiling (CLAUDE.md 5.2): hanging blocks within 2 may come down — often when the struck block
+     * itself hangs, rarely when it is the rock next to them. One roll per tap brings that whole patch down.
+     */
+    public static void onCaneCeilingTap(io.github.nullbrash.seepers.touch.CaneCeilingTapEvent event) {
+        if (!ServerConfig.get(ServerConfig.COLLAPSE_ENABLED)) return;
+        ServerLevel level = event.getPlayer().serverLevel();
+        BlockPos struck = event.getPos();
+        boolean direct = isHanging(level, struck);
+        double chance = direct ? ServerConfig.get(ServerConfig.CANE_DIRECT_SHARE) : ServerConfig.get(ServerConfig.CANE_NEAR_SHARE);
+        if (level.random.nextDouble() >= chance) return;
+        for (BlockPos pos : BlockPos.betweenClosed(struck.offset(-2, -2, -2), struck.offset(2, 2, 2))) {
+            if (isHanging(level, pos)) trigger(level, pos.immutable());
+        }
+    }
+
+    private static boolean isHanging(ServerLevel level, BlockPos pos) {
+        return level.getBlockState(pos).getBlock() instanceof FallingBlock && FallingBlock.isFree(level.getBlockState(pos.below()));
+    }
+
+    /** Drops a hanging block now, without its own warning (a tremor at its peak; the rumble was the warning). */
+    public static void drop(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!(state.getBlock() instanceof FallingBlock) || !FallingBlock.isFree(level.getBlockState(pos.below()))) return;
+        FRESH.computeIfAbsent(level, l -> new Long2LongOpenHashMap()).put(pos.asLong(), level.getGameTime());
+        level.scheduleTick(pos, state.getBlock(), 1);
     }
 
     public static int pendingCount(ServerLevel level) {
@@ -124,6 +171,8 @@ public final class Collapses {
             if (fresh != null) fresh.long2LongEntrySet().removeIf(entry -> now - entry.getLongValue() > FRESH_TICKS);
             Long2LongOpenHashMap cracks = CRACKS.get(level);
             if (cracks != null) cracks.long2LongEntrySet().removeIf(entry -> now - entry.getLongValue() > 40);
+            Long2LongOpenHashMap settled = SETTLED.get(level);
+            if (settled != null) settled.long2LongEntrySet().removeIf(entry -> now - entry.getLongValue() > SETTLE_TICKS);
         }
     }
 
