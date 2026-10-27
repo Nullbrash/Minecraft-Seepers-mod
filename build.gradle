@@ -102,6 +102,8 @@ configurations {
 }
 
 dependencies {
+    // EMI: optional integration (integration/emi), compiled against, never required.
+    compileOnly "maven.modrinth:emi:${emi_version}"
     localRuntime "maven.modrinth:emi:${emi_version}"
     // Sodium is a jar-in-jar container with an early-loading service. On the dev classpath FML takes the
     // container itself as the "sodium" mod (no classes) and Sodium silently does nothing; from the mods

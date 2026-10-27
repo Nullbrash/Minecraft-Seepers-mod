@@ -1,3 +1,11 @@
 {
-  "parent": "seepers:block/anomaly_rock"
+  "parent": "seepers:block/anomaly_rock",
+  "overrides": [
+    {
+      "predicate": {
+        "seepers:hewn": 1
+      },
+      "model": "seepers:block/anomaly_rock_hewn"
+    }
+  ]
 }
