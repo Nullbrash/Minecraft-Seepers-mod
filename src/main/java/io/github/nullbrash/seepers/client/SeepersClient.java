@@ -93,6 +93,8 @@ public final class SeepersClient {
             event.getLeft().add(String.format(java.util.Locale.ROOT, "Seepers zone: %d (distortion %.2f)", Distortion.zone(level), level));
         });
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::register);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.CameraShake::onClientTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.CameraShake::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(Diagnostics::onClientTick);
         NeoForge.EVENT_BUS.addListener(ReportCommand::register);
         modBus.addListener((FMLClientSetupEvent event) -> event.enqueueWork(() -> {

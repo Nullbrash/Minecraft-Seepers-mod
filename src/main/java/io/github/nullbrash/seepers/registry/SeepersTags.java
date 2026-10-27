@@ -30,6 +30,10 @@ public final class SeepersTags {
         public static final TagKey<Block> LIGHT_NO_WATER_DIMMING =
                 TagKey.create(Registries.BLOCK, Seepers.id("light/no_water_dimming"));
 
+        /** Collapse props (CLAUDE.md 4.10): fences hold a small radius, stone walls a wider one. */
+        public static final TagKey<Block> SUPPORT_FENCE = TagKey.create(Registries.BLOCK, Seepers.id("collapse/support/fence"));
+        public static final TagKey<Block> SUPPORT_WALL = TagKey.create(Registries.BLOCK, Seepers.id("collapse/support/wall"));
+
         private Blocks() {}
     }
 

@@ -48,6 +48,10 @@ public final class ClientPayloadHandlers {
         Distortion.set(payload.zones());
     }
 
+    public static void handleCollapseShake(io.github.nullbrash.seepers.network.payload.CollapseShakePayload payload, IPayloadContext context) {
+        io.github.nullbrash.seepers.client.CameraShake.start(payload.strength(), payload.ticks());
+    }
+
     public static void handleServerLoad(ServerLoadPayload payload, IPayloadContext context) {
         AutoRenderDistance.onServerLoad(payload.tps());
     }

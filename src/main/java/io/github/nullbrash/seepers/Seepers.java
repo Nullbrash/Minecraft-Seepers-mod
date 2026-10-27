@@ -94,6 +94,7 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener(FireTracker::onServerTick);
         NeoForge.EVENT_BUS.addListener(ServerLoad::onServerTick);
         NeoForge.EVENT_BUS.addListener(AnomalyRegrowth::onServerTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.collapse.Collapses::onServerTick);
         NeoForge.EVENT_BUS.addListener(AnomalyRegrowth::onChunkLoad);
         NeoForge.EVENT_BUS.addListener(AnomalyRegrowth::onChunkUnload);
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedInEvent event) -> {

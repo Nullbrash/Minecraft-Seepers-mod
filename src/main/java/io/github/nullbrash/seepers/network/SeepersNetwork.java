@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class SeepersNetwork {
     /** Bump on any incompatible payload change: NeoForge refuses connections with a different version. */
-    public static final String PROTOCOL_VERSION = "9";
+    public static final String PROTOCOL_VERSION = "10";
 
     public static void register(RegisterPayloadHandlersEvent event) {
         // Handlers run on the main thread (registrar default).
@@ -46,6 +46,9 @@ public final class SeepersNetwork {
                 (payload, context) -> ClientPayloadHandlers.handleDistortion(payload, context));
         registrar.playToClient(ServerLoadPayload.TYPE, ServerLoadPayload.STREAM_CODEC,
                 (payload, context) -> ClientPayloadHandlers.handleServerLoad(payload, context));
+        registrar.playToClient(io.github.nullbrash.seepers.network.payload.CollapseShakePayload.TYPE,
+                io.github.nullbrash.seepers.network.payload.CollapseShakePayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandlers.handleCollapseShake(payload, context));
         registrar.playToServer(FogProbeReplyPayload.TYPE, FogProbeReplyPayload.STREAM_CODEC, FogProbeTracker::handleReply);
     }
 

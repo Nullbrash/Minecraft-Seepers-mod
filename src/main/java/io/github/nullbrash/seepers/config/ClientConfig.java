@@ -7,6 +7,7 @@ public final class ClientConfig {
     public static final ModConfigSpec SPEC;
     public static final ModConfigSpec.BooleanValue LOG_NETWORK;
     public static final ModConfigSpec.BooleanValue DIAGNOSTICS;
+    public static final ModConfigSpec.DoubleValue CAMERA_SHAKE;
     public static final ModConfigSpec.IntValue FOG_CELLS_PER_TICK;
     public static final ModConfigSpec.DoubleValue POINT_SIZE;
     public static final ModConfigSpec.DoubleValue POINT_MIN_PIXELS;
@@ -86,6 +87,9 @@ public final class ClientConfig {
                 .translation("seepers.configuration.touchCaption.position")
                 .defineEnum("position", io.github.nullbrash.seepers.client.touch.TouchCaption.Position.CROSSHAIR);
         builder.pop();
+
+        CAMERA_SHAKE = builder.comment("Camera shake of collapses and tremors: 1 = as designed, 0 = off.")
+                .translation("seepers.configuration.cameraShake").defineInRange("cameraShake", 1.0, 0.0, 2.0);
 
         builder.comment("Debugging and diagnostics").translation("seepers.configuration.debug").push("debug");
         LOG_NETWORK = builder

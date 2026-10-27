@@ -95,6 +95,15 @@ public final class ServerConfig {
     public static final ModConfigSpec.IntValue REGROWTH_MAX_CATCH_UP;
     public static final ModConfigSpec.DoubleValue CHISEL_ROCK_SECONDS;
     public static final ModConfigSpec.DoubleValue CHISEL_BLOCK_SECONDS;
+    public static final ModConfigSpec.BooleanValue COLLAPSE_ENABLED;
+    public static final ModConfigSpec.IntValue COLLAPSE_FENCE_RADIUS;
+    public static final ModConfigSpec.IntValue COLLAPSE_WALL_RADIUS;
+    public static final ModConfigSpec.IntValue COLLAPSE_SUPPORT_REACH;
+    public static final ModConfigSpec.IntValue COLLAPSE_WARN_MIN_TICKS;
+    public static final ModConfigSpec.IntValue COLLAPSE_WARN_MAX_TICKS;
+    public static final ModConfigSpec.DoubleValue COLLAPSE_DAMAGE_PER_BLOCK;
+    public static final ModConfigSpec.IntValue COLLAPSE_DAMAGE_MAX;
+    public static final ModConfigSpec.IntValue COLLAPSE_MAX_FALLING_PER_CHUNK;
     public static final Map<HeatCategory, ModConfigSpec.DoubleValue> HEAT_STRENGTH = new EnumMap<>(HeatCategory.class);
     public static final Map<HeatCategory, ModConfigSpec.DoubleValue> HEAT_RADIUS = new EnumMap<>(HeatCategory.class);
 
@@ -318,6 +327,27 @@ public final class ServerConfig {
                 .translation("seepers.configuration.anomaly.chiselRockSeconds").defineInRange("chiselRockSeconds", 1.0, 0.0, 60.0);
         CHISEL_BLOCK_SECONDS = builder.comment("Holding the chisel this long turns an ordinary block into its polished or chiseled form (0 = at once).")
                 .translation("seepers.configuration.anomaly.chiselBlockSeconds").defineInRange("chiselBlockSeconds", 0.5, 0.0, 60.0);
+        builder.pop();
+
+        builder.comment("Collapses and props").translation("seepers.configuration.collapse").push("collapse");
+        COLLAPSE_ENABLED = builder.comment("Hanging blocks warn before they fall and props hold them; off = vanilla falling.")
+                .translation("seepers.configuration.collapse.enabled").define("enabled", true);
+        COLLAPSE_FENCE_RADIUS = builder.comment("A fence prop holds hanging blocks this far around it (2 = the step of 5 of a vanilla mineshaft).")
+                .translation("seepers.configuration.collapse.fenceRadius").defineInRange("fenceRadius", 2, 0, 16);
+        COLLAPSE_WALL_RADIUS = builder.comment("A stone wall prop holds hanging blocks this far around it.")
+                .translation("seepers.configuration.collapse.wallRadius").defineInRange("wallRadius", 4, 0, 16);
+        COLLAPSE_SUPPORT_REACH = builder.comment("A prop holds hanging blocks up to this many blocks above its top.")
+                .translation("seepers.configuration.collapse.supportReach").defineInRange("supportReach", 4, 0, 16);
+        COLLAPSE_WARN_MIN_TICKS = builder.comment("Warning (dust, crack) before a hanging block falls: shortest, in ticks.")
+                .translation("seepers.configuration.collapse.warnMinTicks").defineInRange("warnMinTicks", 20, 0, 200);
+        COLLAPSE_WARN_MAX_TICKS = builder.comment("Warning before a hanging block falls: longest, in ticks.")
+                .translation("seepers.configuration.collapse.warnMaxTicks").defineInRange("warnMaxTicks", 40, 0, 200);
+        COLLAPSE_DAMAGE_PER_BLOCK = builder.comment("Damage of falling sand, gravel and the like per block fallen.")
+                .translation("seepers.configuration.collapse.damagePerBlock").defineInRange("damagePerBlock", 1.0, 0.0, 40.0);
+        COLLAPSE_DAMAGE_MAX = builder.comment("Most damage one falling block deals (6 = three hearts).")
+                .translation("seepers.configuration.collapse.damageMax").defineInRange("damageMax", 6, 0, 40);
+        COLLAPSE_MAX_FALLING_PER_CHUNK = builder.comment("Falling blocks at once per chunk; the rest is set straight where it lands.")
+                .translation("seepers.configuration.collapse.maxFallingPerChunk").defineInRange("maxFallingPerChunk", 32, 0, 1024);
         builder.pop();
 
         SPEC = builder.build();
