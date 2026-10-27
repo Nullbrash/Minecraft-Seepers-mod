@@ -369,5 +369,14 @@
   "seepers.configuration.diagnostics": "Diagnostics journal",
   "seepers.configuration.diagnostics.tooltip": "Keep logs/seepers-diagnostics.log (system, frame rate, warnings; personal data replaced). /seepers report packs it for sending.",
   "commands.seepers.report.done": "Report saved (no personal data): %s — click to open the folder, then send the file.",
-  "commands.seepers.report.failed": "Report failed: %s"
+  "commands.seepers.report.failed": "Report failed: %s",
+  "block.seepers.anomaly_rock": "Anomalous Rock",
+  "item.seepers.anomaly_shard": "Anomaly Shard",
+  "seepers.configuration.anomaly": "Anomalous rock",
+  "seepers.configuration.anomaly.button": "Anomalous rock...",
+  "seepers.configuration.anomaly.tooltip": "Anomalous rock (only explosions break it).",
+  "seepers.configuration.anomaly.resistanceNear": "Blast resistance near",
+  "seepers.configuration.anomaly.resistanceNear.tooltip": "Explosion resistance at the start of zone 1 (stone is 6: TNT and creepers break it).",
+  "seepers.configuration.anomaly.resistanceFar": "Blast resistance far",
+  "seepers.configuration.anomaly.resistanceFar.tooltip": "Explosion resistance from zone 3 on (about 14: only the core of a TNT blast)."
 }

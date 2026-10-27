@@ -44,8 +44,11 @@ final class Islands {
     /** One island: its seed point, vertical shift, and whether its top is torn out. */
     record Cell(double x, double z, int offset, int lift, int thickness) {}
 
-    /** What happens to one block column. lift/thickness 0 = not torn. */
-    record Column(int offset, int lift, int thickness, double border) {}
+    /**
+     * What happens to one block column. lift/thickness 0 = not torn. neighbourOffset: the other island at the nearest
+     * border; ramp: that border slopes here (no cliff); pair: stable id of the two islands (cliff features).
+     */
+    record Column(int offset, int lift, int thickness, double border, int neighbourOffset, boolean ramp, long pair) {}
 
     /** Torn slabs thin out toward the island edge over this many blocks. */
     private static final double TORN_TAPER = 12;
@@ -147,8 +150,9 @@ final class Islands {
         double level = distortion.applyAsDouble(x, z);
         float share = Mth.lerp((float) Mth.clamp(level - 1, 0, 1), settings.rampShareStart(), settings.rampShareEnd());
         double offset = first.offset();
+        boolean ramp = (rampShare.getValue(x / 64.0, z / 64.0) + 1) / 2 < share;
         // Along one border a slope gives way to a cliff and back: the share of slopes drops through zone 1.
-        if ((rampShare.getValue(x / 64.0, z / 64.0) + 1) / 2 < share) {
+        if (ramp) {
             double width = Mth.lerp((rampWidth.getValue(x / 32.0, z / 32.0) + 1) / 2, settings.rampMin(), settings.rampMax());
             if (border < width / 2) {
                 double t = Mth.smoothstep(0.5 + border / width);
@@ -160,8 +164,11 @@ final class Islands {
             double taper = Math.sqrt(Mth.clamp(border / TORN_TAPER, 0, 1));
             thickness = (int) Math.round(first.thickness() * taper + 3 * roughness.getValue(x / 6.0, z / 6.0));
         }
+        long a = Double.doubleToLongBits(first.x()) * 31 + Double.doubleToLongBits(first.z());
+        long b = Double.doubleToLongBits(second.x()) * 31 + Double.doubleToLongBits(second.z());
+        long pair = Math.min(a, b) * 0x9E3779B97F4A7C15L ^ Math.max(a, b);
         return thickness > 0
-                ? new Column((int) Math.round(offset), first.lift(), thickness, border)
-                : new Column((int) Math.round(offset), 0, 0, border);
+                ? new Column((int) Math.round(offset), first.lift(), thickness, border, second.offset(), ramp, pair)
+                : new Column((int) Math.round(offset), 0, 0, border, second.offset(), ramp, pair);
     }
 }

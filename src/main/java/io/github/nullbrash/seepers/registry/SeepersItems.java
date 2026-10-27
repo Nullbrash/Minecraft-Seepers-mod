@@ -23,6 +23,8 @@ public final class SeepersItems {
             event.accept(CANE.get());
             event.accept(BOUND_CANE.get());
         }
+        if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) event.accept(SeepersBlocks.ANOMALY_ROCK_ITEM.get());
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) event.accept(SeepersBlocks.ANOMALY_SHARD.get());
     }
 
     private SeepersItems() {}

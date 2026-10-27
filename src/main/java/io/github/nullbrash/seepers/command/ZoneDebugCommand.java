@@ -17,6 +17,7 @@ final class ZoneDebugCommand {
         return Commands.literal("zone")
                 .executes(context -> show(context.getSource(), BlockPos.containing(context.getSource().getPosition())))
                 .then(Commands.literal("gravity").executes(context -> gravityShares(context.getSource())))
+                .then(Commands.literal("walls").executes(context -> wallBreaches(context.getSource())))
                 .then(Commands.argument("pos", BlockPosArgument.blockPos())
                         .executes(context -> show(context.getSource(), BlockPosArgument.getBlockPos(context, "pos"))));
     }
@@ -94,6 +95,39 @@ final class ZoneDebugCommand {
         String sizes = String.format(Locale.ROOT, "; zone 3 patches: %d (%d of them ≥ 64×64), mean diameter of those %.0f, largest %.0f",
                 areas.size(), big.size(), mean, max);
         source.sendSuccess(() -> Component.literal(text + sizes), false);
+        return 1;
+    }
+
+    /** Walks each ring wall block by block along its arc: how much of it is wall, how many breaches and how wide. */
+    private static int wallBreaches(CommandSourceStack source) {
+        if (!(source.getLevel().getChunkSource().getGenerator() instanceof DistortedChunkGenerator generator)) return 0;
+        var random = source.getLevel().getChunkSource().randomState();
+        Distortion.Zones zones = Distortion.zones();
+        StringBuilder text = new StringBuilder("ring walls:");
+        for (int radius : new int[] {zones.zone2(), zones.zone3()}) {
+            int steps = (int) (2 * Math.PI * radius);
+            int open = 0, breaches = 0, run = 0, widest = 0;
+            boolean wasOpen = false;
+            for (int i = 0; i < steps; i++) {
+                double a = i / (double) radius;
+                boolean wall = false;
+                for (int dr = -16; dr <= 16 && !wall; dr += 2) {
+                    wall = generator.anomalyWall(random, (int) Math.round((radius + dr) * Math.cos(a)), (int) Math.round((radius + dr) * Math.sin(a)));
+                }
+                if (!wall) {
+                    open++;
+                    run++;
+                    if (!wasOpen) breaches++;
+                } else if (wasOpen) {
+                    widest = Math.max(widest, run);
+                    run = 0;
+                }
+                wasOpen = !wall;
+            }
+            text.append(String.format(Locale.ROOT, " r=%d: length %d, open %d (%d breaches, widest %d, one per %d blocks);",
+                    radius, steps, open, breaches, widest, breaches == 0 ? 0 : steps / breaches));
+        }
+        source.sendSuccess(() -> Component.literal(text.toString()), false);
         return 1;
     }
 

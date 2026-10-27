@@ -74,6 +74,39 @@
           "passage_height": 4,
           "void_share": 0.3,
           "void_bottom": -40
+        },
+        "anomaly_rock": {
+          "walls": {
+            "ring_thickness_min": 4,
+            "ring_thickness_max": 8,
+            "height_min": 20,
+            "height_max": 60,
+            "breach_every_min": 150,
+            "breach_every_max": 300,
+            "breach_width_min": 3,
+            "breach_width_max": 8,
+            "segment_cell": 512,
+            "segment_chance": 0.35,
+            "segment_length_min": 64,
+            "segment_length_max": 256
+          },
+          "cliffs": {
+            "min_drop": 8,
+            "layer": 2,
+            "mountain_share": 0.05,
+            "mountain_height_min": 30,
+            "mountain_height_max": 80
+          },
+          "geodes": {
+            "cell": 64,
+            "chunks_per_geode_start": 40,
+            "chunks_per_geode_far": 15,
+            "size_min": 8,
+            "size_max": 16,
+            "size_far": 24,
+            "min_y": -50,
+            "max_y": 40
+          }
         }
       }
     },

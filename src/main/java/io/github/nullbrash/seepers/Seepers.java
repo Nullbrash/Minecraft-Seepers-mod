@@ -23,6 +23,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import io.github.nullbrash.seepers.light.Relighter;
 import io.github.nullbrash.seepers.mob.HostileSpawnControl;
 import io.github.nullbrash.seepers.network.SeepersNetwork;
+import io.github.nullbrash.seepers.registry.SeepersBlocks;
 import io.github.nullbrash.seepers.registry.SeepersWorldgen;
 import io.github.nullbrash.seepers.world.WorldShape;
 import io.github.nullbrash.seepers.network.ServerLoad;
@@ -54,6 +55,7 @@ public final class Seepers {
         container.registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC);
 
         SeepersAttachments.ATTACHMENT_TYPES.register(modBus);
+        SeepersBlocks.BLOCKS.register(modBus);
         SeepersItems.ITEMS.register(modBus);
         SeepersComponents.COMPONENTS.register(modBus);
         SeepersWorldgen.DENSITY_FUNCTION_TYPES.register(modBus);

@@ -369,5 +369,14 @@
   "seepers.configuration.diagnostics": "Журнал диагностики",
   "seepers.configuration.diagnostics.tooltip": "Вести logs/seepers-diagnostics.log (система, FPS, предупреждения; личные данные заменены). /seepers report упаковывает его для отправки.",
   "commands.seepers.report.done": "Отчёт сохранён (без личных данных): %s — нажмите, чтобы открыть папку, и отправьте файл.",
-  "commands.seepers.report.failed": "Не удалось сохранить отчёт: %s"
+  "commands.seepers.report.failed": "Не удалось сохранить отчёт: %s",
+  "block.seepers.anomaly_rock": "Аномальная порода",
+  "item.seepers.anomaly_shard": "Осколок аномалии",
+  "seepers.configuration.anomaly": "Аномальная порода",
+  "seepers.configuration.anomaly.button": "Аномальная порода...",
+  "seepers.configuration.anomaly.tooltip": "Аномальная порода (ломается только взрывом).",
+  "seepers.configuration.anomaly.resistanceNear": "Стойкость к взрыву вблизи",
+  "seepers.configuration.anomaly.resistanceNear.tooltip": "Стойкость к взрыву в начале зоны 1 (у камня 6: ТНТ и крипер берут).",
+  "seepers.configuration.anomaly.resistanceFar": "Стойкость к взрыву вдали",
+  "seepers.configuration.anomaly.resistanceFar.tooltip": "Стойкость к взрыву с зоны 3 (около 14: только центр взрыва ТНТ)."
 }

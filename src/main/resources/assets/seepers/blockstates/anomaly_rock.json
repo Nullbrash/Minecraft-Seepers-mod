@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "kind=wall": {
+      "model": "seepers:block/anomaly_rock"
+    },
+    "kind=geode": {
+      "model": "seepers:block/anomaly_rock"
+    }
+  }
+}

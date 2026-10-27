@@ -55,7 +55,8 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
             DensityFunction.HOLDER_HELPER_CODEC.optionalFieldOf("warp").forGetter(generator -> generator.warp),
             Islands.Settings.CODEC.fieldOf("islands").forGetter(generator -> generator.islands),
             LostPockets.Settings.CODEC.fieldOf("lost_pockets").forGetter(generator -> generator.pockets),
-            FarLands.Settings.CODEC.optionalFieldOf("far_lands").forGetter(generator -> generator.farLands))
+            FarLands.Settings.CODEC.optionalFieldOf("far_lands").forGetter(generator -> generator.farLands),
+            AnomalyRock.Settings.CODEC.optionalFieldOf("anomaly_rock").forGetter(generator -> generator.anomaly))
             .apply(instance, DistortedChunkGenerator::new));
 
     private static final BlockState AIR = Blocks.AIR.defaultBlockState();
@@ -74,6 +75,8 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
     private final Islands.Settings islands;
     private final LostPockets.Settings pockets;
     private final Optional<FarLands.Settings> farLands;
+    private final Optional<AnomalyRock.Settings> anomaly;
+    private final Map<RandomState, AnomalyRock> anomalyFields = Collections.synchronizedMap(new WeakHashMap<>());
     /** Noises depend on the world seed: one set per RandomState (one per world). */
     private final Map<RandomState, Islands> islandFields = Collections.synchronizedMap(new WeakHashMap<>());
     private final Map<RandomState, LostPockets> pocketFields = Collections.synchronizedMap(new WeakHashMap<>());
@@ -83,7 +86,7 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
 
     public DistortedChunkGenerator(BiomeSource biomeSource, Holder<NoiseGeneratorSettings> settings, DensityFunction distortion,
                                    Optional<DensityFunction> warp, Islands.Settings islands, LostPockets.Settings pockets,
-                                   Optional<FarLands.Settings> farLands) {
+                                   Optional<FarLands.Settings> farLands, Optional<AnomalyRock.Settings> anomaly) {
         super(biomeSource, settings);
         this.originalSettings = settings;
         this.distortion = distortion;
@@ -102,6 +105,7 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
         this.islands = islands;
         this.pockets = pockets;
         this.farLands = farLands;
+        this.anomaly = anomaly;
     }
 
     /** The world's random state (noises, climate) is built from this: the warped router. */
@@ -127,8 +131,23 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
         return farLands.map(settings -> farLandFields.computeIfAbsent(random, r -> new FarLands(settings, r, this::distortionAt))).orElse(null);
     }
 
+    private @Nullable AnomalyRock anomaly(RandomState random) {
+        return anomaly.map(settings -> anomalyFields.computeIfAbsent(random, r -> new AnomalyRock(settings, r, this::distortionAt, zones()))).orElse(null);
+    }
+
+    private Distortion.Zones zones() {
+        DensityFunction d = distortion instanceof DensityFunctions.HolderHolder holder ? holder.function().value() : distortion;
+        return d instanceof DistortionFunction f ? f.zones() : Distortion.DEFAULT;
+    }
+
     private LostPockets pockets(RandomState random) {
         return pocketFields.computeIfAbsent(random, r -> new LostPockets(pockets, r, this::distortionAt));
+    }
+
+    /** For the debug command: is the column inside a barrier wall (rings and segments)? */
+    public boolean anomalyWall(RandomState random, int x, int z) {
+        AnomalyRock rock = anomaly(random);
+        return rock != null && rock.column(x, z, islands(random).column(x, z, new Long2ObjectOpenHashMap<>())).wall();
     }
 
     /** For the debug command: what the generator does to the column at x, z. */
@@ -146,6 +165,15 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
         }
         FarLands.Column far = farLands(random) == null ? FarLands.Column.NONE : farLands(random).column(x, z);
         String farText = far.wall() ? "wall " + far.height() + (far.passage() ? " passage" : "") : far.empty() ? "void" : "none";
+        AnomalyRock rockField = anomaly(random);
+        AnomalyRock.Column rockShape = rockField == null ? AnomalyRock.Column.NONE : rockField.column(x, z, column);
+        if (rockField != null) {
+            AnomalyRock.Geode g = rockField.geodesNear(x - 128, z - 128, x + 128, z + 128).stream()
+                    .min(java.util.Comparator.comparingDouble(p -> Math.hypot(p.x() - x, p.z() - z))).orElse(null);
+            farText += ", nearest geode " + (g == null ? "none" : g.x() + " " + g.y() + " " + g.z() + " r " + Math.round(g.radius()));
+        }
+        farText += ", anomaly rock " + (rockShape.wall() ? "wall +" + rockShape.wallHeight()
+                : rockShape.cladding() ? "cliff cladding" + (rockShape.mountain() > 0 ? " + mountain " + rockShape.mountain() : "") : "none");
         return String.format(java.util.Locale.ROOT, "shift %d, border %.1f, torn %s, nearest lost pocket %s, terrain %s, far lands %s",
                 column.offset(), column.border(), column.lift() > 0 ? "lift " + column.lift() + " thick " + column.thickness() : "no",
                 nearest == null ? "none" : nearest.x() + " " + nearest.y() + " " + nearest.z() + " r " + nearest.rx() + "/" + nearest.ry() + "/" + nearest.rz(),
@@ -163,6 +191,7 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
         super.buildSurface(level, structureManager, random, chunk);
         Islands field = islands(random);
         FarLands far = farLands(random);
+        AnomalyRock rock = anomaly(random);
         Long2ObjectOpenHashMap<Islands.Cell> cache = new Long2ObjectOpenHashMap<>();
         int min = chunk.getMinBuildHeight();
         int max = chunk.getMaxBuildHeight();
@@ -176,11 +205,14 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
                 Islands.Column shape = field.column(wx, wz, cache);
                 FarLands.Column farShape = far == null ? FarLands.Column.NONE : far.column(wx, wz);
                 boolean loose = isBrokenGravity(chunk, x, z, min);
-                if (shape.offset() == 0 && shape.lift() == 0 && farShape == FarLands.Column.NONE && !loose) continue;
+                AnomalyRock.Column rockShape = rock == null ? AnomalyRock.Column.NONE : rock.column(wx, wz, shape);
+                if (shape.offset() == 0 && shape.lift() == 0 && farShape == FarLands.Column.NONE && !loose
+                        && rockShape == AnomalyRock.Column.NONE) continue;
                 for (int y = min; y < max; y++) column[y - min] = get(chunk, x, y, z);
                 transform(column, moved, shape);
                 if (far != null) far.apply(moved, min, farShape);
                 if (loose) undercut(moved, wx, wz, random);
+                if (rock != null) rock.apply(moved, rockShape);
                 for (int y = min; y < max; y++) {
                     if (moved[y - min] != column[y - min]) set(chunk, x, y, z, moved[y - min]);
                 }
@@ -250,6 +282,8 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
     public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager) {
         super.applyBiomeDecoration(level, chunk, structureManager);
         if (level instanceof WorldGenRegion region) {
+            AnomalyRock rock = anomaly(region.getLevel().getChunkSource().randomState());
+            if (rock != null) rock.placeGeodes(chunk);
             pockets(region.getLevel().getChunkSource().randomState()).carve(chunk);
         }
     }

@@ -87,6 +87,8 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue HEAT_WARMUP_SECONDS;
     public static final ModConfigSpec.DoubleValue HEAT_COOLDOWN_SECONDS;
     public static final ModConfigSpec.IntValue HEAT_MAX_SOURCES_PER_CHUNK;
+    public static final ModConfigSpec.DoubleValue ANOMALY_RESISTANCE_NEAR;
+    public static final ModConfigSpec.DoubleValue ANOMALY_RESISTANCE_FAR;
     public static final Map<HeatCategory, ModConfigSpec.DoubleValue> HEAT_STRENGTH = new EnumMap<>(HeatCategory.class);
     public static final Map<HeatCategory, ModConfigSpec.DoubleValue> HEAT_RADIUS = new EnumMap<>(HeatCategory.class);
 
@@ -291,6 +293,13 @@ public final class ServerConfig {
                     .translation("seepers.configuration.heat.radius").defineInRange("radius", category.defaultRadius, 0.0, 16.0));
             builder.pop();
         }
+        builder.pop();
+
+        builder.comment("Anomalous rock (only explosions break it)").translation("seepers.configuration.anomaly").push("anomaly");
+        ANOMALY_RESISTANCE_NEAR = builder.comment("Explosion resistance at the start of zone 1 (stone is 6: TNT and creepers break it).")
+                .translation("seepers.configuration.anomaly.resistanceNear").defineInRange("resistanceNear", 6.0, 0.0, 3600000.0);
+        ANOMALY_RESISTANCE_FAR = builder.comment("Explosion resistance from zone 3 on (about 14: only the core of a TNT blast).")
+                .translation("seepers.configuration.anomaly.resistanceFar").defineInRange("resistanceFar", 14.0, 0.0, 3600000.0);
         builder.pop();
 
         SPEC = builder.build();
