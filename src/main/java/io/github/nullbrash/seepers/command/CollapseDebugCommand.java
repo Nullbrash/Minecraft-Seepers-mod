@@ -1,5 +1,6 @@
 package io.github.nullbrash.seepers.command;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.nullbrash.seepers.collapse.Collapses;
 import io.github.nullbrash.seepers.collapse.Supports;
@@ -21,7 +22,7 @@ import net.minecraft.world.level.block.FallingBlock;
 /**
  * {@code /seepers debug collapse [pos]} — hanging blocks around and how many props hold; {@code tremor <player>} starts a
  * tremor now, {@code tremor info} — time to the next one; {@code hang <from> <to> <block>} sets blocks without updates
- * (hanging, as generated); {@code drop <pos>} starts a
+ * (hanging, as generated); {@code survey <radius>} — share of ceilings that hang; {@code drop <pos>} starts a
  * collapse there through the normal path (warning, props, limit).
  */
 final class CollapseDebugCommand {
@@ -45,6 +46,9 @@ final class CollapseDebugCommand {
                                         .executes(command -> hang(command.getSource(), BlockPosArgument.getLoadedBlockPos(command, "from"),
                                                 BlockPosArgument.getLoadedBlockPos(command, "to"),
                                                 BlockStateArgument.getBlock(command, "block").getState()))))))
+                .then(Commands.literal("survey").then(Commands.argument("radius", IntegerArgumentType.integer(1, 256))
+                        .executes(context -> survey(context.getSource(), BlockPos.containing(context.getSource().getPosition()),
+                                IntegerArgumentType.getInteger(context, "radius")))))
                 .then(Commands.literal("tremor")
                         .then(Commands.literal("info").executes(context -> {
                             for (ServerPlayer player : context.getSource().getServer().getPlayerList().getPlayers()) {
@@ -85,6 +89,40 @@ final class CollapseDebugCommand {
         source.sendSuccess(() -> Component.literal("At " + center.toShortString() + ": "
                 + (holder == null ? "no prop holds here" : "held by the prop topped at " + holder.toShortString())), false);
         return hangingCount;
+    }
+
+    /**
+     * Ceilings below the surface around (a block with air under it, natural stone or loose) and how many of them
+     * hang (sand, gravel... over air), over loaded chunks only.
+     */
+    private static int survey(CommandSourceStack source, BlockPos center, int radius) {
+        ServerLevel level = source.getLevel();
+        long ceilings = 0;
+        long hanging = 0;
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int x = center.getX() - radius; x <= center.getX() + radius; x++) {
+            for (int z = center.getZ() - radius; z <= center.getZ() + radius; z++) {
+                if (!level.hasChunk(x >> 4, z >> 4)) continue;
+                int top = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z) - 2;
+                for (int y = top; y > level.getMinBuildHeight() + 1; y--) {
+                    pos.set(x, y, z);
+                    if (!level.getBlockState(pos.below()).isAir()) continue;
+                    BlockState here = level.getBlockState(pos);
+                    boolean loose = Collapses.isFallable(level, pos, here);
+                    if (!loose && !here.is(net.minecraft.tags.BlockTags.BASE_STONE_OVERWORLD)) continue;
+                    ceilings++;
+                    if (loose) hanging++;
+                }
+            }
+        }
+        long c = ceilings;
+        long h = hanging;
+        source.sendSuccess(() -> Component.literal(String.format(java.util.Locale.ROOT, "Ceilings within %d: %d, hanging %d (%.1f%%)",
+                radius, c, h, c == 0 ? 0.0 : 100.0 * h / c)), false);
+        long seen = io.github.nullbrash.seepers.world.HangingCeilings.SUPPORTS_SEEN.get();
+        long removed = io.github.nullbrash.seepers.world.HangingCeilings.SUPPORTS_REMOVED.get();
+        source.sendSuccess(() -> Component.literal("Mineshaft support columns generated since start: " + seen + ", taken out " + removed), false);
+        return (int) Math.min(Integer.MAX_VALUE, h);
     }
 
     /**

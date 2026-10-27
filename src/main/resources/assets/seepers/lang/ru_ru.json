@@ -445,5 +445,7 @@
   "seepers.configuration.collapse.caneDirectShare.tooltip": "Шанс, что удар тростью прямо по висящему блоку обрушит его и соседей.",
   "seepers.configuration.collapse.spreadChance": "Шанс расползания обвала",
   "seepers.configuration.collapse.spreadChance.tooltip": "Шанс, что висящий блок сорвётся, когда меняется сосед сбоку или сверху (1 — как в ванили: рушится весь пласт).",
-  "subtitles.seepers.tremor.rumble": "Глубинный рокот"
+  "subtitles.seepers.tremor.rumble": "Глубинный рокот",
+  "seepers.configuration.tremorVolume": "Громкость гула толчков",
+  "seepers.configuration.tremorVolume.tooltip": "Громкость гула толчков: 1 — как задумано, 0,2 — на 80% тише, 1,2 — на 20% громче."
 }

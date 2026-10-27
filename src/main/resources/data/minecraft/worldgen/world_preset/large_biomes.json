@@ -107,6 +107,15 @@
             "min_y": -50,
             "max_y": 40
           }
+        },
+        "hanging_ceilings": {
+          "cell_width": 6,
+          "cell_height": 4,
+          "share_near": 0.05,
+          "share_far": 0.25,
+          "thickness_min": 1,
+          "thickness_max": 3,
+          "mineshaft_prop_loss": 0.15
         }
       }
     },

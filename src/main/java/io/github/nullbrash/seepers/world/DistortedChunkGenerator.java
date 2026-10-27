@@ -56,7 +56,8 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
             Islands.Settings.CODEC.fieldOf("islands").forGetter(generator -> generator.islands),
             LostPockets.Settings.CODEC.fieldOf("lost_pockets").forGetter(generator -> generator.pockets),
             FarLands.Settings.CODEC.optionalFieldOf("far_lands").forGetter(generator -> generator.farLands),
-            AnomalyRock.Settings.CODEC.optionalFieldOf("anomaly_rock").forGetter(generator -> generator.anomaly))
+            AnomalyRock.Settings.CODEC.optionalFieldOf("anomaly_rock").forGetter(generator -> generator.anomaly),
+            HangingCeilings.Settings.CODEC.optionalFieldOf("hanging_ceilings").forGetter(generator -> generator.hanging))
             .apply(instance, DistortedChunkGenerator::new));
 
     private static final BlockState AIR = Blocks.AIR.defaultBlockState();
@@ -76,6 +77,7 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
     private final LostPockets.Settings pockets;
     private final Optional<FarLands.Settings> farLands;
     private final Optional<AnomalyRock.Settings> anomaly;
+    private final Optional<HangingCeilings.Settings> hanging;
     private final Map<RandomState, AnomalyRock> anomalyFields = Collections.synchronizedMap(new WeakHashMap<>());
     /** Noises depend on the world seed: one set per RandomState (one per world). */
     private final Map<RandomState, Islands> islandFields = Collections.synchronizedMap(new WeakHashMap<>());
@@ -86,7 +88,8 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
 
     public DistortedChunkGenerator(BiomeSource biomeSource, Holder<NoiseGeneratorSettings> settings, DensityFunction distortion,
                                    Optional<DensityFunction> warp, Islands.Settings islands, LostPockets.Settings pockets,
-                                   Optional<FarLands.Settings> farLands, Optional<AnomalyRock.Settings> anomaly) {
+                                   Optional<FarLands.Settings> farLands, Optional<AnomalyRock.Settings> anomaly,
+                                   Optional<HangingCeilings.Settings> hanging) {
         super(biomeSource, settings);
         this.originalSettings = settings;
         this.distortion = distortion;
@@ -106,6 +109,7 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
         this.pockets = pockets;
         this.farLands = farLands;
         this.anomaly = anomaly;
+        this.hanging = hanging;
     }
 
     /** The world's random state (noises, climate) is built from this: the warped router. */
@@ -284,6 +288,9 @@ public final class DistortedChunkGenerator extends NoiseBasedChunkGenerator {
         if (level instanceof WorldGenRegion region) {
             AnomalyRock rock = anomaly(region.getLevel().getChunkSource().randomState());
             if (rock != null) rock.placeGeodes(chunk);
+            // Before the pockets: "no world here" has no hanging ceilings either.
+            hanging.ifPresent(settings -> new HangingCeilings(settings, region.getSeed(), (x, z) -> distortionAt((int) x, (int) z))
+                    .place(level, chunk, structureManager));
             pockets(region.getLevel().getChunkSource().randomState()).carve(chunk);
         }
     }

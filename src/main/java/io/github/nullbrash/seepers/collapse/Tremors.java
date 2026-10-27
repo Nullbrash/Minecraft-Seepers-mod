@@ -2,6 +2,7 @@ package io.github.nullbrash.seepers.collapse;
 
 import io.github.nullbrash.seepers.config.ServerConfig;
 import io.github.nullbrash.seepers.network.payload.CollapseShakePayload;
+import io.github.nullbrash.seepers.network.payload.TremorRumblePayload;
 import io.github.nullbrash.seepers.world.Distortion;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,9 +13,7 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import io.github.nullbrash.seepers.registry.SeepersSounds;
 import io.github.nullbrash.seepers.registry.SeepersTags;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -100,13 +99,10 @@ public final class Tremors {
         float strength = (float) Mth.lerp(t, 0.6, 1.5);
         Tremor tremor = new Tremor(level, player.blockPosition(), radius, share, strength, level.getGameTime() + rumble, shake);
         ACTIVE.put(player.getUUID(), tremor);
-        // One rumble for the whole tremor (volume sets the range: 16 blocks per 1). A sound is capped at full volume,
-        // so two copies play in step: twice the loudness.
-        for (int copy = 0; copy < 2; copy++) {
-            level.playSound(null, tremor.center, SeepersSounds.TREMOR_RUMBLE.get(), SoundSource.BLOCKS, radius / 16.0F, 1.0F);
-        }
+        // One rumble for the whole tremor, felt by everyone within the radius; each client plays it at its own volume.
         for (ServerPlayer other : level.players()) {
             if (other.blockPosition().closerThan(tremor.center, radius)) {
+                PacketDistributor.sendToPlayer(other, new TremorRumblePayload());
                 PacketDistributor.sendToPlayer(other, new CollapseShakePayload(0.15F, rumble));
             }
         }

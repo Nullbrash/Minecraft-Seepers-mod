@@ -445,5 +445,7 @@
   "seepers.configuration.collapse.caneDirectShare.tooltip": "Chance a cane tap on a hanging block itself brings it and its neighbours down.",
   "seepers.configuration.collapse.spreadChance": "Collapse spread chance",
   "seepers.configuration.collapse.spreadChance.tooltip": "Chance a hanging block comes down when a neighbour beside or above it changes (1 = vanilla: a whole sheet goes).",
-  "subtitles.seepers.tremor.rumble": "Deep rumble"
+  "subtitles.seepers.tremor.rumble": "Deep rumble",
+  "seepers.configuration.tremorVolume": "Tremor rumble volume",
+  "seepers.configuration.tremorVolume.tooltip": "Volume of the tremor rumble: 1 = as designed, 0.2 = 80% quieter, 1.2 = 20% louder."
 }

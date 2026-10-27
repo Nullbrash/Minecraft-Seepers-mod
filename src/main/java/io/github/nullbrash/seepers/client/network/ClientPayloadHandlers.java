@@ -52,6 +52,22 @@ public final class ClientPayloadHandlers {
         io.github.nullbrash.seepers.client.CameraShake.start(payload.strength(), payload.ticks());
     }
 
+    /**
+     * The tremor rumble, heard where the player is (felt through the ground, not placed in the world). A sound is
+     * capped at full volume, so three copies play in step: at the default volume each plays at 2/3 — up to 150% fits.
+     */
+    public static void handleTremorRumble(io.github.nullbrash.seepers.network.payload.TremorRumblePayload payload, IPayloadContext context) {
+        float each = (float) (ClientConfig.TREMOR_VOLUME.get() * 2.0 / 3.0);
+        if (each <= 0) return;
+        long seed = net.minecraft.util.RandomSource.create().nextLong();
+        for (int copy = 0; copy < 3; copy++) {
+            Minecraft.getInstance().getSoundManager().play(new net.minecraft.client.resources.sounds.SimpleSoundInstance(
+                    io.github.nullbrash.seepers.registry.SeepersSounds.TREMOR_RUMBLE.get().getLocation(), net.minecraft.sounds.SoundSource.BLOCKS,
+                    each, 1.0F, net.minecraft.util.RandomSource.create(seed), false, 0,
+                    net.minecraft.client.resources.sounds.SoundInstance.Attenuation.NONE, 0, 0, 0, true));
+        }
+    }
+
     public static void handleServerLoad(ServerLoadPayload payload, IPayloadContext context) {
         AutoRenderDistance.onServerLoad(payload.tps());
     }
