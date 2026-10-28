@@ -61,13 +61,19 @@ public final class SeepersClient {
         NeoForge.EVENT_BUS.addListener(HandTouch::onClientTick);
         NeoForge.EVENT_BUS.addListener(CaneTouch::onClientTick);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.lidar.LidarScan::onClientTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.lidar.LidarRefresh::onClientTick);
         modBus.addListener(TouchCaption::register);
         modBus.addListener(io.github.nullbrash.seepers.client.lidar.LidarHud::register);
         // Lowest priority: a Pre another mod cancels never reaches us, so every push here gets its pop in Post.
         NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST, io.github.nullbrash.seepers.client.lidar.LidarHud::onRenderLayerPre);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.lidar.LidarHud::onRenderLayerPost);
-        modBus.addListener((net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent event) ->
-                event.register(io.github.nullbrash.seepers.client.lidar.LidarScreen.KEY));
+        modBus.addListener((net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent event) -> {
+            event.register(io.github.nullbrash.seepers.client.lidar.LidarScreen.KEY);
+            event.register(io.github.nullbrash.seepers.client.lidar.LidarScreen.DYNAMO_KEY);
+            event.register(io.github.nullbrash.seepers.client.lidar.LidarScreen.ROUND_KEY);
+        });
+        modBus.addListener((net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) ->
+                event.register(io.github.nullbrash.seepers.registry.SeepersMenus.LIDAR.get(), io.github.nullbrash.seepers.client.lidar.LidarScreen::new));
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onClientTick);
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(AutoRenderDistance::onDebugText);
@@ -123,6 +129,8 @@ public final class SeepersClient {
             PointCloud.reset();
             HandTouch.onLoggingOut();
             io.github.nullbrash.seepers.client.lidar.LidarScan.onLoggingOut();
+            io.github.nullbrash.seepers.client.lidar.DynamoSounds.clear();
+            io.github.nullbrash.seepers.client.lidar.LidarRefresh.onLoggingOut();
             Distortion.set(Distortion.DEFAULT);
         });
         // Chunk-mesh regions carry no level: tell the light overrides which dimension the client is in.

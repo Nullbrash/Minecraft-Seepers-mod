@@ -22,5 +22,37 @@
         "name": "seepers:lidar/hum"
       }
     ]
+  },
+  "lidar.empty": {
+    "subtitle": "subtitles.seepers.lidar.empty",
+    "sounds": [
+      {
+        "name": "seepers:lidar/empty"
+      }
+    ]
+  },
+  "lidar.clicks": {
+    "subtitle": "subtitles.seepers.lidar.scan",
+    "sounds": [
+      {
+        "name": "seepers:lidar/clicks"
+      }
+    ]
+  },
+  "lidar.clicks_dry": {
+    "subtitle": "subtitles.seepers.lidar.scan",
+    "sounds": [
+      {
+        "name": "seepers:lidar/clicks_dry"
+      }
+    ]
+  },
+  "lidar.dynamo": {
+    "subtitle": "subtitles.seepers.lidar.dynamo",
+    "sounds": [
+      {
+        "name": "seepers:lidar/dynamo"
+      }
+    ]
   }
 }

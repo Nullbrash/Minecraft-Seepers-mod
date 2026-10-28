@@ -41,6 +41,7 @@ public final class PointCommands {
                                 .then(Commands.argument("ticks", IntegerArgumentType.integer(1, 1200))
                                         .executes(context -> io.github.nullbrash.seepers.client.lidar.LidarScan.debugScan(
                                                 IntegerArgumentType.getInteger(context, "ticks")) ? 1 : 0)))
+                        .then(Commands.literal("refresh").executes(context -> refresh(context.getSource())))
                         .then(Commands.literal("stats").executes(context -> stats(context.getSource())))));
     }
 
@@ -104,6 +105,19 @@ public final class PointCommands {
             }
         }
         return added;
+    }
+
+    /** The data refresh module's check over the whole memory at once: how many lidar points were stale. */
+    private static int refresh(CommandSourceStack source) {
+        PointCloud cloud = PointCloud.get();
+        if (cloud == null) return 0;
+        int before = cloud.count(PointSource.LIDAR);
+        int checked = 0;
+        for (long key : cloud.sectionKeys().toLongArray()) checked += cloud.refreshSection(key);
+        int removed = before - cloud.count(PointSource.LIDAR);
+        int seen = checked;
+        source.sendSuccess(() -> Component.literal("Lidar refresh: checked " + seen + ", removed " + removed), false);
+        return removed;
     }
 
     private static int clear(CommandSourceStack source) {

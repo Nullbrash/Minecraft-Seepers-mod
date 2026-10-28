@@ -96,4 +96,8 @@ public final class ClientPayloadHandlers {
     }
 
     private ClientPayloadHandlers() {}
+
+    public static void handleDynamoSound(io.github.nullbrash.seepers.network.payload.DynamoSoundPayload payload, IPayloadContext context) {
+        io.github.nullbrash.seepers.client.lidar.DynamoSounds.set(payload.entityId(), payload.cranking());
+    }
 }

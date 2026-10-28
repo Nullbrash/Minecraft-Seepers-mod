@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    {
+      "item": "seepers:lidar_module_memory_1"
+    },
+    {
+      "item": "seepers:schematic_2"
+    },
+    {
+      "item": "minecraft:gold_ingot"
+    },
+    {
+      "item": "seepers:anomaly_shard"
+    }
+  ],
+  "result": {
+    "id": "seepers:lidar_module_memory_2",
+    "count": 1
+  }
+}

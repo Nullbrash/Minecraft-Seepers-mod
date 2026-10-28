@@ -34,7 +34,15 @@ public final class SeepersCommands {
                         .then(HeightmapDebugCommand.build())
                         .then(RoomDebugCommand.build())
                         .then(FireDebugCommand.build())
-                        .then(ClientDebugCommand.build())));
+                        .then(ClientDebugCommand.build())
+                        // Opens a player's lidar screen as its key would (checks without pressing keys in the game).
+                        .then(Commands.literal("lidar").then(Commands.literal("screen")
+                                .then(Commands.argument("target", EntityArgument.player())
+                                        .executes(context -> {
+                                            io.github.nullbrash.seepers.lidar.LidarMenu.open(EntityArgument.getPlayer(context, "target"),
+                                                    net.minecraft.world.InteractionHand.MAIN_HAND);
+                                            return 1;
+                                        }))))));
     }
 
     private SeepersCommands() {}

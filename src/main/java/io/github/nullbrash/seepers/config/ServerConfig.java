@@ -89,6 +89,30 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue LIDAR_CONE_DEGREES;
     public static final ModConfigSpec.IntValue LIDAR_POINTS_PER_SECOND;
     public static final ModConfigSpec.IntValue LIDAR_POINT_LIMIT;
+    public static final ModConfigSpec.IntValue LIDAR_BATTERY_MINUTES;
+    public static final ModConfigSpec.DoubleValue LIDAR_REDSTONE_CHARGE;
+    public static final ModConfigSpec.DoubleValue LIDAR_VIEW_CONE_DEGREES;
+    public static final ModConfigSpec.DoubleValue LIDAR_VIEW_SCREEN_2;
+    public static final ModConfigSpec.DoubleValue LIDAR_VIEW_SCREEN_3;
+    public static final ModConfigSpec.DoubleValue LIDAR_WIDE_COST;
+    public static final ModConfigSpec.DoubleValue LIDAR_PASS_SPEED_BONUS;
+    public static final ModConfigSpec.IntValue LIDAR_ROUND_PASS_TICKS;
+    public static final ModConfigSpec.IntValue LIDAR_ROUND_PAUSE_TICKS;
+    public static final ModConfigSpec.DoubleValue LIDAR_VIEW_COST_1;
+    public static final ModConfigSpec.DoubleValue LIDAR_VIEW_COST_2;
+    public static final ModConfigSpec.DoubleValue LIDAR_VIEW_COST_3;
+    public static final ModConfigSpec.IntValue LIDAR_DENSITY_1;
+    public static final ModConfigSpec.IntValue LIDAR_DENSITY_2;
+    public static final ModConfigSpec.IntValue LIDAR_DENSITY_3;
+    public static final ModConfigSpec.DoubleValue LIDAR_DENSITY_COST_1;
+    public static final ModConfigSpec.DoubleValue LIDAR_DENSITY_COST_2;
+    public static final ModConfigSpec.DoubleValue LIDAR_DENSITY_COST_3;
+    public static final ModConfigSpec.IntValue LIDAR_MEMORY_1;
+    public static final ModConfigSpec.IntValue LIDAR_MEMORY_2;
+    public static final ModConfigSpec.IntValue LIDAR_MEMORY_3;
+    public static final ModConfigSpec.DoubleValue LIDAR_DYNAMO_RATE;
+    public static final ModConfigSpec.DoubleValue LIDAR_SCHEMATIC_2_CHANCE;
+    public static final ModConfigSpec.DoubleValue LIDAR_SCHEMATIC_3_CHANCE;
     public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_START;
     public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_FULL;
     public static final ModConfigSpec.DoubleValue FIRE_CHECK_SECONDS;
@@ -324,6 +348,50 @@ public final class ServerConfig {
         // Ring slots are twice the limit and must fit 24 bits (PointCloud).
         LIDAR_POINT_LIMIT = builder.comment("Lidar points kept at once without upgrades. They never fade: the oldest go when full, all go on leaving the world.")
                 .translation("seepers.configuration.lidar.pointLimit").defineInRange("pointLimit", 1_048_576, 0, 8_388_608);
+        LIDAR_BATTERY_MINUTES = builder.comment("Minutes of continuous basic scanning a full battery lasts.")
+                .translation("seepers.configuration.lidar.batteryMinutes").defineInRange("batteryMinutes", 60, 1, 1440);
+        LIDAR_REDSTONE_CHARGE = builder.comment("Share of a full battery one redstone dust adds.")
+                .translation("seepers.configuration.lidar.redstoneCharge").defineInRange("redstoneCharge", 0.10, 0.001, 1.0);
+        builder.comment("Lidar modules: what each level gives and how much faster it drains the battery.")
+                .translation("seepers.configuration.lidar.modules").push("modules");
+        LIDAR_VIEW_CONE_DEGREES = builder.comment("View I: width of the cone, degrees.")
+                .translation("seepers.configuration.lidar.modules.viewConeDegrees")
+                .defineInRange("viewConeDegrees", 40.0, 1.0, 120.0);
+        LIDAR_VIEW_SCREEN_2 = builder.comment("View II: share of the screen's width and height its scan covers, centred.")
+                .translation("seepers.configuration.lidar.modules.viewScreen2").defineInRange("viewScreen2", 0.5, 0.05, 1.0);
+        LIDAR_VIEW_SCREEN_3 = builder.comment("View III: share of the screen's width and height its ordinary scan covers, centred.")
+                .translation("seepers.configuration.lidar.modules.viewScreen3").defineInRange("viewScreen3", 0.9, 0.05, 1.0);
+        LIDAR_PASS_SPEED_BONUS = builder.comment("The view key's 180 and 360 scans lay this much more points per second than the lidar's ordinary scan (0.4 = 40%).")
+                .translation("seepers.configuration.lidar.modules.passSpeedBonus").defineInRange("passSpeedBonus", 0.4, 0.0, 10.0);
+        LIDAR_WIDE_COST = builder.comment("View II 180 scan: battery drain multiplier while its passes run.")
+                .translation("seepers.configuration.lidar.modules.wideCost").defineInRange("wideCost", 4.5, 0.0, 100.0);
+        LIDAR_ROUND_PASS_TICKS = builder.comment("View III all-around scan: ticks one pass is spread over.")
+                .translation("seepers.configuration.lidar.modules.roundPassTicks").defineInRange("roundPassTicks", 5, 1, 100);
+        LIDAR_ROUND_PAUSE_TICKS = builder.comment("View III all-around scan: ticks between passes while the key is held.")
+                .translation("seepers.configuration.lidar.modules.roundPauseTicks").defineInRange("roundPauseTicks", 10, 0, 200);
+        LIDAR_VIEW_COST_1 = builder.comment("View I: battery drain multiplier.").translation("seepers.configuration.lidar.modules.viewCost1").defineInRange("viewCost1", 1.5, 0.0, 100.0);
+        LIDAR_VIEW_COST_2 = builder.comment("View II: battery drain multiplier.").translation("seepers.configuration.lidar.modules.viewCost2").defineInRange("viewCost2", 3.0, 0.0, 100.0);
+        LIDAR_VIEW_COST_3 = builder.comment("View III: battery drain multiplier.").translation("seepers.configuration.lidar.modules.viewCost3").defineInRange("viewCost3", 6.0, 0.0, 100.0);
+        LIDAR_DENSITY_1 = builder.comment("Density I: points per second.").translation("seepers.configuration.lidar.modules.density1").defineInRange("density1", 640, 20, 20000);
+        LIDAR_DENSITY_2 = builder.comment("Density II: points per second.").translation("seepers.configuration.lidar.modules.density2").defineInRange("density2", 1280, 20, 20000);
+        LIDAR_DENSITY_3 = builder.comment("Density III: points per second.").translation("seepers.configuration.lidar.modules.density3").defineInRange("density3", 2560, 20, 20000);
+        LIDAR_DENSITY_COST_1 = builder.comment("Density I: battery drain multiplier.").translation("seepers.configuration.lidar.modules.densityCost1").defineInRange("densityCost1", 1.5, 0.0, 100.0);
+        LIDAR_DENSITY_COST_2 = builder.comment("Density II: battery drain multiplier.").translation("seepers.configuration.lidar.modules.densityCost2").defineInRange("densityCost2", 2.0, 0.0, 100.0);
+        LIDAR_DENSITY_COST_3 = builder.comment("Density III: battery drain multiplier.").translation("seepers.configuration.lidar.modules.densityCost3").defineInRange("densityCost3", 3.0, 0.0, 100.0);
+        // Ring slots are twice the limit and must fit 24 bits (PointCloud).
+        LIDAR_MEMORY_1 = builder.comment("Memory I: lidar points kept.").translation("seepers.configuration.lidar.modules.memory1").defineInRange("memory1", 2_097_152, 0, 8_388_608);
+        LIDAR_MEMORY_2 = builder.comment("Memory II: lidar points kept.").translation("seepers.configuration.lidar.modules.memory2").defineInRange("memory2", 4_194_304, 0, 8_388_608);
+        LIDAR_MEMORY_3 = builder.comment("Memory III: lidar points kept; they are also saved between visits.").translation("seepers.configuration.lidar.modules.memory3").defineInRange("memory3", 8_388_608, 0, 8_388_608);
+        LIDAR_DYNAMO_RATE = builder.comment("Hand dynamo: seconds of basic scanning charged per second of cranking.")
+                .translation("seepers.configuration.lidar.modules.dynamoRate")
+                .defineInRange("dynamoRate", 5.0, 0.0, 600.0);
+        LIDAR_SCHEMATIC_2_CHANCE = builder.comment("Chance a mineshaft or dungeon chest holds a level II schematic.")
+                .translation("seepers.configuration.lidar.modules.schematic2Chance")
+                .defineInRange("schematic2Chance", 0.25, 0.0, 1.0);
+        LIDAR_SCHEMATIC_3_CHANCE = builder.comment("Chance an ancient city or stronghold chest holds a level III schematic.")
+                .translation("seepers.configuration.lidar.modules.schematic3Chance")
+                .defineInRange("schematic3Chance", 0.2, 0.0, 1.0);
+        builder.pop();
         builder.pop();
 
         builder.comment("Fog blows out torches, breaks campfires and puts out candles (tags #seepers:fire/*). Lanterns are safe.")

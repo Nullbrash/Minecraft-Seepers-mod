@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class SeepersNetwork {
     /** Bump on any incompatible payload change: NeoForge refuses connections with a different version. */
-    public static final String PROTOCOL_VERSION = "13";
+    public static final String PROTOCOL_VERSION = "17";
 
     public static void register(RegisterPayloadHandlersEvent event) {
         // Handlers run on the main thread (registrar default).
@@ -40,6 +40,10 @@ public final class SeepersNetwork {
                 (payload, context) -> ClientPayloadHandlers.handleClientCommand(payload, context));
         registrar.playToServer(TouchLavaPayload.TYPE, TouchLavaPayload.STREAM_CODEC, LavaTouch::handle);
         registrar.playToServer(CaneTapPayload.TYPE, CaneTapPayload.STREAM_CODEC, CaneTaps::handle);
+        registrar.playToServer(io.github.nullbrash.seepers.network.payload.LidarScanPayload.TYPE,
+                io.github.nullbrash.seepers.network.payload.LidarScanPayload.STREAM_CODEC, io.github.nullbrash.seepers.lidar.LidarPower::handle);
+        registrar.playToServer(io.github.nullbrash.seepers.network.payload.LidarActionPayload.TYPE,
+                io.github.nullbrash.seepers.network.payload.LidarActionPayload.STREAM_CODEC, io.github.nullbrash.seepers.lidar.LidarPower::handleAction);
         registrar.playToClient(SilhouettePayload.TYPE, SilhouettePayload.STREAM_CODEC,
                 (payload, context) -> ClientPayloadHandlers.handleSilhouette(payload, context));
         registrar.playToClient(DistortionPayload.TYPE, DistortionPayload.STREAM_CODEC,
@@ -55,6 +59,9 @@ public final class SeepersNetwork {
         registrar.playToClient(io.github.nullbrash.seepers.network.payload.DynamicLightPayload.TYPE,
                 io.github.nullbrash.seepers.network.payload.DynamicLightPayload.STREAM_CODEC,
                 (payload, context) -> ClientPayloadHandlers.handleDynamicLight(payload, context));
+        registrar.playToClient(io.github.nullbrash.seepers.network.payload.DynamoSoundPayload.TYPE,
+                io.github.nullbrash.seepers.network.payload.DynamoSoundPayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandlers.handleDynamoSound(payload, context));
         registrar.playToServer(FogProbeReplyPayload.TYPE, FogProbeReplyPayload.STREAM_CODEC, FogProbeTracker::handleReply);
     }
 

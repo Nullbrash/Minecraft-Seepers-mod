@@ -3,7 +3,11 @@ package io.github.nullbrash.seepers.client.lidar;
 import io.github.nullbrash.seepers.Seepers;
 import io.github.nullbrash.seepers.client.points.PointCloud;
 import io.github.nullbrash.seepers.client.points.PointSource;
+import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.nullbrash.seepers.config.ClientConfig;
+import io.github.nullbrash.seepers.item.BatteryItem;
+import io.github.nullbrash.seepers.item.LidarItem;
+import io.github.nullbrash.seepers.lidar.LidarModules;
 import io.github.nullbrash.seepers.config.ServerConfig;
 import java.util.Locale;
 import net.minecraft.client.DeltaTracker;
@@ -49,6 +53,13 @@ public final class LidarHud {
     private static final int MARGIN = 4;
     private static final int BESIDE_GAP = 31;
     private static final int BAR = 4;
+    private static final int BACKING_ALPHA = 0xD8;
+    /** An icon and its gap before the text. */
+    private static final int ICON = 10;
+    private static final ResourceLocation ICONS = Seepers.id("textures/gui/lidar_icons.png");
+    private static final int ICONS_WIDTH = 40;
+    /** Below this share of a full battery its charge blinks. */
+    private static final double LOW_SHARE = 0.1;
     private static final String SEPARATOR = "  ·  ";
 
     private static final int NOT_RAISED = Integer.MIN_VALUE;
@@ -116,25 +127,33 @@ public final class LidarHud {
         }
         shownMemory += (memory - shownMemory) * 0.25;
         if (Math.abs(memory - shownMemory) < 1) shownMemory = memory;
-        int limit = PointSource.LIDAR.capacity();
+        LidarModules.Stats stats = LidarModules.stats(player.getItemInHand(hand));
+        int limit = stats.pointLimit();
 
         Font font = minecraft.font;
-        // The beam in fixed columns sized for their widest values, so nothing jumps as they change; memory under it,
-        // its bar along the panel's whole bottom edge.
-        Component mode = Component.translatable("seepers.lidar.hud.mode", number(ServerConfig.get(ServerConfig.LIDAR_CONE_DEGREES)));
-        Component rate = Component.translatable("seepers.lidar.hud.rate", ServerConfig.get(ServerConfig.LIDAR_POINTS_PER_SECOND));
+        Integer charge = LidarItem.battery(player.getItemInHand(hand));
+        // Icons instead of words, each value in a fixed column sized for its widest value, so nothing jumps as values
+        // change. Row 1: range, mode, scan speed. Row 2: memory, battery. Charge bar along the top edge, memory along
+        // the bottom.
+        Component mode = field(stats);
+        Component rate = Component.translatable(LidarScan.latched() ? "seepers.lidar.hud.rate_auto" : "seepers.lidar.hud.rate", stats.pointsPerSecond());
         Component idle = Component.translatable("seepers.lidar.hud.idle");
         Component range = range(minecraft, player);
         Component memoryText = Component.translatable("seepers.lidar.hud.memory", grouped((long) shownMemory), grouped(limit));
+        Component chargeText = charge == null ? Component.translatable("seepers.lidar.hud.no_battery") : chargeText(charge, stats);
         int separator = font.width(SEPARATOR);
-        int modeWidth = font.width(mode);
-        int scanWidth = Math.max(font.width(rate), font.width(idle));
         int rangeWidth = Math.max(font.width(Component.translatable("seepers.lidar.hud.range",
                 number(ServerConfig.get(ServerConfig.LIDAR_RANGE)) + ".0")), font.width(Component.translatable("seepers.lidar.hud.no_range")));
-        int beamWidth = modeWidth + separator + scanWidth + separator + rangeWidth;
-        int memoryWidth = font.width(Component.translatable("seepers.lidar.hud.memory", grouped(limit), grouped(limit)));
-        int width = Math.max(Math.max(beamWidth, memoryWidth), MIN_WIDTH) + PAD * 2;
-        int height = 2 * (font.lineHeight + 2) + PAD * 2 - 2 + BAR;
+        // The sphere's label changes as one stops and walks: sized for both.
+        int modeWidth = Math.max(font.width(Component.translatable("seepers.lidar.hud.mode.screen_share", 100)),
+                font.width(Component.translatable("seepers.lidar.hud.mode.round_moving")));
+        int scanWidth = Math.max(Math.max(font.width(rate), font.width(idle)),
+                font.width(Component.translatable("seepers.lidar.hud.rate_auto", stats.pointsPerSecond())));
+        int beamWidth = ICON * 3 + rangeWidth + modeWidth + scanWidth + separator * 2;
+        int memoryWidth = ICON + font.width(Component.translatable("seepers.lidar.hud.memory", grouped(limit), grouped(limit)));
+        int chargeWidth = ICON + Math.max(font.width(chargeText(BatteryItem.capacity(), stats)), font.width(Component.translatable("seepers.lidar.hud.no_battery")));
+        int width = Math.max(Math.max(beamWidth, memoryWidth + separator + chargeWidth), MIN_WIDTH) + PAD * 2;
+        int height = BAR + 2 * (font.lineHeight + 2) + PAD * 2 - 2 + BAR;
 
         // Presets (client config); beside the hotbar goes to the side of the hand that holds the lidar.
         boolean right = (hand == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite()) == HumanoidArm.RIGHT;
@@ -159,33 +178,91 @@ public final class LidarHud {
         // A faint flicker, brighter while the beam runs.
         long now = System.currentTimeMillis();
         float flicker = 0.92F + 0.08F * Mth.sin(now / 37.0F) * Mth.sin(now / 91.0F);
-        float strength = (LidarScan.scanning() ? 1.0F : 0.7F) * flicker;
+        float strength = (LidarScan.scanning() ? 1.0F : 0.85F) * flicker;
         int text = alpha(strength) << 24 | COLOR;
 
         graphics.pose().pushPose();
         graphics.pose().translate(left, top, 0);
-        graphics.fill(0, 0, width, height, Math.round(0x48 * strength) << 24 | 0x0A1A26);
-        graphics.fill(0, 0, width, 1, alpha(strength * 0.6F) << 24 | COLOR);
-        int y = PAD;
+        // A nearly opaque backing: points drawn behind it must not show through the text.
+        graphics.fill(0, 0, width, height, BACKING_ALPHA << 24 | 0x06121A);
+        int capacity = BatteryItem.capacity();
+        bar(graphics, 0, width, charge == null ? 0 : charge / (double) capacity, strength, text);
+        int y = BAR + PAD;
         int x = PAD;
+        x = icon(graphics, Icon.RANGE, x, y, strength);
         graphics.drawString(font, range, x, y, text, false);
         x += rangeWidth;
         graphics.drawString(font, SEPARATOR, x, y, text, false);
         x += separator;
+        x = icon(graphics, Icon.ROSETTE, x, y, strength);
         graphics.drawString(font, mode, x, y, text, false);
         x += modeWidth;
         graphics.drawString(font, SEPARATOR, x, y, text, false);
         x += separator;
+        x = icon(graphics, Icon.SCAN, x, y, strength);
         graphics.drawString(font, LidarScan.scanning() ? rate : idle, x, y, text, false);
         y += font.lineHeight + 2;
-        graphics.drawString(font, memoryText, PAD, y, text, false);
-        int filled = limit <= 0 ? 0 : (int) Math.round(width * Math.min(1.0, shownMemory / limit));
-        graphics.fill(0, height - BAR, width, height, alpha(strength * 0.25F) << 24 | COLOR);
-        graphics.fill(0, height - BAR, Math.max(filled, shownMemory > 0 ? 1 : 0), height, text);
+        x = icon(graphics, Icon.MEMORY, PAD, y, strength);
+        graphics.drawString(font, memoryText, x, y, text, false);
+        // A low or missing battery blinks.
+        boolean low = charge == null || charge < capacity * LOW_SHARE;
+        float chargeStrength = low && (now / 400) % 2 == 0 ? strength * 0.35F : strength;
+        x = icon(graphics, Icon.BATTERY, width - PAD - chargeWidth, y, chargeStrength);
+        graphics.drawString(font, chargeText, x, y, alpha(chargeStrength) << 24 | COLOR, false);
+        bar(graphics, height - BAR, width, limit <= 0 ? 0 : shownMemory / limit, strength, text);
         // Scanlines: every other row a touch darker, drifting slowly.
         int offset = (int) (now / 120 % 2);
         for (int row = offset; row < height; row += 2) graphics.fill(0, row, width, row + 1, 0x18000000);
         graphics.pose().popPose();
+    }
+
+    private static Component chargeText(int charge, LidarModules.Stats stats) {
+        int capacity = BatteryItem.capacity();
+        return Component.translatable("seepers.lidar.hud.charge", (int) Math.floor(100.0 * charge / capacity), minutes(charge, stats));
+    }
+
+    /** Minutes of scanning left at this lidar's drain. */
+    static int minutes(int charge, LidarModules.Stats stats) {
+        return (int) Math.ceil(charge / (1200.0 * Math.max(stats.cost(), 0.001)));
+    }
+
+    /** The beam's field: the chosen area, or the special scan while its key is held (180, 360, repair). */
+    static Component field(LidarModules.Stats stats) {
+        var player = net.minecraft.client.Minecraft.getInstance().player;
+        if (player != null && LidarScan.roundKeyHeld(player)) {
+            boolean still = LidarScan.standing();
+            if (stats.refresh() && still) return Component.translatable("seepers.lidar.hud.mode.repair");
+            if (stats.view() == 2) return Component.translatable("seepers.lidar.hud.mode.wide");
+            if (stats.view() >= 3) {
+                return Component.translatable(still ? "seepers.lidar.hud.mode.round" : "seepers.lidar.hud.mode.round_moving");
+            }
+            return Component.translatable("seepers.lidar.hud.mode.repair_moving");
+        }
+        return area(stats.field(), stats.field() == LidarModules.Field.CONE ? stats.coneHalf() * 2 : stats.screenShare());
+    }
+
+    static Component area(LidarModules.Field field, double value) {
+        return field == LidarModules.Field.CONE ? Component.translatable("seepers.lidar.hud.mode", number(value))
+                : Component.translatable("seepers.lidar.hud.mode.screen_share", Math.round(value * 100));
+    }
+
+    /** A full-width bar: faint track, lit share. */
+    private static void bar(GuiGraphics graphics, int y, int width, double share, float strength, int lit) {
+        graphics.fill(0, y, width, y + BAR, alpha(strength * 0.25F) << 24 | COLOR);
+        int filled = (int) Math.round(width * Math.min(1.0, Math.max(0.0, share)));
+        if (share > 0) graphics.fill(0, y, Math.max(filled, 1), y + BAR, lit);
+    }
+
+    /** Icons of the hologram, 8x8 each in one sheet, tinted with the panel's colour. */
+    enum Icon { RANGE, ROSETTE, SCAN, MEMORY, BATTERY }
+
+    /** Draws the icon at x and returns where its text starts. */
+    private static int icon(GuiGraphics graphics, Icon icon, int x, int y, float strength) {
+        graphics.setColor(((COLOR >> 16) & 0xFF) / 255.0F, ((COLOR >> 8) & 0xFF) / 255.0F, (COLOR & 0xFF) / 255.0F, Mth.clamp(strength, 0, 1));
+        RenderSystem.enableBlend();
+        graphics.blit(ICONS, x, y, icon.ordinal() * 8, 0, 8, 8, ICONS_WIDTH, 8);
+        graphics.setColor(1, 1, 1, 1);
+        return x + ICON;
     }
 
     private static Component range(Minecraft minecraft, LocalPlayer player) {
@@ -198,7 +275,7 @@ public final class LidarHud {
     }
 
     /** 1048576 → "1 048 576": long counts read at a glance. */
-    static String grouped(long value) {
+    public static String grouped(long value) {
         return String.format(Locale.ROOT, "%,d", value).replace(',', ' ');
     }
 

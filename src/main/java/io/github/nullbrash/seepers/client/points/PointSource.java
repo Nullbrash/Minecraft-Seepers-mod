@@ -24,12 +24,26 @@ public enum PointSource {
     /** "Forever" for the shader's fade (it starts after two thirds of the lifetime): months of play. */
     private static final double LIDAR_LIFETIME_SECONDS = 1.0E7;
 
+    /** The lidar share's limit from the last lidar in hand (memory module), or -1 for the config's base. */
+    private static int lidarLimit = -1;
+    /** Slots the lidar share may grow to whatever its limit: twice the largest memory, so a new limit keeps the points. */
+    public static final int LIDAR_MAX_LIMIT = 8_388_608;
+
+    public static void setLidarLimit(int limit) {
+        lidarLimit = Math.min(limit, LIDAR_MAX_LIMIT);
+    }
+
+    /** Whether a change of this share's limit keeps its points (the ring is sized for the largest). */
+    public boolean resizable() {
+        return this == LIDAR;
+    }
+
     public int capacity() {
         return switch (this) {
             case TOUCH -> ServerConfig.get(ServerConfig.TOUCH_POINT_LIMIT);
             case CANE -> ServerConfig.get(ServerConfig.CANE_POINT_LIMIT);
             case SILHOUETTE -> SILHOUETTE_CAPACITY;
-            case LIDAR -> ServerConfig.get(ServerConfig.LIDAR_POINT_LIMIT);
+            case LIDAR -> lidarLimit < 0 ? ServerConfig.get(ServerConfig.LIDAR_POINT_LIMIT) : lidarLimit;
             case DEBUG -> DEBUG_CAPACITY;
             default -> 0;
         };

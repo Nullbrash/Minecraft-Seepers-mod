@@ -16,6 +16,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -66,7 +67,7 @@ public final class PointCloud {
      * section in 1/1024 block, the face read from the local key, the lifetime from the source.
      */
     static final class Ring {
-        final int limit;
+        int limit;
         final int capacity;
         long[] section;
         int[] local;
@@ -79,9 +80,9 @@ public final class PointCloud {
         int size;
         int live;
 
-        Ring(int limit) {
+        Ring(int limit, int capacity) {
             this.limit = limit;
-            this.capacity = limit * 2;
+            this.capacity = capacity;
             allocate(Math.min(capacity, INITIAL_SLOTS));
         }
 
@@ -125,7 +126,10 @@ public final class PointCloud {
     public static @Nullable PointCloud get() {
         ClientLevel level = Minecraft.getInstance().level;
         if (current != null && current.level != level) reset();
-        if (current == null && level != null) current = new PointCloud(level);
+        if (current == null && level != null) {
+            current = new PointCloud(level);
+            LidarMemory.load(current, level);
+        }
         return current;
     }
 
@@ -134,12 +138,17 @@ public final class PointCloud {
         return current;
     }
 
+    public it.unimi.dsi.fastutil.longs.LongSet sectionKeys() {
+        return sections.keySet();
+    }
+
     public boolean hasPoints() {
         return !sections.isEmpty();
     }
 
     public static void reset() {
         if (current != null) {
+            LidarMemory.save(current, current.level);
             current.clear();
             current = null;
         }
@@ -237,6 +246,10 @@ public final class PointCloud {
         return removed;
     }
 
+    @Nullable Ring ringFor(PointSource source) {
+        return rings.get(source);
+    }
+
     Ring ringOf(int packed) {
         return rings.get(PointSource.values()[packed >>> 24]);
     }
@@ -280,6 +293,55 @@ public final class PointCloud {
      * they share the plane with the new block's face and would flicker through it. Only points lying on the block
      * boundary — the top of a slab inside its block is never covered by the block above.
      */
+    /**
+     * Lidar data refresh (CLAUDE.md 5.3): drops this section's lidar points whose surface is gone — the shape behind
+     * the point no longer reaches it (block broken, moved or replaced). Returns the points checked; the caller spends
+     * a budget on them.
+     */
+    public int refreshSection(long key) {
+        Section section = sections.get(key);
+        if (section == null || section.points.isEmpty()) return 0;
+        double ox = SectionPos.sectionToBlockCoord(SectionPos.x(key));
+        double oy = SectionPos.sectionToBlockCoord(SectionPos.y(key));
+        double oz = SectionPos.sectionToBlockCoord(SectionPos.z(key));
+        BlockPos.MutableBlockPos behind = new BlockPos.MutableBlockPos();
+        IntArrayList stale = null;
+        int checked = 0;
+        for (Int2IntMap.Entry entry : section.points.int2IntEntrySet()) {
+            int packed = entry.getIntValue();
+            if (packed >>> 24 != PointSource.LIDAR.ordinal()) continue;
+            checked++;
+            Ring ring = ringOf(packed);
+            int slot = packed & 0xFFFFFF;
+            Direction face = ring.face(slot);
+            double x = ox + ring.x(slot);
+            double y = oy + ring.y(slot);
+            double z = oz + ring.z(slot);
+            behind.set(Mth.floor(x - face.getStepX() * 0.02), Mth.floor(y - face.getStepY() * 0.02), Mth.floor(z - face.getStepZ() * 0.02));
+            if (!level.isLoaded(behind) || onSurface(behind, x, y, z)) continue;
+            if (stale == null) stale = new IntArrayList();
+            stale.add(entry.getIntKey());
+        }
+        if (stale != null) {
+            for (int i = 0; i < stale.size(); i++) {
+                int packed = section.points.remove(stale.getInt(i));
+                ringOf(packed).live--;
+            }
+            section.dirty = true;
+        }
+        return checked;
+    }
+
+    /** Whether the block's drawn shape (or a fluid's surface) still reaches the point, give or take a hair. */
+    private boolean onSurface(BlockPos pos, double x, double y, double z) {
+        BlockState state = level.getBlockState(pos);
+        if (!state.getFluidState().isEmpty()) return true;
+        for (AABB box : state.getShape(level, pos).toAabbs()) {
+            if (box.move(pos).inflate(0.06).contains(x, y, z)) return true;
+        }
+        return false;
+    }
+
     private boolean dropBuried(Section section) {
         IntArrayList buried = null;
         double ox = SectionPos.sectionToBlockCoord(SectionPos.x(section.key));
@@ -314,12 +376,18 @@ public final class PointCloud {
         int capacity = source.capacity();
         Ring ring = rings.get(source);
         if (ring != null && ring.limit == capacity) return ring;
+        if (ring != null && source.resizable() && capacity > 0) {
+            // Same ring, new limit: the oldest live points beyond it go now.
+            ring.limit = capacity;
+            while (ring.live > ring.limit) removeSlot(source, ring, ring.head);
+            return ring;
+        }
         if (ring != null) {
             while (ring.size > 0) removeSlot(source, ring, ring.head); // the limit changed: start this share over
             rings.remove(source);
         }
         if (capacity <= 0) return null;
-        ring = new Ring(capacity);
+        ring = new Ring(capacity, source.resizable() ? PointSource.LIDAR_MAX_LIMIT * 2 : capacity * 2);
         rings.put(source, ring);
         return ring;
     }

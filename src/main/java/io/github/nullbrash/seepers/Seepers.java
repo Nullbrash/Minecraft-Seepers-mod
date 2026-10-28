@@ -59,6 +59,7 @@ public final class Seepers {
         SeepersBlocks.BLOCKS.register(modBus);
         SeepersItems.ITEMS.register(modBus);
         SeepersComponents.COMPONENTS.register(modBus);
+        io.github.nullbrash.seepers.registry.SeepersMenus.MENUS.register(modBus);
         io.github.nullbrash.seepers.registry.SeepersSounds.SOUNDS.register(modBus);
         SeepersWorldgen.DENSITY_FUNCTION_TYPES.register(modBus);
         SeepersWorldgen.CHUNK_GENERATORS.register(modBus);
@@ -67,6 +68,10 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener(WorldShape::onLoggedIn);
         NeoForge.EVENT_BUS.addListener(WorldShape::onCreateSpawn);
         NeoForge.EVENT_BUS.addListener(CaneItem::onAnvilUpdate);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.LidarPower::onPlayerTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.LidarPower::onStartTracking);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.SchematicLoot::onLootTableLoad);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.LidarPower::onLoggedOut);
         modBus.addListener(SeepersItems::addToCreativeTabs);
         modBus.addListener(io.github.nullbrash.seepers.item.ChiselItem::registerDataMaps);
 

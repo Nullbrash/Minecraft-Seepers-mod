@@ -3,10 +3,12 @@ package io.github.nullbrash.seepers.integration.emi;
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
+import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.recipe.EmiWorldInteractionRecipe;
 import dev.emi.emi.api.stack.EmiStack;
 import io.github.nullbrash.seepers.Seepers;
 import io.github.nullbrash.seepers.block.AnomalyRockBlock;
+import io.github.nullbrash.seepers.item.BatteryItem;
 import io.github.nullbrash.seepers.item.ChiselItem;
 import io.github.nullbrash.seepers.registry.SeepersBlocks;
 import io.github.nullbrash.seepers.registry.SeepersComponents;
@@ -22,8 +24,8 @@ import net.minecraft.world.item.component.BlockItemStateProperties;
 import net.minecraft.world.level.block.Block;
 
 /**
- * Optional EMI integration: shows what plain recipes do not — the cane's iron tip and repairs on the anvil, and the
- * chisel's block conversions. Loaded only by EMI (annotation scan), so the mod never needs it.
+ * Optional EMI integration: shows what plain recipes do not — the cane's iron tip and repairs on the anvil, the
+ * chisel's block conversions and the lidar battery's inventory clicks. Loaded only by EMI (annotation scan), so the mod never needs it.
  */
 @EmiEntrypoint
 public final class SeepersEmiPlugin implements EmiPlugin {
@@ -35,6 +37,7 @@ public final class SeepersEmiPlugin implements EmiPlugin {
             registry.addRecipe(new AnvilEmiRecipe(id("anvil/iron_tip/" + name(cane)), EmiStack.of(cane), EmiStack.of(Items.IRON_NUGGET), EmiStack.of(tipped)));
         }
         repair(registry, SeepersItems.BOUND_CANE.get(), Items.STRING);
+        inventory(registry);
         repair(registry, SeepersItems.CHISEL.get(), Items.IRON_INGOT);
 
         ItemStack hewn = new ItemStack(SeepersBlocks.ANOMALY_ROCK_ITEM.get());
@@ -47,6 +50,27 @@ public final class SeepersEmiPlugin implements EmiPlugin {
             if (from.asItem() == Items.AIR || result.result().asItem() == Items.AIR) return;
             chisel(registry, key.location().getNamespace() + "/" + key.location().getPath(), EmiStack.of(from), EmiStack.of(result.result()), null);
         });
+    }
+
+    /** Lidar battery clicks (CLAUDE.md 5.3): putting it in, and charging with redstone dust. */
+    private static void inventory(EmiRegistry registry) {
+        EmiRecipeCategory category = new EmiRecipeCategory(Seepers.id("inventory"), EmiStack.of(SeepersItems.BATTERY.get()));
+        registry.addCategory(category);
+        int capacity = BatteryItem.capacity();
+        int dust = BatteryItem.withDust(0);
+        ItemStack lidar = new ItemStack(SeepersItems.LIDAR.get());
+        ItemStack loaded = lidar.copy();
+        loaded.set(SeepersComponents.BATTERY.get(), capacity);
+        registry.addRecipe(new InventoryEmiRecipe(category, id("inventory/lidar_battery"), EmiStack.of(BatteryItem.withCharge(capacity)),
+                EmiStack.of(lidar), EmiStack.of(loaded)));
+        registry.addRecipe(new InventoryEmiRecipe(category, id("inventory/battery_redstone"), EmiStack.of(Items.REDSTONE),
+                EmiStack.of(BatteryItem.withCharge(0)), EmiStack.of(BatteryItem.withCharge(dust))));
+        ItemStack flat = lidar.copy();
+        flat.set(SeepersComponents.BATTERY.get(), 0);
+        ItemStack topped = lidar.copy();
+        topped.set(SeepersComponents.BATTERY.get(), dust);
+        registry.addRecipe(new InventoryEmiRecipe(category, id("inventory/lidar_redstone"), EmiStack.of(Items.REDSTONE),
+                EmiStack.of(flat), EmiStack.of(topped)));
     }
 
     private static void repair(EmiRegistry registry, Item item, Item material) {
