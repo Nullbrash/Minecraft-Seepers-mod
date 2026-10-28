@@ -3,10 +3,7 @@ package io.github.nullbrash.seepers.client.points;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
-import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.VertexBuffer;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import io.github.nullbrash.seepers.Seepers;
@@ -14,6 +11,7 @@ import io.github.nullbrash.seepers.client.touch.TouchMaterial;
 import io.github.nullbrash.seepers.config.ClientConfig;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -26,28 +24,37 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL32;
+import org.lwjgl.system.MemoryUtil;
 
 /**
- * Draws the point cloud (CLAUDE.md 5, 5.3): one static vertex buffer per section, rebuilt only when its points or
- * their light change. Points are camera-facing glowing discs drawn by our own shader: darkness and fog do not
- * touch them, depth does (no points through walls), fading with age happens on the GPU.
+ * Draws the point cloud (CLAUDE.md 5, 5.3): one static buffer per section, rebuilt only when its points or their
+ * light change. A point is a single 16-byte vertex drawn as a point sprite that our shader turns into a camera-facing
+ * glowing disc: darkness and fog do not touch it, depth does (no points through walls), fading with age happens on
+ * the GPU. Vanilla's vertex modes have no points, so the buffers are plain GL objects bound around the shader.
  */
 public final class PointRenderer {
     /**
-     * Position (section-relative), color (alpha = how well light shows the surface: 0 dark .. 1 lit),
-     * UV0 = (born, lifetime) s, UV1 = corner. The shader also takes the fog into account.
+     * Attribute names in location order for the shader ({@link ShaderInstance} binds them by this list); the actual
+     * layout is {@link #STRIDE} bytes set up in {@link Mesh}: position (3 shorts, 1/1024 block, section-relative,
+     * already lifted off the face), lifetime (unsigned short seconds, 0 = never fades), colour (4 bytes, alpha = how
+     * well light shows the surface), born (float seconds).
      */
     static final VertexFormat FORMAT = VertexFormat.builder()
             .add("Position", VertexFormatElement.POSITION)
             .add("Color", VertexFormatElement.COLOR)
-            .add("UV0", VertexFormatElement.UV0)
-            .add("UV1", VertexFormatElement.UV1)
+            .add("Born", VertexFormatElement.UV0)
+            .add("Life", VertexFormatElement.UV2)
             .build();
+    static final int STRIDE = 16;
     private static final long REBUILD_BUDGET_NANOS = 2_000_000;
-    private static final int[][] CORNERS = {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}};
+    /** Longer lifetimes are drawn as never fading (lidar points). */
+    private static final int MAX_LIFETIME_SECONDS = 65535;
 
     private static @Nullable ShaderInstance shader;
-    private static @Nullable ByteBufferBuilder bytes;
+    private static @Nullable ByteBuffer bytes;
 
     // Stats for /seepers points stats.
     private static int rebuiltThisSecond;
@@ -56,6 +63,49 @@ public final class PointRenderer {
     private static long rebuildNanosLastSecond;
     private static long secondStarted;
     private static double drawNanosAverage;
+
+    /** One section's points on the GPU. Render thread only. */
+    static final class Mesh {
+        private final int vao = GlStateManager._glGenVertexArrays();
+        private final int vbo = GlStateManager._glGenBuffers();
+        private int count;
+
+        Mesh() {
+            GlStateManager._glBindVertexArray(vao);
+            GlStateManager._glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+            GlStateManager._enableVertexAttribArray(0);
+            GlStateManager._vertexAttribPointer(0, 3, GL11.GL_SHORT, false, STRIDE, 0);
+            GlStateManager._enableVertexAttribArray(1);
+            GlStateManager._vertexAttribPointer(1, 4, GL11.GL_UNSIGNED_BYTE, true, STRIDE, 8);
+            GlStateManager._enableVertexAttribArray(2);
+            GlStateManager._vertexAttribPointer(2, 1, GL11.GL_FLOAT, false, STRIDE, 12);
+            GlStateManager._enableVertexAttribArray(3);
+            GlStateManager._vertexAttribPointer(3, 1, GL11.GL_UNSIGNED_SHORT, false, STRIDE, 6);
+            GlStateManager._glBindVertexArray(0);
+            BufferUploader.invalidate();
+        }
+
+        void upload(ByteBuffer data, int points) {
+            count = points;
+            GlStateManager._glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+            GlStateManager._glBufferData(GL15.GL_ARRAY_BUFFER, data, GL15.GL_STATIC_DRAW);
+            BufferUploader.invalidate();
+        }
+
+        void draw() {
+            GlStateManager._glBindVertexArray(vao);
+            GL11.glDrawArrays(GL11.GL_POINTS, 0, count);
+        }
+
+        int count() {
+            return count;
+        }
+
+        void close() {
+            GlStateManager._glDeleteBuffers(vbo);
+            GlStateManager._glDeleteVertexArrays(vao);
+        }
+    }
 
     public static void onRegisterShaders(RegisterShadersEvent event) {
         try {
@@ -83,6 +133,7 @@ public final class PointRenderer {
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
         RenderSystem.disableCull();
+        GL11.glEnable(GL32.GL_PROGRAM_POINT_SIZE); // the vertex shader sizes each sprite
 
         shader.setDefaultUniforms(VertexFormat.Mode.QUADS, event.getModelViewMatrix(), event.getProjectionMatrix(), minecraft.getWindow());
         shader.safeGetUniform("PointTime").set(cloud.now(event.getPartialTick().getGameTimeDeltaPartialTick(false)));
@@ -100,12 +151,13 @@ public final class PointRenderer {
                 offset.set((float) (ox - camera.x), (float) (oy - camera.y), (float) (oz - camera.z));
                 offset.upload();
             }
-            section.buffer.bind();
             section.buffer.draw();
         }
         shader.clear();
-        VertexBuffer.unbind();
+        GlStateManager._glBindVertexArray(0);
+        BufferUploader.invalidate();
 
+        GL11.glDisable(GL32.GL_PROGRAM_POINT_SIZE);
         RenderSystem.enableCull();
         RenderSystem.depthMask(true);
         RenderSystem.defaultBlendFunc();
@@ -152,41 +204,47 @@ public final class PointRenderer {
         int fadeEnd = Math.max(fadeStart + 1, ClientConfig.POINT_LIGHT_FADE_END.get());
         // Lift the disc off the face so it does not sink into the block it lies on.
         float lift = ClientConfig.POINT_SIZE.get().floatValue() * 0.5F + 0.005F;
-        if (bytes == null) bytes = new ByteBufferBuilder(FORMAT.getVertexSize() * 4 * 256);
-        BufferBuilder builder = new BufferBuilder(bytes, VertexFormat.Mode.QUADS, FORMAT);
+        int points = section.points.size();
+        ByteBuffer data = buffer(points * STRIDE);
         int hash = 1;
         for (int packed : section.points.values()) {
             PointCloud.Ring ring = cloud.ringOf(packed);
+            PointSource source = PointSource.values()[packed >>> 24];
             int slot = packed & 0xFFFFFF;
             int light = cloud.lightAt(section.key, ring, slot);
             hash = hash * 31 + light;
             float t = Mth.clamp((light - fadeStart) / (float) (fadeEnd - fadeStart), 0, 1);
-            // Lit surfaces still get points: fog may hide them, the shader decides. Marks never fade.
-            int alpha = TouchMaterial.byId(ring.material[slot]).isMark() ? 0 : Math.round(t * t * (3 - 2 * t) * 255);
-            Direction face = Direction.values()[ring.face[slot]];
-            float x = ring.x[slot] + face.getStepX() * lift;
-            float y = ring.y[slot] + face.getStepY() * lift;
-            float z = ring.z[slot] + face.getStepZ() * lift;
-            // Material tint (touch); solid is the cold blue-white shared by all sources (CLAUDE.md 5).
             TouchMaterial material = TouchMaterial.byId(ring.material[slot]);
-            for (int[] corner : CORNERS) {
-                builder.addVertex(x, y, z).setColor(material.red, material.green, material.blue, alpha).setUv(ring.born[slot], ring.lifetime[slot])
-                        .setUv1(corner[0], corner[1]);
-            }
+            // Lit surfaces still get points: fog may hide them, the shader decides. Marks never fade.
+            int alpha = material.isMark() ? 0 : Math.round(t * t * (3 - 2 * t) * 255);
+            Direction face = ring.face(slot);
+            float lifetime = source.lifetimeSeconds();
+            data.putShort(position(ring.x(slot) + face.getStepX() * lift))
+                    .putShort(position(ring.y(slot) + face.getStepY() * lift))
+                    .putShort(position(ring.z(slot) + face.getStepZ() * lift))
+                    .putShort((short) (lifetime > MAX_LIFETIME_SECONDS ? 0 : Math.max(1, Math.round(lifetime))))
+                    // Material tint (touch); solid is the cold blue-white shared by all sources (CLAUDE.md 5).
+                    .put((byte) material.red).put((byte) material.green).put((byte) material.blue).put((byte) alpha)
+                    .putFloat(ring.born[slot]);
         }
+        data.flip();
         section.lightHash = hash;
-        MeshData mesh = builder.build();
-        if (mesh == null) {
-            if (section.buffer != null) {
-                section.buffer.close();
-                section.buffer = null;
-            }
-            return;
+        if (section.buffer == null) section.buffer = new Mesh();
+        section.buffer.upload(data, points);
+    }
+
+    private static short position(float local) {
+        return (short) Math.round(local * PointCloud.POSITION_SCALE);
+    }
+
+    /** A reused native buffer of at least the given size, cleared for writing. */
+    private static ByteBuffer buffer(int size) {
+        if (bytes == null || bytes.capacity() < size) {
+            if (bytes != null) MemoryUtil.memFree(bytes);
+            bytes = MemoryUtil.memAlloc(Math.max(size, 64 * 1024));
         }
-        if (section.buffer == null) section.buffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-        section.buffer.bind();
-        section.buffer.upload(mesh);
-        VertexBuffer.unbind();
+        bytes.clear();
+        return bytes;
     }
 
     private PointRenderer() {}

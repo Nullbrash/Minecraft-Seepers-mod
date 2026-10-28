@@ -1,6 +1,5 @@
 package io.github.nullbrash.seepers.client.points;
 
-import com.mojang.blaze3d.vertex.VertexBuffer;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -32,6 +31,8 @@ public final class PointCloud {
     /** A point touched again sooner than this is left as is: constant touching must not churn the ring. */
     private static final float REFRESH_MIN_AGE_SECONDS = 2;
     private static final int INITIAL_SLOTS = 8192;
+    /** Positions inside a section are kept in 1/1024 block (0..16 fits a short). */
+    static final float POSITION_SCALE = 1024;
 
     private static @Nullable PointCloud current;
 
@@ -49,7 +50,7 @@ public final class PointCloud {
         final Int2IntOpenHashMap points = new Int2IntOpenHashMap();
         boolean dirty = true;
         int lightHash;
-        @Nullable VertexBuffer buffer;
+        @Nullable PointRenderer.Mesh buffer;
 
         Section(long key) {
             this.key = key;
@@ -61,20 +62,19 @@ public final class PointCloud {
      * One source's points in arrival order. Slots whose section entry points elsewhere are dead (refreshed or
      * replaced). The limit counts live points; twice as many slots leave room for the dead ones, so refreshing
      * old points does not push out other live ones early. Arrays grow on demand up to that: a lidar share of
-     * millions would otherwise take all its memory on the first point.
+     * millions would otherwise take all its memory on the first point. A slot is 21 bytes: the position inside its
+     * section in 1/1024 block, the face read from the local key, the lifetime from the source.
      */
     static final class Ring {
         final int limit;
         final int capacity;
         long[] section;
         int[] local;
-        float[] x;
-        float[] y;
-        float[] z;
-        byte[] face;
+        short[] x;
+        short[] y;
+        short[] z;
         byte[] material;
         float[] born;
-        float[] lifetime;
         int head;
         int size;
         int live;
@@ -92,13 +92,27 @@ public final class PointCloud {
         void allocate(int slots) {
             section = new long[slots];
             local = new int[slots];
-            x = new float[slots];
-            y = new float[slots];
-            z = new float[slots];
-            face = new byte[slots];
+            x = new short[slots];
+            y = new short[slots];
+            z = new short[slots];
             material = new byte[slots];
             born = new float[slots];
-            lifetime = new float[slots];
+        }
+
+        float x(int slot) {
+            return x[slot] / POSITION_SCALE;
+        }
+
+        float y(int slot) {
+            return y[slot] / POSITION_SCALE;
+        }
+
+        float z(int slot) {
+            return z[slot] / POSITION_SCALE;
+        }
+
+        Direction face(int slot) {
+            return Direction.values()[local[slot] >>> 27];
         }
     }
 
@@ -181,13 +195,11 @@ public final class PointCloud {
         ring.live++;
         ring.section[slot] = sectionKey;
         ring.local[slot] = local;
-        ring.x[slot] = lx;
-        ring.y[slot] = ly;
-        ring.z[slot] = lz;
-        ring.face[slot] = (byte) face.ordinal();
+        ring.x[slot] = (short) Math.round(lx * POSITION_SCALE);
+        ring.y[slot] = (short) Math.round(ly * POSITION_SCALE);
+        ring.z[slot] = (short) Math.round(lz * POSITION_SCALE);
         ring.material[slot] = (byte) material;
         ring.born[slot] = now;
-        ring.lifetime[slot] = source.lifetimeSeconds();
 
         section.points.put(local, source.ordinal() << 24 | slot);
         section.dirty = true;
@@ -198,9 +210,10 @@ public final class PointCloud {
         float now = now(0);
         for (Map.Entry<PointSource, Ring> entry : rings.entrySet()) {
             Ring ring = entry.getValue();
+            float lifetime = entry.getKey().lifetimeSeconds();
             while (ring.size > 0) {
                 int slot = ring.head;
-                if (isAlive(entry.getKey(), ring, slot) && ring.born[slot] + ring.lifetime[slot] > now) break;
+                if (isAlive(entry.getKey(), ring, slot) && ring.born[slot] + lifetime > now) break;
                 removeSlot(entry.getKey(), ring, slot);
             }
         }
@@ -230,10 +243,10 @@ public final class PointCloud {
 
     /** Block light on the open side of the point's face (a solid block's own light is always 0). */
     int lightAt(long sectionKey, Ring ring, int slot) {
-        Direction face = Direction.values()[ring.face[slot]];
-        double x = SectionPos.sectionToBlockCoord(SectionPos.x(sectionKey)) + ring.x[slot] + face.getStepX() * 0.5;
-        double y = SectionPos.sectionToBlockCoord(SectionPos.y(sectionKey)) + ring.y[slot] + face.getStepY() * 0.5;
-        double z = SectionPos.sectionToBlockCoord(SectionPos.z(sectionKey)) + ring.z[slot] + face.getStepZ() * 0.5;
+        Direction face = ring.face(slot);
+        double x = SectionPos.sectionToBlockCoord(SectionPos.x(sectionKey)) + ring.x(slot) + face.getStepX() * 0.5;
+        double y = SectionPos.sectionToBlockCoord(SectionPos.y(sectionKey)) + ring.y(slot) + face.getStepY() * 0.5;
+        double z = SectionPos.sectionToBlockCoord(SectionPos.z(sectionKey)) + ring.z(slot) + face.getStepZ() * 0.5;
         BlockPos at = BlockPos.containing(x, y, z);
         return Math.max(level.getBrightness(LightLayer.BLOCK, at), io.github.nullbrash.seepers.client.light.ClientDynamicLights.level(at));
     }
@@ -277,10 +290,10 @@ public final class PointCloud {
             int packed = entry.getIntValue();
             Ring ring = ringOf(packed);
             int slot = packed & 0xFFFFFF;
-            Direction face = Direction.values()[ring.face[slot]];
-            double x = ox + ring.x[slot];
-            double y = oy + ring.y[slot];
-            double z = oz + ring.z[slot];
+            Direction face = ring.face(slot);
+            double x = ox + ring.x(slot);
+            double y = oy + ring.y(slot);
+            double z = oz + ring.z(slot);
             double along = face.getAxis().choose(x, y, z);
             if (Math.abs(along - Math.rint(along)) > 1.0E-3) continue;
             front.set(Mth.floor(x + face.getStepX() * 0.5), Mth.floor(y + face.getStepY() * 0.5), Mth.floor(z + face.getStepZ() * 0.5));
@@ -333,13 +346,11 @@ public final class PointCloud {
         int old = ring.slots();
         long[] section = ring.section;
         int[] local = ring.local;
-        float[] x = ring.x;
-        float[] y = ring.y;
-        float[] z = ring.z;
-        byte[] face = ring.face;
+        short[] x = ring.x;
+        short[] y = ring.y;
+        short[] z = ring.z;
         byte[] material = ring.material;
         float[] born = ring.born;
-        float[] lifetime = ring.lifetime;
         boolean[] alive = new boolean[ring.size];
         for (int i = 0; i < ring.size; i++) alive[i] = isAlive(source, ring, (ring.head + i) % old);
         ring.allocate(Math.min(ring.capacity, old * 2));
@@ -350,10 +361,8 @@ public final class PointCloud {
             ring.x[i] = x[from];
             ring.y[i] = y[from];
             ring.z[i] = z[from];
-            ring.face[i] = face[from];
             ring.material[i] = material[from];
             ring.born[i] = born[from];
-            ring.lifetime[i] = lifetime[from];
             if (alive[i]) sections.get(section[from]).points.put(local[from], source.ordinal() << 24 | i);
         }
         ring.head = 0;

@@ -127,8 +127,14 @@ public final class PointCommands {
         String[] render = PointRenderer.stats();
         source.sendSuccess(() -> Component.translatable("commands.seepers.points.stats", touch + debug + lidar, touch,
                 PointSource.TOUCH.capacity(), lidar, PointSource.LIDAR.capacity(), debug, cloud.sections.size(), withBuffers, render[0], render[1], render[2],
-                Minecraft.getInstance().getFps()), false);
+                Minecraft.getInstance().getFps(), javaMegabytes()), false);
         return touch + debug + lidar;
+    }
+
+    /** Heap in use, MB (after the last collection: a rough figure for benchmarks). */
+    private static long javaMegabytes() {
+        Runtime runtime = Runtime.getRuntime();
+        return (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
     }
 
     private PointCommands() {}
