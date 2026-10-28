@@ -14,5 +14,12 @@ public final class SeepersSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> TREMOR_RUMBLE = SOUNDS.register("tremor.rumble",
             () -> SoundEvent.createVariableRangeEvent(Seepers.id("tremor.rumble")));
 
+    /** The lidar's beam: a soft looped hum while scanning, heard only by the one scanning (own synthesized sound). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> LIDAR_HUM = SOUNDS.register("lidar.hum",
+            () -> SoundEvent.createVariableRangeEvent(Seepers.id("lidar.hum")));
+    /** A lidar scan starting: a short soft chirp, heard only by the one scanning (own synthesized sound). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> LIDAR_SCAN = SOUNDS.register("lidar.scan",
+            () -> SoundEvent.createVariableRangeEvent(Seepers.id("lidar.scan")));
+
     private SeepersSounds() {}
 }

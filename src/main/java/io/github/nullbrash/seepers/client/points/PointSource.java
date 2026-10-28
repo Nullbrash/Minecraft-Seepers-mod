@@ -11,8 +11,9 @@ public enum PointSource {
     CANE,
     /** Silhouettes of mobs left by blows. */
     SILHOUETTE,
-    /** Lidar (milestone 10) and foreign data (15): no share yet. */
+    /** Lidar scans: never fade by time, only pushed out by newer ones (CLAUDE.md 5.3). */
     LIDAR,
+    /** Foreign data (milestone 16): no share yet. */
     FOREIGN,
     /** {@code /seepers points test}: large share for render benchmarks. */
     DEBUG;
@@ -20,12 +21,15 @@ public enum PointSource {
     private static final int DEBUG_CAPACITY = 4_194_304;
     private static final int SILHOUETTE_CAPACITY = 4096;
     private static final double DEBUG_LIFETIME_SECONDS = 600;
+    /** "Forever" for the shader's fade (it starts after two thirds of the lifetime): months of play. */
+    private static final double LIDAR_LIFETIME_SECONDS = 1.0E7;
 
     public int capacity() {
         return switch (this) {
             case TOUCH -> ServerConfig.get(ServerConfig.TOUCH_POINT_LIMIT);
             case CANE -> ServerConfig.get(ServerConfig.CANE_POINT_LIMIT);
             case SILHOUETTE -> SILHOUETTE_CAPACITY;
+            case LIDAR -> ServerConfig.get(ServerConfig.LIDAR_POINT_LIMIT);
             case DEBUG -> DEBUG_CAPACITY;
             default -> 0;
         };
@@ -37,6 +41,7 @@ public enum PointSource {
             case CANE -> ServerConfig.get(ServerConfig.CANE_POINT_LIFETIME_SECONDS);
             case SILHOUETTE -> ServerConfig.get(ServerConfig.SILHOUETTE_SECONDS);
             case DEBUG -> DEBUG_LIFETIME_SECONDS;
+            case LIDAR -> LIDAR_LIFETIME_SECONDS;
             default -> 60.0;
         };
     }

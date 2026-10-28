@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 
 /**
- * {@code /seepers points test <radius> | clear | stats | touch} — client-side debugging of the point cloud. Other
+ * {@code /seepers points test <radius> | clear | stats | touch | lidar [ticks]} — client-side debugging of the point cloud. Other
  * {@code /seepers} subcommands fall through to the server. Needs the server's debug commands and operator rights:
  * covering everything around with points would reveal the dark.
  */
@@ -36,6 +36,11 @@ public final class PointCommands {
                                         .executes(context -> test(context.getSource(), IntegerArgumentType.getInteger(context, "radius")))))
                         .then(Commands.literal("clear").executes(context -> clear(context.getSource())))
                         .then(Commands.literal("touch").executes(context -> HandTouch.debugTouch() ? 1 : 0))
+                        .then(Commands.literal("lidar")
+                                .executes(context -> io.github.nullbrash.seepers.client.lidar.LidarScan.debugScan(20) ? 1 : 0)
+                                .then(Commands.argument("ticks", IntegerArgumentType.integer(1, 1200))
+                                        .executes(context -> io.github.nullbrash.seepers.client.lidar.LidarScan.debugScan(
+                                                IntegerArgumentType.getInteger(context, "ticks")) ? 1 : 0)))
                         .then(Commands.literal("stats").executes(context -> stats(context.getSource())))));
     }
 
@@ -113,16 +118,17 @@ public final class PointCommands {
         if (cloud == null) return 0;
         int touch = cloud.count(PointSource.TOUCH);
         int debug = cloud.count(PointSource.DEBUG);
+        int lidar = cloud.count(PointSource.LIDAR);
         int buffers = 0;
         for (PointCloud.Section section : cloud.sections.values()) {
             if (section.buffer != null) buffers++;
         }
         int withBuffers = buffers;
         String[] render = PointRenderer.stats();
-        source.sendSuccess(() -> Component.translatable("commands.seepers.points.stats", touch + debug, touch,
-                PointSource.TOUCH.capacity(), debug, cloud.sections.size(), withBuffers, render[0], render[1], render[2],
+        source.sendSuccess(() -> Component.translatable("commands.seepers.points.stats", touch + debug + lidar, touch,
+                PointSource.TOUCH.capacity(), lidar, PointSource.LIDAR.capacity(), debug, cloud.sections.size(), withBuffers, render[0], render[1], render[2],
                 Minecraft.getInstance().getFps()), false);
-        return touch + debug;
+        return touch + debug + lidar;
     }
 
     private PointCommands() {}

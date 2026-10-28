@@ -9,6 +9,8 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue DIAGNOSTICS;
     public static final ModConfigSpec.DoubleValue CAMERA_SHAKE;
     public static final ModConfigSpec.DoubleValue TREMOR_VOLUME;
+    public static final ModConfigSpec.DoubleValue LIDAR_VOLUME;
+    public static final ModConfigSpec.EnumValue<io.github.nullbrash.seepers.client.lidar.LidarHud.Position> LIDAR_HUD_POSITION;
     public static final ModConfigSpec.BooleanValue DYNAMIC_LIGHT_SMOOTH;
     public static final ModConfigSpec.IntValue FOG_CELLS_PER_TICK;
     public static final ModConfigSpec.DoubleValue POINT_SIZE;
@@ -94,6 +96,11 @@ public final class ClientConfig {
                 .translation("seepers.configuration.cameraShake").defineInRange("cameraShake", 1.0, 0.0, 2.0);
         TREMOR_VOLUME = builder.comment("Volume of the tremor rumble: 1 = as designed, 0.2 = 80% quieter, 1.2 = 20% louder.")
                 .translation("seepers.configuration.tremorVolume").defineInRange("tremorVolume", 1.0, 0.2, 1.2);
+        LIDAR_VOLUME = builder.comment("Volume of the lidar's scan sounds (start chirp and beam hum): 1 = as designed, 0 = off, 1.2 = 20% louder.")
+                .translation("seepers.configuration.lidarVolume").defineInRange("lidarVolume", 1.0, 0.0, 1.2);
+        LIDAR_HUD_POSITION = builder.comment("Where the lidar's hologram sits: a top corner, the top centre, above the hotbar (centred) or beside it on the side of the hand holding the lidar.")
+                .translation("seepers.configuration.lidarHudPosition")
+                .defineEnum("lidarHudPosition", io.github.nullbrash.seepers.client.lidar.LidarHud.Position.TOP_LEFT);
         DYNAMIC_LIGHT_SMOOTH = builder.comment("Draw dynamic light smoothly (by exact distance). Off: the server's stepped block light is shown. Takes effect after re-entering the world.")
                 .translation("seepers.configuration.dynamicLightSmooth").define("dynamicLightSmooth", true);
 

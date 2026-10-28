@@ -3,6 +3,7 @@ package io.github.nullbrash.seepers.registry;
 import io.github.nullbrash.seepers.Seepers;
 import io.github.nullbrash.seepers.item.CaneItem;
 import io.github.nullbrash.seepers.item.ChiselItem;
+import io.github.nullbrash.seepers.item.LidarItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -22,11 +23,15 @@ public final class SeepersItems {
     /** Chisel (CLAUDE.md 5.4): 512 uses. */
     public static final DeferredItem<ChiselItem> CHISEL = ITEMS.register("chisel", () -> new ChiselItem(new Item.Properties().durability(512)));
 
+    /** Lidar (CLAUDE.md 5.3). */
+    public static final DeferredItem<LidarItem> LIDAR = ITEMS.register("lidar", () -> new LidarItem(new Item.Properties().stacksTo(1)));
+
     public static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(CANE.get());
             event.accept(BOUND_CANE.get());
             event.accept(CHISEL.get());
+            event.accept(LIDAR.get());
         }
         if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) event.accept(SeepersBlocks.ANOMALY_ROCK_ITEM.get());
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) event.accept(SeepersBlocks.ANOMALY_SHARD.get());

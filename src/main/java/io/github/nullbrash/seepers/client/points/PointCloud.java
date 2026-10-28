@@ -31,6 +31,7 @@ public final class PointCloud {
     private static final int LIGHT_SAMPLES_PER_TICK = 4096;
     /** A point touched again sooner than this is left as is: constant touching must not churn the ring. */
     private static final float REFRESH_MIN_AGE_SECONDS = 2;
+    private static final int INITIAL_SLOTS = 8192;
 
     private static @Nullable PointCloud current;
 
@@ -59,20 +60,21 @@ public final class PointCloud {
     /**
      * One source's points in arrival order. Slots whose section entry points elsewhere are dead (refreshed or
      * replaced). The limit counts live points; twice as many slots leave room for the dead ones, so refreshing
-     * old points does not push out other live ones early.
+     * old points does not push out other live ones early. Arrays grow on demand up to that: a lidar share of
+     * millions would otherwise take all its memory on the first point.
      */
     static final class Ring {
         final int limit;
         final int capacity;
-        final long[] section;
-        final int[] local;
-        final float[] x;
-        final float[] y;
-        final float[] z;
-        final byte[] face;
-        final byte[] material;
-        final float[] born;
-        final float[] lifetime;
+        long[] section;
+        int[] local;
+        float[] x;
+        float[] y;
+        float[] z;
+        byte[] face;
+        byte[] material;
+        float[] born;
+        float[] lifetime;
         int head;
         int size;
         int live;
@@ -80,15 +82,23 @@ public final class PointCloud {
         Ring(int limit) {
             this.limit = limit;
             this.capacity = limit * 2;
-            section = new long[capacity];
-            local = new int[capacity];
-            x = new float[capacity];
-            y = new float[capacity];
-            z = new float[capacity];
-            face = new byte[capacity];
-            material = new byte[capacity];
-            born = new float[capacity];
-            lifetime = new float[capacity];
+            allocate(Math.min(capacity, INITIAL_SLOTS));
+        }
+
+        int slots() {
+            return local.length;
+        }
+
+        void allocate(int slots) {
+            section = new long[slots];
+            local = new int[slots];
+            x = new float[slots];
+            y = new float[slots];
+            z = new float[slots];
+            face = new byte[slots];
+            material = new byte[slots];
+            born = new float[slots];
+            lifetime = new float[slots];
         }
     }
 
@@ -103,6 +113,15 @@ public final class PointCloud {
         if (current != null && current.level != level) reset();
         if (current == null && level != null) current = new PointCloud(level);
         return current;
+    }
+
+    /** The current cloud without creating one: render threads and mixins must not reset or allocate it. */
+    public static @Nullable PointCloud current() {
+        return current;
+    }
+
+    public boolean hasPoints() {
+        return !sections.isEmpty();
     }
 
     public static void reset() {
@@ -153,8 +172,11 @@ public final class PointCloud {
             owner.live--;
         }
         while (ring.live >= ring.limit) removeSlot(source, ring, ring.head); // drop the oldest live point
-        if (ring.size == ring.capacity) removeSlot(source, ring, ring.head);
-        int slot = (ring.head + ring.size) % ring.capacity;
+        if (ring.size == ring.slots()) {
+            if (ring.slots() < ring.capacity) grow(source, ring);
+            else removeSlot(source, ring, ring.head);
+        }
+        int slot = (ring.head + ring.size) % ring.slots();
         ring.size++;
         ring.live++;
         ring.section[slot] = sectionKey;
@@ -302,8 +324,39 @@ public final class PointCloud {
             section.dirty = true;
             ring.live--;
         }
-        ring.head = (ring.head + 1) % ring.capacity;
+        ring.head = (ring.head + 1) % ring.slots();
         ring.size--;
+    }
+
+    /** Doubles a full ring's arrays (up to its capacity), unrolled from the head; live points' entries follow. */
+    private void grow(PointSource source, Ring ring) {
+        int old = ring.slots();
+        long[] section = ring.section;
+        int[] local = ring.local;
+        float[] x = ring.x;
+        float[] y = ring.y;
+        float[] z = ring.z;
+        byte[] face = ring.face;
+        byte[] material = ring.material;
+        float[] born = ring.born;
+        float[] lifetime = ring.lifetime;
+        boolean[] alive = new boolean[ring.size];
+        for (int i = 0; i < ring.size; i++) alive[i] = isAlive(source, ring, (ring.head + i) % old);
+        ring.allocate(Math.min(ring.capacity, old * 2));
+        for (int i = 0; i < ring.size; i++) {
+            int from = (ring.head + i) % old;
+            ring.section[i] = section[from];
+            ring.local[i] = local[from];
+            ring.x[i] = x[from];
+            ring.y[i] = y[from];
+            ring.z[i] = z[from];
+            ring.face[i] = face[from];
+            ring.material[i] = material[from];
+            ring.born[i] = born[from];
+            ring.lifetime[i] = lifetime[from];
+            if (alive[i]) sections.get(section[from]).points.put(local[from], source.ordinal() << 24 | i);
+        }
+        ring.head = 0;
     }
 
     private static int quant(float local) {

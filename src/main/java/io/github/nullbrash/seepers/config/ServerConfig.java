@@ -85,6 +85,10 @@ public final class ServerConfig {
     public static final ModConfigSpec.IntValue CANE_POINTS;
     public static final ModConfigSpec.IntValue CANE_POINT_LIMIT;
     public static final ModConfigSpec.DoubleValue CANE_POINT_LIFETIME_SECONDS;
+    public static final ModConfigSpec.DoubleValue LIDAR_RANGE;
+    public static final ModConfigSpec.DoubleValue LIDAR_CONE_DEGREES;
+    public static final ModConfigSpec.IntValue LIDAR_POINTS_PER_SECOND;
+    public static final ModConfigSpec.IntValue LIDAR_POINT_LIMIT;
     public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_START;
     public static final ModConfigSpec.DoubleValue FIRE_BLOW_OUT_FULL;
     public static final ModConfigSpec.DoubleValue FIRE_CHECK_SECONDS;
@@ -307,6 +311,19 @@ public final class ServerConfig {
                 .translation("seepers.configuration.cane.silhouetteSeconds").defineInRange("silhouetteSeconds", 8.0, 1.0, 120.0);
         CANE_POINT_LIFETIME_SECONDS = builder.comment("Seconds a cane point lasts; it fades over the last third.")
                 .translation("seepers.configuration.cane.pointLifetimeSeconds").defineInRange("pointLifetimeSeconds", 60.0, 1.0, 3600.0);
+        builder.pop();
+
+        builder.comment("Lidar (CLAUDE.md 5.3): while held, the beam traces a never-repeating rosette, so scans paint surfaces densely. Upgrades widen and deepen it, never the range.")
+                .translation("seepers.configuration.lidar").push("lidar");
+        LIDAR_RANGE = builder.comment("How far the rays reach, blocks (one range for every mode).")
+                .translation("seepers.configuration.lidar.range").defineInRange("range", 48.0, 4.0, 128.0);
+        LIDAR_CONE_DEGREES = builder.comment("Width of the basic beam, degrees.")
+                .translation("seepers.configuration.lidar.coneDegrees").defineInRange("coneDegrees", 20.0, 1.0, 120.0);
+        LIDAR_POINTS_PER_SECOND = builder.comment("Rays (points) per second of the basic beam while scanning.")
+                .translation("seepers.configuration.lidar.pointsPerSecond").defineInRange("pointsPerSecond", 320, 20, 20000);
+        // Ring slots are twice the limit and must fit 24 bits (PointCloud).
+        LIDAR_POINT_LIMIT = builder.comment("Lidar points kept at once without upgrades. They never fade: the oldest go when full, all go on leaving the world.")
+                .translation("seepers.configuration.lidar.pointLimit").defineInRange("pointLimit", 1_048_576, 0, 8_388_608);
         builder.pop();
 
         builder.comment("Fog blows out torches, breaks campfires and puts out candles (tags #seepers:fire/*). Lanterns are safe.")

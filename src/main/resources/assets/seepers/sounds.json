@@ -6,5 +6,21 @@
         "name": "seepers:tremor/rumble"
       }
     ]
+  },
+  "lidar.scan": {
+    "subtitle": "subtitles.seepers.lidar.scan",
+    "sounds": [
+      {
+        "name": "seepers:lidar/scan"
+      }
+    ]
+  },
+  "lidar.hum": {
+    "subtitle": "subtitles.seepers.lidar.scan",
+    "sounds": [
+      {
+        "name": "seepers:lidar/hum"
+      }
+    ]
   }
 }
