@@ -44,7 +44,7 @@ public final class SeepersItems {
     /** Lidar modules that exist so far, by kind, level I first (analysis, filter, water and echo come in later phases). */
     public static final Map<LidarModules.Kind, List<DeferredItem<ModuleItem>>> MODULES = modules(
             LidarModules.Kind.VIEW, LidarModules.Kind.DENSITY, LidarModules.Kind.MEMORY, LidarModules.Kind.PATTERN, LidarModules.Kind.DYNAMO,
-            LidarModules.Kind.REFRESH);
+            LidarModules.Kind.REFRESH, LidarModules.Kind.ANALYSIS, LidarModules.Kind.BEAMS);
 
     private static Map<LidarModules.Kind, List<DeferredItem<ModuleItem>>> modules(LidarModules.Kind... kinds) {
         Map<LidarModules.Kind, List<DeferredItem<ModuleItem>>> map = new EnumMap<>(LidarModules.Kind.class);

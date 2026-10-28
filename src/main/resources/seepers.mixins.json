@@ -10,12 +10,15 @@
     "ServerLevelMixin"
   ],
   "client": [
+    "client.CompositeStateAccessor",
     "client.EntityRenderDispatcherMixin",
     "client.EntityRendererLightMixin",
     "client.LevelRendererLightMixin",
     "client.LightTextureMixin",
     "client.OptionInstanceSliderButtonMixin",
-    "client.OptionsMixin"
+    "client.OptionsMixin",
+    "client.RenderTypeStateAccessor",
+    "client.TextureStateShardInvoker"
   ],
   "server": [],
   "injectors": {

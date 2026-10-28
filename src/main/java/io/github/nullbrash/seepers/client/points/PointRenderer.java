@@ -50,8 +50,18 @@ public final class PointRenderer {
             .build();
     static final int STRIDE = 16;
     private static final long REBUILD_BUDGET_NANOS = 2_000_000;
+    /**
+     * A big section under a held beam turns dirty every tick and costs its whole size to rebuild: such sections are
+     * rebuilt at most this often (new points show a moment later), small ones at once.
+     */
+    private static final long BIG_REBUILD_INTERVAL_NANOS = 150_000_000;
+    private static final int BIG_SECTION_POINTS = 4096;
     /** Longer lifetimes are drawn as never fading (lidar points). */
-    private static final int MAX_LIFETIME_SECONDS = 65535;
+    private static final int MAX_LIFETIME_SECONDS = 65534;
+    /** Texture pixels (analysis III) are drawn a little darker than the texture: the scan's look, not a photo. */
+    private static final float TEXEL_BRIGHTNESS = 0.95F;
+    /** Lifetime value marking broken data (anomalous rock): the shader makes it tremble and flicker, never fade. */
+    private static final int BROKEN_DATA = 65535;
 
     private static @Nullable ShaderInstance shader;
     private static @Nullable ByteBuffer bytes;
@@ -152,6 +162,7 @@ public final class PointRenderer {
                 offset.upload();
             }
             section.buffer.draw();
+            if (section.freshBuffer != null && section.freshBuffer.count() > 0) section.freshBuffer.draw();
         }
         shader.clear();
         GlStateManager._glBindVertexArray(0);
@@ -184,6 +195,7 @@ public final class PointRenderer {
         for (PointCloud.Section section : cloud.sections.values()) {
             if (!section.dirty) continue;
             if (System.nanoTime() - started > REBUILD_BUDGET_NANOS) break;
+            if (section.points.size() > BIG_SECTION_POINTS && started - section.rebuiltAt < BIG_REBUILD_INTERVAL_NANOS) continue;
             if (section.points.isEmpty()) {
                 empty.add(section);
                 continue;
@@ -193,44 +205,105 @@ public final class PointRenderer {
         }
         for (PointCloud.Section section : empty) {
             if (section.buffer != null) section.buffer.close();
+            if (section.freshBuffer != null) section.freshBuffer.close();
             cloud.sections.remove(section.key);
+        }
+        // Sections still waiting for their rebuild show their fresh points from the small buffer.
+        Style style = null;
+        for (PointCloud.Section section : cloud.sections.values()) {
+            if (!section.freshDirty || !section.dirty || section.buffer == null) continue;
+            if (style == null) style = new Style();
+            section.freshDirty = false;
+            var cells = PointCloud.lightCells();
+            ByteBuffer data = buffer(section.fresh.size() * STRIDE);
+            int count = 0;
+            for (int i = 0; i < section.fresh.size(); i++) {
+                int packed = section.fresh.getInt(i);
+                PointCloud.Ring ring = cloud.ringOf(packed);
+                int slot = packed & 0xFFFFFF;
+                // Replaced or refreshed since: its key now holds another slot (or none).
+                if (ring == null || section.points.get(ring.local[slot]) != packed) continue;
+                write(data, cloud, section, packed, cells, style);
+                count++;
+            }
+            data.flip();
+            if (section.freshBuffer == null) section.freshBuffer = new Mesh();
+            section.freshBuffer.upload(data, count);
         }
         rebuildNanosThisSecond += System.nanoTime() - started;
     }
 
+    /** Per-pass settings for writing points. */
+    private static final class Style {
+        final float[] lifetimes = new float[PointSource.VALUES.length];
+        final int fadeStart = ClientConfig.POINT_LIGHT_FADE_START.get();
+        final int fadeEnd = Math.max(fadeStart + 1, ClientConfig.POINT_LIGHT_FADE_END.get());
+        // Lift the disc off the face so it does not sink into the block it lies on.
+        final float lift = ClientConfig.POINT_SIZE.get().floatValue() * 0.5F + 0.005F;
+
+        Style() {
+            for (PointSource source : PointSource.VALUES) lifetimes[source.ordinal()] = source.lifetimeSeconds();
+        }
+    }
+
     private static void rebuild(PointCloud cloud, PointCloud.Section section) {
         section.dirty = false;
-        int fadeStart = ClientConfig.POINT_LIGHT_FADE_START.get();
-        int fadeEnd = Math.max(fadeStart + 1, ClientConfig.POINT_LIGHT_FADE_END.get());
-        // Lift the disc off the face so it does not sink into the block it lies on.
-        float lift = ClientConfig.POINT_SIZE.get().floatValue() * 0.5F + 0.005F;
+        section.rebuiltAt = System.nanoTime();
+        section.fresh.clear();
+        section.freshDirty = false;
+        if (section.freshBuffer != null) section.freshBuffer.upload(buffer(0), 0);
+        var cells = PointCloud.lightCells();
+        Style style = new Style();
         int points = section.points.size();
         ByteBuffer data = buffer(points * STRIDE);
         int hash = 1;
-        for (int packed : section.points.values()) {
-            PointCloud.Ring ring = cloud.ringOf(packed);
-            PointSource source = PointSource.values()[packed >>> 24];
-            int slot = packed & 0xFFFFFF;
-            int light = cloud.lightAt(section.key, ring, slot);
-            hash = hash * 31 + light;
-            float t = Mth.clamp((light - fadeStart) / (float) (fadeEnd - fadeStart), 0, 1);
-            TouchMaterial material = TouchMaterial.byId(ring.material[slot]);
-            // Lit surfaces still get points: fog may hide them, the shader decides. Marks never fade.
-            int alpha = material.isMark() ? 0 : Math.round(t * t * (3 - 2 * t) * 255);
-            Direction face = ring.face(slot);
-            float lifetime = source.lifetimeSeconds();
-            data.putShort(position(ring.x(slot) + face.getStepX() * lift))
-                    .putShort(position(ring.y(slot) + face.getStepY() * lift))
-                    .putShort(position(ring.z(slot) + face.getStepZ() * lift))
-                    .putShort((short) (lifetime > MAX_LIFETIME_SECONDS ? 0 : Math.max(1, Math.round(lifetime))))
-                    // Material tint (touch); solid is the cold blue-white shared by all sources (CLAUDE.md 5).
-                    .put((byte) material.red).put((byte) material.green).put((byte) material.blue).put((byte) alpha)
-                    .putFloat(ring.born[slot]);
-        }
+        for (int packed : section.points.values()) hash = hash * 31 + write(data, cloud, section, packed, cells, style);
         data.flip();
         section.lightHash = hash;
         if (section.buffer == null) section.buffer = new Mesh();
         section.buffer.upload(data, points);
+    }
+
+    /** Writes one point's vertex; returns the light over it (for the section's light hash). */
+    private static int write(ByteBuffer data, PointCloud cloud, PointCloud.Section section, int packed,
+                             it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap cells, Style style) {
+        int fadeStart = style.fadeStart;
+        int fadeEnd = style.fadeEnd;
+        float lift = style.lift;
+        float[] lifetimes = style.lifetimes;
+        {
+            PointCloud.Ring ring = cloud.ringOf(packed);
+            PointSource source = PointSource.VALUES[packed >>> 24];
+            int slot = packed & 0xFFFFFF;
+            int light = cloud.lightAt(section.key, ring, slot, cells);
+            float t = Mth.clamp((light - fadeStart) / (float) (fadeEnd - fadeStart), 0, 1);
+            TouchMaterial material = TouchMaterial.byId(ring.material[slot]);
+            // Lit surfaces still get points: fog may hide them, the shader decides. Marks never fade.
+            int alpha = material.isMark() ? 0 : Math.round(t * t * (3 - 2 * t) * 255);
+            // The lowest alpha bit flags a texel for the shader (a hard square); 1/255 of light changes nothing.
+            alpha = material.isTexel() ? alpha | 1 : alpha & ~1;
+            Direction face = ring.face(slot);
+            float lifetime = lifetimes[source.ordinal()];
+            // The point's own colour (lidar analysis) over its material's.
+            int own = ring.rgb[slot];
+            int red = own == 0 ? material.red : own >> 16 & 0xFF;
+            int green = own == 0 ? material.green : own >> 8 & 0xFF;
+            int blue = own == 0 ? material.blue : own & 0xFF;
+            if (material.isTexel()) {
+                red = Math.round(red * TEXEL_BRIGHTNESS);
+                green = Math.round(green * TEXEL_BRIGHTNESS);
+                blue = Math.round(blue * TEXEL_BRIGHTNESS);
+            }
+            data.putShort(position(ring.x(slot) + face.getStepX() * lift))
+                    .putShort(position(ring.y(slot) + face.getStepY() * lift))
+                    .putShort(position(ring.z(slot) + face.getStepZ() * lift))
+                    .putShort((short) (material == TouchMaterial.ANOMALY ? BROKEN_DATA
+                            : lifetime > MAX_LIFETIME_SECONDS ? 0 : Math.max(1, Math.round(lifetime))))
+                    // Material tint (touch); solid is the cold blue-white shared by all sources (CLAUDE.md 5).
+                    .put((byte) red).put((byte) green).put((byte) blue).put((byte) alpha)
+                    .putFloat(ring.born[slot]);
+            return light;
+        }
     }
 
     private static short position(float local) {

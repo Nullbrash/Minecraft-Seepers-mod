@@ -167,14 +167,21 @@ public final class HandTouch {
      * which burns.
      */
     public static @Nullable Hit cast(LocalPlayer player, ClientLevel level, Vec3 eye, Vec3 direction, double reach) {
+        return cast(player, level, eye, direction, reach, true);
+    }
+
+    /** feel: judge the touch material (false for the lidar, which never shows it: the hit is SOLID). */
+    public static @Nullable Hit cast(LocalPlayer player, ClientLevel level, Vec3 eye, Vec3 direction, double reach, boolean feel) {
         Vec3 end = eye.add(direction.scale(reach));
         // Outline, not collision: the hand also finds what one walks through (pressure plates, cobweb, grass).
-        BlockHitResult result = level.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
-        BlockHitResult withFluids = level.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, player));
-        if (withFluids.getType() != HitResult.Type.MISS && level.getFluidState(withFluids.getBlockPos()).is(FluidTags.LAVA)
-                && (result.getType() == HitResult.Type.MISS
-                    || withFluids.getLocation().distanceToSqr(eye) < result.getLocation().distanceToSqr(eye))) {
-            result = withFluids;
+        // With fluids first: lava in front stops the ray; with no fluid on the way it is the same hit as without.
+        // Only water in front needs the second clip, without fluids, to find what lies under it.
+        BlockHitResult result = level.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, player));
+        if (result.getType() != HitResult.Type.MISS) {
+            FluidState met = level.getFluidState(result.getBlockPos());
+            if (!met.isEmpty() && !met.is(FluidTags.LAVA)) {
+                result = level.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+            }
         }
         if (result.getType() == HitResult.Type.MISS) return null;
         BlockPos pos = result.getBlockPos();
@@ -184,7 +191,7 @@ public final class HandTouch {
         boolean lava = fluid && fluidState.is(FluidTags.LAVA);
         TouchMaterial material = lava ? TouchMaterial.WARM
                 : fluid ? TouchMaterial.WET
-                : TouchMaterial.of(level, pos, state, result.getDirection());
+                : feel ? TouchMaterial.of(level, pos, state, result.getDirection()) : TouchMaterial.SOLID;
         Vec3 location = result.getLocation();
         if (!fluid) {
             // The ray stops at the collision shape; move the point out to the drawn surface if that sticks out

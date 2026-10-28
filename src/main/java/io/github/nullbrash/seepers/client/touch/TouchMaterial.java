@@ -23,7 +23,15 @@ public enum TouchMaterial {
     /** Silhouettes of peaceful and neutral mobs (light lemon: yellow-orange stays for ores). */
     CREATURE(240, 236, 120),
     /** Silhouettes of hostile mobs. */
-    HOSTILE(230, 60, 55);
+    HOSTILE(230, 60, 55),
+    /** Anomalous rock in the lidar's data: no colour, the points tremble (CLAUDE.md 4.8). */
+    ANOMALY(150, 150, 165),
+    /** Analysis III: one texture pixel of a block, in its own colour, drawn as a hard square. */
+    TEXEL(199, 230, 255),
+    /** Analysis III: one texture pixel of an entity, a mark like the silhouettes (seen in light too). */
+    TEXEL_MARK(240, 236, 120);
+
+    private static final TouchMaterial[] VALUES = values();
 
     public final int red;
     public final int green;
@@ -42,11 +50,16 @@ public enum TouchMaterial {
 
     /** Marks are data, not surfaces: light and fog never fade them (CLAUDE.md 5). */
     public boolean isMark() {
-        return this == CREATURE || this == HOSTILE;
+        return this == CREATURE || this == HOSTILE || this == TEXEL_MARK;
+    }
+
+    /** Drawn as a hard square of its own colour: a texture pixel (lidar analysis III). */
+    public boolean isTexel() {
+        return this == TEXEL || this == TEXEL_MARK;
     }
 
     public static TouchMaterial byId(int id) {
-        TouchMaterial[] values = values();
+        TouchMaterial[] values = VALUES;
         return id >= 0 && id < values.length ? values[id] : SOLID;
     }
 

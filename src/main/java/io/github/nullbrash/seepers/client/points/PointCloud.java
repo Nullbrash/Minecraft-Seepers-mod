@@ -1,7 +1,9 @@
 package io.github.nullbrash.seepers.client.points;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import io.github.nullbrash.seepers.client.touch.TouchMaterial;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
@@ -27,6 +29,9 @@ import org.jetbrains.annotations.Nullable;
 public final class PointCloud {
     /** Positions are keyed at 1/32 block inside a section: touching the same spot again refreshes the point. */
     private static final int QUANT = 32;
+    /** Fresh points kept per section until its rebuild; more wait for the rebuild. */
+    private static final int FRESH_LIMIT = 8192;
+    private static final Direction[] DIRECTIONS = Direction.values();
     private static final int LIGHT_CHECK_TICKS = 20;
     private static final int LIGHT_SAMPLES_PER_TICK = 4096;
     /** A point touched again sooner than this is left as is: constant touching must not churn the ring. */
@@ -43,6 +48,7 @@ public final class PointCloud {
     private final long epochTick;
     private final LongArrayFIFOQueue lightQueue = new LongArrayFIFOQueue();
     private long nextLightPass;
+    private int lightBudget;
 
     /** Points of one section; the renderer owns its buffer. */
     static final class Section {
@@ -51,6 +57,15 @@ public final class PointCloud {
         final Int2IntOpenHashMap points = new Int2IntOpenHashMap();
         boolean dirty = true;
         int lightHash;
+        /** When the renderer last rebuilt it (System.nanoTime). */
+        long rebuiltAt;
+        /**
+         * Points added since the last rebuild (source << 24 | slot): a big section is rebuilt only now and then, these
+         * show at once from a small buffer of their own (the scan would appear in jerks otherwise).
+         */
+        final it.unimi.dsi.fastutil.ints.IntArrayList fresh = new it.unimi.dsi.fastutil.ints.IntArrayList();
+        boolean freshDirty;
+        @Nullable PointRenderer.Mesh freshBuffer;
         @Nullable PointRenderer.Mesh buffer;
 
         Section(long key) {
@@ -64,7 +79,7 @@ public final class PointCloud {
      * replaced). The limit counts live points; twice as many slots leave room for the dead ones, so refreshing
      * old points does not push out other live ones early. Arrays grow on demand up to that: a lidar share of
      * millions would otherwise take all its memory on the first point. A slot is 21 bytes: the position inside its
-     * section in 1/1024 block, the face read from the local key, the lifetime from the source.
+     * section in 1/1024 block, the face read from the local key, the lifetime from the source; 4 more for a colour.
      */
     static final class Ring {
         int limit;
@@ -75,6 +90,8 @@ public final class PointCloud {
         short[] y;
         short[] z;
         byte[] material;
+        /** A point's own colour (0xRRGGBB, lidar analysis); 0 = its material's. */
+        int[] rgb;
         float[] born;
         int head;
         int size;
@@ -97,6 +114,7 @@ public final class PointCloud {
             y = new short[slots];
             z = new short[slots];
             material = new byte[slots];
+            rgb = new int[slots];
             born = new float[slots];
         }
 
@@ -113,7 +131,7 @@ public final class PointCloud {
         }
 
         Direction face(int slot) {
-            return Direction.values()[local[slot] >>> 27];
+            return DIRECTIONS[local[slot] >>> 27];
         }
     }
 
@@ -173,6 +191,15 @@ public final class PointCloud {
      * while crouching must not blur what was learned (and a changed block no longer matches, so it is redrawn).
      */
     public void add(PointSource source, double x, double y, double z, Direction face, int material, int precise) {
+        add(source, x, y, z, face, material, precise, 0);
+    }
+
+    /** As add, with the point's own colour (0xRRGGBB; 0 = the material's): lidar analysis. */
+    public void addColored(PointSource source, double x, double y, double z, Direction face, int material, int rgb) {
+        add(source, x, y, z, face, material, -1, rgb);
+    }
+
+    private void add(PointSource source, double x, double y, double z, Direction face, int material, int precise, int rgb) {
         Ring ring = ring(source);
         if (ring == null) return;
         long sectionKey = SectionPos.asLong(Mth.floor(x) >> 4, Mth.floor(y) >> 4, Mth.floor(z) >> 4);
@@ -185,6 +212,7 @@ public final class PointCloud {
         int local = face.ordinal() << 27 | quant(lx) << 18 | quant(ly) << 9 | quant(lz);
 
         Section section = sections.computeIfAbsent(sectionKey, Section::new);
+        if (source == PointSource.LIDAR && !takePixel(section, ring, face, local, rank(material, rgb))) return;
         int existing = section.points.get(local);
         float now = now(0);
         if (existing != -1) {
@@ -208,10 +236,15 @@ public final class PointCloud {
         ring.y[slot] = (short) Math.round(ly * POSITION_SCALE);
         ring.z[slot] = (short) Math.round(lz * POSITION_SCALE);
         ring.material[slot] = (byte) material;
+        ring.rgb[slot] = rgb;
         ring.born[slot] = now;
 
         section.points.put(local, source.ordinal() << 24 | slot);
         section.dirty = true;
+        if (section.buffer != null && section.fresh.size() < FRESH_LIMIT) {
+            section.fresh.add(source.ordinal() << 24 | slot);
+            section.freshDirty = true;
+        }
     }
 
     /** Drops expired points and re-checks the light over points now and then (a lamp placed, a torch blown out). */
@@ -239,6 +272,7 @@ public final class PointCloud {
         for (Section section : sections.values()) {
             removed += section.points.size();
             if (section.buffer != null) section.buffer.close();
+            if (section.freshBuffer != null) section.freshBuffer.close();
         }
         sections.clear();
         rings.clear();
@@ -251,23 +285,40 @@ public final class PointCloud {
     }
 
     Ring ringOf(int packed) {
-        return rings.get(PointSource.values()[packed >>> 24]);
+        return rings.get(PointSource.VALUES[packed >>> 24]);
     }
 
     /** Block light on the open side of the point's face (a solid block's own light is always 0). */
-    int lightAt(long sectionKey, Ring ring, int slot) {
+    /**
+     * The light over a point: of the air cell in front of its face. Points of one face share cells by the hundred, so
+     * {@code cells} remembers each cell's light for one pass over a section (a world lookup per point was the cost).
+     */
+    int lightAt(long sectionKey, Ring ring, int slot, Long2IntOpenHashMap cells) {
         Direction face = ring.face(slot);
         double x = SectionPos.sectionToBlockCoord(SectionPos.x(sectionKey)) + ring.x(slot) + face.getStepX() * 0.5;
         double y = SectionPos.sectionToBlockCoord(SectionPos.y(sectionKey)) + ring.y(slot) + face.getStepY() * 0.5;
         double z = SectionPos.sectionToBlockCoord(SectionPos.z(sectionKey)) + ring.z(slot) + face.getStepZ() * 0.5;
-        BlockPos at = BlockPos.containing(x, y, z);
-        return Math.max(level.getBrightness(LightLayer.BLOCK, at), io.github.nullbrash.seepers.client.light.ClientDynamicLights.level(at));
+        long cell = BlockPos.asLong(Mth.floor(x), Mth.floor(y), Mth.floor(z));
+        int known = cells.get(cell);
+        if (known >= 0) return known;
+        BlockPos at = BlockPos.of(cell);
+        int light = Math.max(level.getBrightness(LightLayer.BLOCK, at), io.github.nullbrash.seepers.client.light.ClientDynamicLights.level(at));
+        cells.put(cell, light);
+        return light;
+    }
+
+    /** A fresh cell memo for lightAt. */
+    static Long2IntOpenHashMap lightCells() {
+        Long2IntOpenHashMap cells = new Long2IntOpenHashMap();
+        cells.defaultReturnValue(-1);
+        return cells;
     }
 
     int lightHash(Section section) {
         int hash = 1;
+        Long2IntOpenHashMap cells = lightCells();
         for (int packed : section.points.values()) {
-            hash = hash * 31 + lightAt(section.key, ringOf(packed), packed & 0xFFFFFF);
+            hash = hash * 31 + lightAt(section.key, ringOf(packed), packed & 0xFFFFFF, cells);
         }
         return hash;
     }
@@ -279,11 +330,13 @@ public final class PointCloud {
             nextLightPass = tick + LIGHT_CHECK_TICKS;
             for (long key : sections.keySet()) lightQueue.enqueue(key);
         }
-        int budget = LIGHT_SAMPLES_PER_TICK;
-        while (budget > 0 && !lightQueue.isEmpty()) {
+        // A dense section is checked whole and runs the budget into debt that later ticks pay off: on average no more
+        // than the budget per tick, however big the sections a scan has filled.
+        lightBudget = Math.min(lightBudget + LIGHT_SAMPLES_PER_TICK, LIGHT_SAMPLES_PER_TICK);
+        while (lightBudget > 0 && !lightQueue.isEmpty()) {
             Section section = sections.get(lightQueue.dequeueLong());
             if (section == null || section.dirty) continue;
-            budget -= section.points.size();
+            lightBudget -= section.points.size();
             if (dropBuried(section) || lightHash(section) != section.lightHash) section.dirty = true;
         }
     }
@@ -348,6 +401,8 @@ public final class PointCloud {
         double oy = SectionPos.sectionToBlockCoord(SectionPos.y(section.key));
         double oz = SectionPos.sectionToBlockCoord(SectionPos.z(section.key));
         BlockPos.MutableBlockPos front = new BlockPos.MutableBlockPos();
+        // Whether a cell covers a face, by cell and face: points of one face share cells by the hundred.
+        Long2IntOpenHashMap covers = lightCells();
         for (Int2IntMap.Entry entry : section.points.int2IntEntrySet()) {
             int packed = entry.getIntValue();
             Ring ring = ringOf(packed);
@@ -359,8 +414,14 @@ public final class PointCloud {
             double along = face.getAxis().choose(x, y, z);
             if (Math.abs(along - Math.rint(along)) > 1.0E-3) continue;
             front.set(Mth.floor(x + face.getStepX() * 0.5), Mth.floor(y + face.getStepY() * 0.5), Mth.floor(z + face.getStepZ() * 0.5));
-            BlockState state = level.getBlockState(front);
-            if (!Block.isFaceFull(state.getCollisionShape(level, front), face.getOpposite())) continue;
+            long cell = front.asLong() * 6 + face.ordinal();
+            int covered = covers.get(cell);
+            if (covered < 0) {
+                BlockState state = level.getBlockState(front);
+                covered = Block.isFaceFull(state.getCollisionShape(level, front), face.getOpposite()) ? 1 : 0;
+                covers.put(cell, covered);
+            }
+            if (covered == 0) continue;
             if (buried == null) buried = new IntArrayList();
             buried.add(entry.getIntKey());
         }
@@ -418,6 +479,7 @@ public final class PointCloud {
         short[] y = ring.y;
         short[] z = ring.z;
         byte[] material = ring.material;
+        int[] rgb = ring.rgb;
         float[] born = ring.born;
         boolean[] alive = new boolean[ring.size];
         for (int i = 0; i < ring.size; i++) alive[i] = isAlive(source, ring, (ring.head + i) % old);
@@ -430,10 +492,59 @@ public final class PointCloud {
             ring.y[i] = y[from];
             ring.z[i] = z[from];
             ring.material[i] = material[from];
+            ring.rgb[i] = rgb[from];
             ring.born[i] = born[from];
             if (alive[i]) sections.get(section[from]).points.put(local[from], source.ordinal() << 24 | i);
         }
         ring.head = 0;
+    }
+
+    /** What a lidar point tells: a texture pixel (analysis III) over a coloured point (an ore) over a plain one. */
+    private static int rank(int material, int rgb) {
+        return material == TouchMaterial.TEXEL.ordinal() ? 2 : rgb != 0 ? 1 : 0;
+    }
+
+    /**
+     * A lidar point claims its texture pixel on the face (1/16 block, 2x2 keys): less telling lidar points there go,
+     * and a more telling one already there keeps the pixel — the new point is dropped (false). Otherwise a scan with
+     * a weaker analysis would bury the better data under its points.
+     */
+    private boolean takePixel(Section section, Ring ring, Direction face, int local, int rank) {
+        int[] q = {local >>> 18 & 0x1FF, local >>> 9 & 0x1FF, local & 0x1FF};
+        int perpendicular = face.getAxis().ordinal();
+        int a = perpendicular == 0 ? 1 : 0;
+        int b = perpendicular == 2 ? 1 : 2;
+        boolean changed = false;
+        // Hits on one face land a hair either side of its plane: look one key deeper and shallower too.
+        for (int dp = -1; dp <= 1; dp++) {
+            int depth = q[perpendicular] + dp;
+            if (depth < 0 || depth >= 16 * QUANT) continue;
+            for (int da = 0; da < 2; da++) {
+                for (int db = 0; db < 2; db++) {
+                    int[] k = q.clone();
+                    k[perpendicular] = depth;
+                    k[a] = q[a] & ~1 | da;
+                    k[b] = q[b] & ~1 | db;
+                    int key = face.ordinal() << 27 | k[0] << 18 | k[1] << 9 | k[2];
+                    if (key == local) continue; // the same key is replaced by add() itself
+                    int packed = section.points.get(key);
+                    if (packed == -1 || ringOf(packed) != ring) continue;
+                    int slot = packed & 0xFFFFFF;
+                    int other = rank(ring.material[slot], ring.rgb[slot]);
+                    if (other > rank) return false;
+                    if (other < rank) {
+                        section.points.remove(key);
+                        ring.live--;
+                        changed = true;
+                    }
+                }
+            }
+        }
+        // add() would replace a more telling point at the very same key.
+        int same = section.points.get(local);
+        if (same != -1 && ringOf(same) == ring && rank(ring.material[same & 0xFFFFFF], ring.rgb[same & 0xFFFFFF]) > rank) return false;
+        if (changed) section.dirty = true;
+        return true;
     }
 
     private static int quant(float local) {

@@ -18,6 +18,9 @@ public enum PointSource {
     /** {@code /seepers points test}: large share for render benchmarks. */
     DEBUG;
 
+    /** values() without the copy: looked up per point. */
+    public static final PointSource[] VALUES = values();
+
     private static final int DEBUG_CAPACITY = 4_194_304;
     private static final int SILHOUETTE_CAPACITY = 4096;
     private static final double DEBUG_LIFETIME_SECONDS = 600;

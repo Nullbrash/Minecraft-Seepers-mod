@@ -61,6 +61,8 @@ public final class SeepersClient {
         NeoForge.EVENT_BUS.addListener(HandTouch::onClientTick);
         NeoForge.EVENT_BUS.addListener(CaneTouch::onClientTick);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.lidar.LidarScan::onClientTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.lidar.LidarScan::onRenderFrame);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.lidar.LidarRays::onRenderLevelStage);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.lidar.LidarRefresh::onClientTick);
         modBus.addListener(TouchCaption::register);
         modBus.addListener(io.github.nullbrash.seepers.client.lidar.LidarHud::register);
@@ -131,6 +133,7 @@ public final class SeepersClient {
             io.github.nullbrash.seepers.client.lidar.LidarScan.onLoggingOut();
             io.github.nullbrash.seepers.client.lidar.DynamoSounds.clear();
             io.github.nullbrash.seepers.client.lidar.LidarRefresh.onLoggingOut();
+            io.github.nullbrash.seepers.client.lidar.LidarRays.clear();
             Distortion.set(Distortion.DEFAULT);
         });
         // Chunk-mesh regions carry no level: tell the light overrides which dimension the client is in.

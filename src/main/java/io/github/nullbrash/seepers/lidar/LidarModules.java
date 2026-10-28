@@ -18,7 +18,7 @@ import net.minecraft.world.item.component.ItemContainerContents;
 public final class LidarModules {
     public enum Kind {
         // Appended only: a lidar keeps its modules by slot index.
-        VIEW(3), DENSITY(3), MEMORY(3), ANALYSIS(3), FILTER(3), WATER(2), PATTERN(1), ECHO(1), DYNAMO(1), REFRESH(1);
+        VIEW(3), DENSITY(3), MEMORY(3), ANALYSIS(3), FILTER(3), WATER(2), PATTERN(1), ECHO(1), DYNAMO(1), REFRESH(1), BEAMS(3);
 
         public final int maxLevel;
 
@@ -53,10 +53,15 @@ public final class LidarModules {
 
     /**
      * What a lidar does with its modules. view: the view module's level (II and III also have the special scans:
-     * 180 and 360).
+     * 180 and 360). pointsPerSecond is one beam's; beams: how many run at once (the beams module).
      */
     public record Stats(int view, Field field, double coneHalf, double screenShare, int pointsPerSecond, int pointLimit, boolean keepsMemory,
-                        double cost, Pattern pattern, boolean dynamo, boolean refresh) {}
+                        double cost, Pattern pattern, boolean dynamo, boolean refresh, int beams) {
+        /** Points per second of all beams together. */
+        public int rate() {
+            return pointsPerSecond * beams;
+        }
+    }
 
     /** The scan areas a view level offers, narrowest first; the default is the widest. */
     public static List<Area> areas(int view) {
@@ -144,10 +149,19 @@ public final class LidarModules {
             case 2 -> ServerConfig.get(ServerConfig.LIDAR_DENSITY_COST_2);
             default -> ServerConfig.get(ServerConfig.LIDAR_DENSITY_COST_3);
         };
+        // Beams meet each other along the pattern: I from its start and end, II and III twice and four times that.
+        int beamsLevel = level(lidar, Kind.BEAMS);
+        int beams = beamsLevel == 0 ? 1 : 1 << beamsLevel;
+        double beamsCost = switch (beamsLevel) {
+            case 0 -> 1;
+            case 1 -> ServerConfig.get(ServerConfig.LIDAR_BEAMS_COST_1);
+            case 2 -> ServerConfig.get(ServerConfig.LIDAR_BEAMS_COST_2);
+            default -> ServerConfig.get(ServerConfig.LIDAR_BEAMS_COST_3);
+        };
         boolean cone = area.field() == Field.CONE;
         return new Stats(view, area.field(), cone ? area.value() / 2 : 0, cone ? 0 : area.value(), points, limit, memory >= 3,
-                tierCost(area.tier()) * densityCost, pattern(lidar),
-                level(lidar, Kind.DYNAMO) > 0, level(lidar, Kind.REFRESH) > 0);
+                tierCost(area.tier()) * densityCost * beamsCost, pattern(lidar),
+                level(lidar, Kind.DYNAMO) > 0, level(lidar, Kind.REFRESH) > 0, beams);
     }
 
     private LidarModules() {}

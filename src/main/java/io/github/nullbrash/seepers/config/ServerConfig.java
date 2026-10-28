@@ -107,6 +107,9 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue LIDAR_DENSITY_COST_1;
     public static final ModConfigSpec.DoubleValue LIDAR_DENSITY_COST_2;
     public static final ModConfigSpec.DoubleValue LIDAR_DENSITY_COST_3;
+    public static final ModConfigSpec.DoubleValue LIDAR_BEAMS_COST_1;
+    public static final ModConfigSpec.DoubleValue LIDAR_BEAMS_COST_2;
+    public static final ModConfigSpec.DoubleValue LIDAR_BEAMS_COST_3;
     public static final ModConfigSpec.IntValue LIDAR_MEMORY_1;
     public static final ModConfigSpec.IntValue LIDAR_MEMORY_2;
     public static final ModConfigSpec.IntValue LIDAR_MEMORY_3;
@@ -378,13 +381,16 @@ public final class ServerConfig {
         LIDAR_DENSITY_COST_1 = builder.comment("Density I: battery drain multiplier.").translation("seepers.configuration.lidar.modules.densityCost1").defineInRange("densityCost1", 1.5, 0.0, 100.0);
         LIDAR_DENSITY_COST_2 = builder.comment("Density II: battery drain multiplier.").translation("seepers.configuration.lidar.modules.densityCost2").defineInRange("densityCost2", 2.0, 0.0, 100.0);
         LIDAR_DENSITY_COST_3 = builder.comment("Density III: battery drain multiplier.").translation("seepers.configuration.lidar.modules.densityCost3").defineInRange("densityCost3", 3.0, 0.0, 100.0);
+        LIDAR_BEAMS_COST_1 = builder.comment("Beams I (2 beams): battery drain multiplier.").translation("seepers.configuration.lidar.modules.beamsCost1").defineInRange("beamsCost1", 1.5, 0.0, 100.0);
+        LIDAR_BEAMS_COST_2 = builder.comment("Beams II (4 beams): battery drain multiplier.").translation("seepers.configuration.lidar.modules.beamsCost2").defineInRange("beamsCost2", 2.0, 0.0, 100.0);
+        LIDAR_BEAMS_COST_3 = builder.comment("Beams III (8 beams): battery drain multiplier.").translation("seepers.configuration.lidar.modules.beamsCost3").defineInRange("beamsCost3", 3.0, 0.0, 100.0);
         // Ring slots are twice the limit and must fit 24 bits (PointCloud).
         LIDAR_MEMORY_1 = builder.comment("Memory I: lidar points kept.").translation("seepers.configuration.lidar.modules.memory1").defineInRange("memory1", 2_097_152, 0, 8_388_608);
         LIDAR_MEMORY_2 = builder.comment("Memory II: lidar points kept.").translation("seepers.configuration.lidar.modules.memory2").defineInRange("memory2", 4_194_304, 0, 8_388_608);
         LIDAR_MEMORY_3 = builder.comment("Memory III: lidar points kept; they are also saved between visits.").translation("seepers.configuration.lidar.modules.memory3").defineInRange("memory3", 8_388_608, 0, 8_388_608);
         LIDAR_DYNAMO_RATE = builder.comment("Hand dynamo: seconds of basic scanning charged per second of cranking.")
                 .translation("seepers.configuration.lidar.modules.dynamoRate")
-                .defineInRange("dynamoRate", 5.0, 0.0, 600.0);
+                .defineInRange("dynamoRate", 6.0, 0.0, 600.0);
         LIDAR_SCHEMATIC_2_CHANCE = builder.comment("Chance a mineshaft or dungeon chest holds a level II schematic.")
                 .translation("seepers.configuration.lidar.modules.schematic2Chance")
                 .defineInRange("schematic2Chance", 0.25, 0.0, 1.0);

@@ -10,6 +10,7 @@ public final class ClientConfig {
     public static final ModConfigSpec.DoubleValue CAMERA_SHAKE;
     public static final ModConfigSpec.DoubleValue TREMOR_VOLUME;
     public static final ModConfigSpec.DoubleValue LIDAR_VOLUME;
+    public static final ModConfigSpec.DoubleValue LIDAR_RAYS_OPACITY;
     public static final ModConfigSpec.EnumValue<io.github.nullbrash.seepers.client.lidar.LidarScan.BeamSound> LIDAR_BEAM_SOUND;
     public static final ModConfigSpec.EnumValue<io.github.nullbrash.seepers.client.lidar.LidarHud.Position> LIDAR_HUD_POSITION;
     public static final ModConfigSpec.BooleanValue DYNAMIC_LIGHT_SMOOTH;
@@ -99,6 +100,8 @@ public final class ClientConfig {
                 .translation("seepers.configuration.tremorVolume").defineInRange("tremorVolume", 1.0, 0.2, 1.2);
         LIDAR_VOLUME = builder.comment("Volume of the lidar's scan sounds (start chirp and beam sound): 1 = as designed, 0 = off, 1.2 = 20% louder.")
                 .translation("seepers.configuration.lidarVolume").defineInRange("lidarVolume", 1.0, 0.0, 1.2);
+        LIDAR_RAYS_OPACITY = builder.comment("Opacity of the lidar's faint beam lines while it scans: 0 = off, 1 = solid. Kept barely visible by default.")
+                .translation("seepers.configuration.lidarRaysOpacity").defineInRange("lidarRaysOpacity", 0.08, 0.0, 1.0);
         LIDAR_BEAM_SOUND = builder.comment("The lidar beam's sound: full clicks, dry clicks or a low hum. Click sounds speed up with faster scans.")
                 .translation("seepers.configuration.lidarBeamSound")
                 .defineEnum("lidarBeamSound", io.github.nullbrash.seepers.client.lidar.LidarScan.BeamSound.CLICKS);

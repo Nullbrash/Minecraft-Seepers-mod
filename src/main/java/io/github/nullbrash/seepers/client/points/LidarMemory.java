@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * they are not sent anywhere. Files are named by a hash, not by the server's address.
  */
 public final class LidarMemory {
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
     private static boolean keeps;
 
     /** Set from the last lidar in hand: whether its memory keeps points between visits. */
@@ -61,6 +61,7 @@ public final class LidarMemory {
                         out.writeShort(ring.y[slot]);
                         out.writeShort(ring.z[slot]);
                         out.writeByte(ring.material[slot]);
+                        out.writeInt(ring.rgb[slot]);
                         written++;
                     }
                 }
@@ -86,7 +87,8 @@ public final class LidarMemory {
                 double y = SectionPos.sectionToBlockCoord(SectionPos.y(sectionKey)) + in.readShort() / PointCloud.POSITION_SCALE;
                 double z = SectionPos.sectionToBlockCoord(SectionPos.z(sectionKey)) + in.readShort() / PointCloud.POSITION_SCALE;
                 int material = in.readByte();
-                cloud.add(PointSource.LIDAR, x, y, z, Direction.values()[local >>> 27], material);
+                int rgb = in.readInt();
+                cloud.addColored(PointSource.LIDAR, x, y, z, Direction.values()[local >>> 27], material, rgb);
             }
         } catch (IOException e) {
             Seepers.LOGGER.warn("Lidar memory could not be read from {}", file, e);

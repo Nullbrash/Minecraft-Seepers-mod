@@ -17,6 +17,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -54,6 +55,7 @@ public final class CaneTaps {
             } else if (state.getShape(level, tap.pos()).isEmpty()) {
                 // Nothing solid there: the cane met a mob.
                 level.playSound(null, at.x, at.y, at.z, SoundEvents.PLAYER_ATTACK_WEAK, SoundSource.PLAYERS, KNOCK_VOLUME, 0.8F);
+                vibrate(level, at, state);
             } else {
                 SoundType sound = state.getSoundType(level, tap.pos(), player);
                 Direction face = tap.face();
@@ -62,6 +64,7 @@ public final class CaneTaps {
                         && level.getBlockState(tap.pos().relative(face.getOpposite())).getCollisionShape(level, tap.pos().relative(face.getOpposite())).isEmpty();
                 level.playSound(null, at.x, at.y, at.z, sound.getHitSound(), SoundSource.PLAYERS,
                         hollow ? HOLLOW_VOLUME : KNOCK_VOLUME, sound.getPitch() * (hollow ? HOLLOW_PITCH : 1.0F));
+                vibrate(level, at, state);
                 if (face == Direction.DOWN) NeoForge.EVENT_BUS.post(new CaneCeilingTapEvent(player, tap.pos()));
             }
         } else {
@@ -78,6 +81,14 @@ public final class CaneTaps {
             return;
         }
         cane.hurtAndBreak(1, player, slot);
+    }
+
+    /**
+     * The knock is a vibration for sculk sensors and wardens. Not tied to the player: sneaking quiets steps, not a
+     * stick striking stone.
+     */
+    private static void vibrate(ServerLevel level, Vec3 at, BlockState state) {
+        level.gameEvent(GameEvent.HIT_GROUND, at, GameEvent.Context.of(state));
     }
 
     private CaneTaps() {}

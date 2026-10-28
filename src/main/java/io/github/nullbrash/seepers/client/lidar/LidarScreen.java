@@ -41,8 +41,8 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
     private static final int LABEL_COLOR = 0x8FB4CC;
     private static final int BACKGROUND = 0xE00A1A26;
     /** Slot colours by module kind, matching the stone on each module: view, density, memory, analysis, filter, water,
-     * pattern, echo, dynamo, refresh. */
-    private static final int[] KIND_COLORS = {0xA06EDC, 0xE1DCCD, 0xC8281E, 0x4FC46A, 0xB8B8B8, 0x3E7FE0, 0xDC3C32, 0x2AA89A, 0xBE6E46, 0xE8C040};
+     * pattern, echo, dynamo, refresh, beams. */
+    private static final int[] KIND_COLORS = {0xA06EDC, 0xE1DCCD, 0xC8281E, 0x4FC46A, 0xB8B8B8, 0x3E7FE0, 0xDC3C32, 0x2AA89A, 0xBE6E46, 0xE8C040, 0x5CC8DC};
 
     private final LidarIconButton[] patternButtons = new LidarIconButton[LidarModules.Pattern.values().length];
     private LidarIconButton narrower;
@@ -162,7 +162,7 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
                 {Component.translatable("seepers.lidar.screen.range"),
                         Component.translatable("seepers.lidar.screen.range.value", LidarHud.number(ServerConfig.get(ServerConfig.LIDAR_RANGE)))},
                 {Component.translatable("seepers.lidar.screen.rate"),
-                        Component.translatable("seepers.lidar.screen.rate.value", stats.pointsPerSecond())},
+                        Component.translatable("seepers.lidar.screen.rate.value", stats.rate())},
                 {Component.translatable("seepers.lidar.screen.memory"),
                         Component.translatable("seepers.lidar.screen.memory.value", LidarHud.grouped(memory), LidarHud.grouped(stats.pointLimit()))},
                 {Component.translatable("seepers.lidar.screen.lifetime"), Component.translatable(stats.keepsMemory()

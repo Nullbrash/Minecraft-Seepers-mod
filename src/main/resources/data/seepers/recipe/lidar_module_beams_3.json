@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    {
+      "item": "seepers:lidar_module_beams_2"
+    },
+    {
+      "item": "seepers:schematic_3"
+    },
+    {
+      "item": "minecraft:diamond"
+    },
+    {
+      "item": "seepers:anomaly_shard"
+    },
+    {
+      "item": "seepers:anomaly_shard"
+    }
+  ],
+  "result": {
+    "id": "seepers:lidar_module_beams_3",
+    "count": 1
+  }
+}

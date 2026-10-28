@@ -136,7 +136,7 @@ public final class LidarHud {
         // change. Row 1: range, mode, scan speed. Row 2: memory, battery. Charge bar along the top edge, memory along
         // the bottom.
         Component mode = field(stats);
-        Component rate = Component.translatable(LidarScan.latched() ? "seepers.lidar.hud.rate_auto" : "seepers.lidar.hud.rate", stats.pointsPerSecond());
+        Component rate = Component.translatable(LidarScan.latched() ? "seepers.lidar.hud.rate_auto" : "seepers.lidar.hud.rate", stats.rate());
         Component idle = Component.translatable("seepers.lidar.hud.idle");
         Component range = range(minecraft, player);
         Component memoryText = Component.translatable("seepers.lidar.hud.memory", grouped((long) shownMemory), grouped(limit));
@@ -148,7 +148,7 @@ public final class LidarHud {
         int modeWidth = Math.max(font.width(Component.translatable("seepers.lidar.hud.mode.screen_share", 100)),
                 font.width(Component.translatable("seepers.lidar.hud.mode.round_moving")));
         int scanWidth = Math.max(Math.max(font.width(rate), font.width(idle)),
-                font.width(Component.translatable("seepers.lidar.hud.rate_auto", stats.pointsPerSecond())));
+                font.width(Component.translatable("seepers.lidar.hud.rate_auto", stats.rate())));
         int beamWidth = ICON * 3 + rangeWidth + modeWidth + scanWidth + separator * 2;
         int memoryWidth = ICON + font.width(Component.translatable("seepers.lidar.hud.memory", grouped(limit), grouped(limit)));
         int chargeWidth = ICON + Math.max(font.width(chargeText(BatteryItem.capacity(), stats)), font.width(Component.translatable("seepers.lidar.hud.no_battery")));

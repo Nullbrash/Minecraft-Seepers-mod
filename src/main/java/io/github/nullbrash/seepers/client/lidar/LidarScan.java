@@ -14,6 +14,7 @@ import io.github.nullbrash.seepers.registry.SeepersSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -25,7 +26,12 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.network.chat.Component;
+import io.github.nullbrash.seepers.client.touch.Silhouettes;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.common.TranslatableEnum;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
@@ -54,6 +60,14 @@ public final class LidarScan {
     /** Rosette time in seconds; runs on across scans so each one continues the pattern. */
     private static double patternTime;
     private static double carry;
+    /**
+     * The ordinary scan's stats while it runs, set every tick; the rays themselves go out per frame, each frame its
+     * share of the elapsed time. All of a tick's rays at once made every few frames longer than the rest (stutter).
+     */
+    private static LidarModules.@Nullable Stats frameStats;
+    private static long lastFrameNanos;
+    /** The frame the rays belong to (for the beam lines' per-frame sample); passes count by tick. */
+    private static long frameNanos;
     private static int scanTicks;
     private static int debugTicks;
     private static Hum hum;
@@ -77,6 +91,16 @@ public final class LidarScan {
     /** The running pass covers the sphere; it repairs the data (refresh module, standing). */
     private static boolean passSphere;
     private static boolean passRepair;
+    /** This tick's analysis level and the entities a ray may meet. */
+    private static int analysis;
+    private static final java.util.List<Entity> nearby = new java.util.ArrayList<>();
+    private static final java.util.List<net.minecraft.world.phys.AABB> nearbyBoxes = new java.util.ArrayList<>();
+    private static final int SEEPAGE_TICKS = 200;
+    /** Beams module: how far apart in pattern time each pair of meeting beams runs. */
+    private static final double BEAM_SPREAD_SECONDS = 0.37;
+    /** Blocks a ray may pass through clear pixels of (analysis III) before it gives up. */
+    private static final int MODEL_PASSES = 6;
+    private static long lastSeepage = -1_000_000L;
     /** The running scan began on the special key. */
     private static boolean startedSpecial;
     /** Ticks into the all-around scan's pass and pause cycle; the pass's turn and height shift. */
@@ -92,6 +116,7 @@ public final class LidarScan {
     private static @Nullable InteractionHand crankHand;
 
     public static void onClientTick(ClientTickEvent.Post event) {
+        frameStats = null;
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         boolean ready = player != null && minecraft.level != null && !player.isSpectator() && holdsLidar(player);
@@ -271,22 +296,142 @@ public final class LidarScan {
         return null;
     }
 
+    /**
+     * One ray: the first entity it meets (analysis II and up) or the first block, painted by the analysis module.
+     * On an entity the ray leaves one point where it lands on the model (a pixel of its texture at analysis III);
+     * a ray between its legs goes on.
+     */
+    private static void land(LocalPlayer player, ClientLevel level, PointCloud cloud, Vec3 eye, Vec3 direction, double range) {
+        LidarRays.record(cast(player, level, cloud, eye, direction, range), frameNanos);
+    }
+
+    /** One ray's work (see land); returns where it ended: the point it left, or the end of its range. */
+    private static Vec3 cast(LocalPlayer player, ClientLevel level, PointCloud cloud, Vec3 eye, Vec3 direction, double range) {
+        HandTouch.Hit hit = HandTouch.cast(player, level, eye, direction, range, false);
+        // Analysis III looks at the block's model: through a clear pixel (leaves, a bush, a flower) the ray goes on.
+        LidarAnalysis.Texel texel = null;
+        for (int pass = 0; analysis >= 3 && hit != null && !hit.fluid() && pass < MODEL_PASSES; pass++) {
+            if (hit.state().is(io.github.nullbrash.seepers.registry.SeepersBlocks.ANOMALY_ROCK.get())) break;
+            BlockPos pos = hit.result().getBlockPos();
+            LidarAnalysis.Texel found = LidarAnalysis.castModel(level, pos, hit.state(), eye, direction);
+            if (found != null) {
+                if (found != LidarAnalysis.NO_MODEL) texel = found;
+                break;
+            }
+            // Out the far side of this block and on.
+            double exit = exitDistance(eye, direction, pos);
+            if (exit >= range) {
+                hit = null;
+                break;
+            }
+            hit = HandTouch.cast(player, level, eye.add(direction.scale(exit + 1.0E-3)), direction, range - exit - 1.0E-3, false);
+            if (hit != null && hit.location().distanceTo(eye) <= exit) hit = null; // the same block again
+        }
+        double reach = texel != null ? texel.distance() : hit == null ? range : hit.location().distanceTo(eye);
+        if (!nearby.isEmpty()) {
+            Vec3 end = eye.add(direction.scale(reach));
+            Entity met = null;
+            Silhouettes.ModelHit best = null;
+            for (int e = 0; e < nearby.size(); e++) {
+                Entity entity = nearby.get(e);
+                if (nearbyBoxes.get(e).clip(eye, end).isEmpty()) continue;
+                Silhouettes.ModelHit model = Silhouettes.cast(entity, eye, direction, best == null ? reach : best.distance(), analysis >= 3);
+                if (model != null) {
+                    best = model;
+                    met = entity;
+                }
+            }
+            if (best != null) {
+                cloud.addColored(PointSource.SILHOUETTE, best.at().x, best.at().y, best.at().z, best.face(), best.material(), best.rgb());
+                return best.at();
+            }
+        }
+        if (texel != null) {
+            cloud.addColored(PointSource.LIDAR, texel.at().x, texel.at().y, texel.at().z, texel.face(), TouchMaterial.TEXEL.ordinal(), texel.rgb());
+            sessionPoints++;
+            return texel.at();
+        }
+        if (hit == null) return eye.add(direction.scale(range));
+        LidarAnalysis.Paint paint = LidarAnalysis.paint(level, hit, analysis);
+        if (paint.material() == TouchMaterial.ANOMALY.ordinal()) seepage(level);
+        // A texel sits at its pixel's centre.
+        Vec3 at = paint.material() == TouchMaterial.TEXEL.ordinal() ? LidarAnalysis.snap(hit) : hit.location();
+        cloud.addColored(PointSource.LIDAR, at.x, at.y, at.z, hit.result().getDirection(), paint.material(), paint.rgb());
+        sessionPoints++;
+        return at;
+    }
+
+    /** How far along the ray it leaves the block at pos (the ray starts before or inside it). */
+    private static double exitDistance(Vec3 from, Vec3 dir, BlockPos pos) {
+        double exit = Double.MAX_VALUE;
+        double[] o = {from.x, from.y, from.z};
+        double[] d = {dir.x, dir.y, dir.z};
+        int[] p = {pos.getX(), pos.getY(), pos.getZ()};
+        for (int i = 0; i < 3; i++) {
+            if (Math.abs(d[i]) < 1.0E-9) continue;
+            double plane = d[i] > 0 ? p[i] + 1 : p[i];
+            exit = Math.min(exit, (plane - o[i]) / d[i]);
+        }
+        return exit;
+    }
+
+    /** This tick's analysis level and, from analysis II, the living entities in the lidar's reach. */
+    private static void prepare(LocalPlayer player, ClientLevel level, double range) {
+        InteractionHand hand = lidarHand(player);
+        analysis = hand == null ? 0 : LidarModules.level(player.getItemInHand(hand), LidarModules.Kind.ANALYSIS);
+        nearby.clear();
+        nearbyBoxes.clear();
+        if (analysis >= 2) {
+            nearby.addAll(level.getEntities(player, player.getBoundingBox().inflate(range),
+                    entity -> entity instanceof LivingEntity && entity.isAlive() && !entity.isSpectator()));
+            for (Entity entity : nearby) nearbyBoxes.add(entity.getBoundingBox().inflate(0.1));
+        }
+    }
+
+    /** Anomalous rock in the data: "seepage detected", now and then (CLAUDE.md 10.1). */
+    private static void seepage(ClientLevel level) {
+        long now = level.getGameTime();
+        if (now - lastSeepage < SEEPAGE_TICKS) return;
+        lastSeepage = now;
+        Minecraft.getInstance().gui.setOverlayMessage(Component.translatable("seepers.lidar.seepage"), false);
+    }
+
     /** This tick's share of the points per second, each at its own moment of the pattern, laid over the field. */
     private static void scan(LocalPlayer player, ClientLevel level, LidarModules.Stats stats) {
         PointCloud cloud = PointCloud.get();
         if (cloud == null) return;
+        prepare(player, level, ServerConfig.get(ServerConfig.LIDAR_RANGE));
         double range = ServerConfig.get(ServerConfig.LIDAR_RANGE);
         if (round) {
-            roundPass(player, level, cloud, range, passSphere, stats.pointsPerSecond());
+            roundPass(player, level, cloud, range, passSphere, stats.pointsPerSecond(), stats.beams());
             return;
         }
         roundTick = 0;
-        carry += stats.pointsPerSecond() / 20.0;
+        if (frameStats == null && scanTicks <= 1) lastFrameNanos = System.nanoTime();
+        frameStats = stats;
+    }
+
+    /** The ordinary scan's rays for the time since the last frame (see frameStats). */
+    public static void onRenderFrame(RenderFrameEvent.Pre event) {
+        long now = System.nanoTime();
+        double seconds = Math.min((now - lastFrameNanos) / 1.0E9, 0.1);
+        lastFrameNanos = now;
+        frameNanos = now;
+        LidarModules.Stats stats = frameStats;
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        ClientLevel level = minecraft.level;
+        PointCloud cloud = PointCloud.get();
+        if (stats == null || player == null || level == null || cloud == null || minecraft.isPaused()) return;
+        double range = ServerConfig.get(ServerConfig.LIDAR_RANGE);
+        float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        carry += stats.pointsPerSecond() * seconds;
         int rays = (int) carry;
         carry -= rays;
+        if (rays == 0) return;
         // From the player's eyes along their view, also in third person (CLAUDE.md 5).
-        Vec3 eye = player.getEyePosition();
-        Vec3 look = player.getViewVector(1.0F);
+        Vec3 eye = player.getEyePosition(partial);
+        Vec3 look = player.getViewVector(partial);
         Vec3 right = look.cross(new Vec3(0, 1, 0));
         right = right.lengthSqr() < 1.0E-6 ? new Vec3(1, 0, 0) : right.normalize();
         Vec3 up = right.cross(look);
@@ -294,12 +439,15 @@ public final class LidarScan {
         // The chosen area; the special scans go by passes (roundPass).
         LidarModules.Field field = stats.field();
         // Half-widths of the screen's image plane at distance 1, from the camera's vertical field of view and the window.
-        Minecraft minecraft = Minecraft.getInstance();
         double screenY = Math.tan(Math.toRadians(minecraft.options.fov().get()) / 2) * stats.screenShare();
         double screenX = screenY * minecraft.getWindow().getWidth() / Math.max(1.0, minecraft.getWindow().getHeight());
-        for (int i = 0; i < rays; i++) {
-            patternTime += 0.05 / rays;
-            if (!LidarPatterns.sample(stats.pattern(), patternTime, field == LidarModules.Field.CONE, RANDOM, uv)) continue;
+        int beams = stats.beams();
+        for (int n = 0; n < rays * beams; n++) {
+            int beam = n % beams;
+            if (beam == 0) patternTime += seconds / rays;
+            // Beams meet along the pattern: even ones run it forwards, odd ones backwards, pairs spread apart in time.
+            double time = (beam % 2 == 0 ? patternTime : -patternTime) + (beam / 2) * BEAM_SPREAD_SECONDS;
+            if (!LidarPatterns.sample(stats.pattern(), time, field == LidarModules.Field.CONE, RANDOM, uv)) continue;
             double u = uv[0] + RANDOM.nextGaussian() * JITTER;
             double v = uv[1] + RANDOM.nextGaussian() * JITTER;
             Vec3 direction = switch (field) {
@@ -314,11 +462,7 @@ public final class LidarScan {
                 // The screen: the pattern's square laid on the camera's image plane, so it stays a rectangle at any pitch.
                 case SCREEN -> look.add(right.scale(u * screenX)).add(up.scale(v * screenY)).normalize();
             };
-            HandTouch.Hit hit = HandTouch.cast(player, level, eye, direction, range);
-            if (hit == null) continue;
-            cloud.add(PointSource.LIDAR, hit.location().x, hit.location().y, hit.location().z, hit.result().getDirection(),
-                    TouchMaterial.SOLID.ordinal());
-            sessionPoints++;
+            land(player, level, cloud, eye, direction, range);
         }
     }
 
@@ -327,11 +471,14 @@ public final class LidarScan {
      * a short pause. They lay points faster than the ordinary scan by a bonus (config). View III (sphere): rays on a Fibonacci sphere, turned anew each pass. View II: the whole screen in
      * a grid with a random spot in each cell. Either way each pass lands in new spots.
      */
-    private static void roundPass(LocalPlayer player, ClientLevel level, PointCloud cloud, double range, boolean sphere, int pointsPerSecond) {
+    private static void roundPass(LocalPlayer player, ClientLevel level, PointCloud cloud, double range, boolean sphere, int pointsPerSecond,
+                                  int beams) {
         int passTicks = ServerConfig.get(ServerConfig.LIDAR_ROUND_PASS_TICKS);
         int cycle = passTicks + ServerConfig.get(ServerConfig.LIDAR_ROUND_PAUSE_TICKS);
         // Faster than the ordinary scan by the bonus: a pass carries a whole cycle's points.
-        int rays = Math.max(16, (int) Math.round(pointsPerSecond * (1 + ServerConfig.get(ServerConfig.LIDAR_PASS_SPEED_BONUS)) * cycle / 20.0));
+        // Each beam sweeps its own band of the pass: with the beams module the bands meet each other (top and bottom first).
+        int band = Math.max(16, (int) Math.round(pointsPerSecond * (1 + ServerConfig.get(ServerConfig.LIDAR_PASS_SPEED_BONUS)) * cycle / 20.0));
+        int rays = band * beams;
         int tick = roundTick % cycle;
         if (tick == 0) {
             // Pressing again does not hurry it: a new pass waits a whole cycle from the last one's start.
@@ -344,6 +491,8 @@ public final class LidarScan {
         }
         roundTick++;
         if (tick >= passTicks) return;
+        frameNanos = System.nanoTime();
+        prepare(player, level, range);
         Vec3 eye = player.getEyePosition();
         Vec3 look = player.getViewVector(1.0F);
         Vec3 right = look.cross(new Vec3(0, 1, 0));
@@ -354,9 +503,12 @@ public final class LidarScan {
         double aspect = minecraft.getWindow().getWidth() / Math.max(1.0, minecraft.getWindow().getHeight());
         int columns = Math.max(1, (int) Math.round(Math.sqrt(rays * aspect)));
         int rows = Math.max(1, (rays + columns - 1) / columns);
-        int from = rays * tick / passTicks;
-        int to = rays * (tick + 1) / passTicks;
-        for (int i = from; i < to; i++) {
+        int from = band * tick / passTicks;
+        int to = band * (tick + 1) / passTicks;
+        for (int n = from * beams; n < to * beams; n++) {
+            int beam = n % beams;
+            int k = n / beams;
+            int i = beam * band + (beam % 2 == 0 ? k : band - 1 - k);
             Vec3 direction;
             if (sphere) {
                 double y = 1 - 2 * (i + roundShift) / rays;
@@ -369,11 +521,7 @@ public final class LidarScan {
                 double v = 1 - ((i / columns) + RANDOM.nextDouble()) / rows * 2;
                 direction = look.add(right.scale(u * screenY * aspect)).add(up.scale(v * screenY)).normalize();
             }
-            HandTouch.Hit hit = HandTouch.cast(player, level, eye, direction, range);
-            if (hit == null) continue;
-            cloud.add(PointSource.LIDAR, hit.location().x, hit.location().y, hit.location().z, hit.result().getDirection(),
-                    TouchMaterial.SOLID.ordinal());
-            sessionPoints++;
+            land(player, level, cloud, eye, direction, range);
         }
     }
 
@@ -403,6 +551,7 @@ public final class LidarScan {
         debugTicks = 0;
         carry = 0;
         lastPassStart = -1_000_000L; // the next world has its own game time
+        lastSeepage = -1_000_000L;
         useLatched = false;
         specialLatched = false;
         lastUsePress = NEVER;

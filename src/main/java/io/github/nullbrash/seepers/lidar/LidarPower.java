@@ -13,6 +13,7 @@ import java.util.UUID;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -26,6 +27,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  */
 public final class LidarPower {
     private static final int WRITE_TICKS = 20;
+    /** How often a turning crank sends a vibration: often enough to keep a sculk sensor going. */
+    private static final int CRANK_VIBRATION_TICKS = 10;
 
     private static final Map<UUID, Session> SCANNING = new HashMap<>();
     private static final Map<UUID, Session> CRANKING = new HashMap<>();
@@ -102,6 +105,8 @@ public final class LidarPower {
             }
             crank.unspent += ServerConfig.get(ServerConfig.LIDAR_DYNAMO_RATE);
             if (++crank.ticks % WRITE_TICKS == 0) write(player, crank, 1);
+            // The crank is loud (CLAUDE.md 5.3): sculk sensors and wardens hear it all the time it turns, sneaking or not.
+            if (crank.ticks % CRANK_VIBRATION_TICKS == 1) player.level().gameEvent(player, GameEvent.ENTITY_ACTION, player.position());
         }
     }
 
