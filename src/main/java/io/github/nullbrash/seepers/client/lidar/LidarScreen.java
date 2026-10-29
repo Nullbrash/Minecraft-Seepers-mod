@@ -19,6 +19,10 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
+import io.github.nullbrash.seepers.lidar.Wiring;
+import java.util.ArrayList;
+import java.util.List;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The lidar's own screen (CLAUDE.md 5.3), opened by its key while the lidar is in hand: the device itself, as if held
@@ -72,6 +76,9 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
     private LidarControls.GuardedButton erase;
     private LidarControls.LatchButton lockWrite;
     private LidarControls.LatchButton lockCopy;
+    private LidarControls.Screw batteryScrew;
+    private final List<LidarControls.PanelScrew> panelScrews = new ArrayList<>();
+    private @Nullable LidarWiring wiring;
 
     public LidarScreen(LidarMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -106,20 +113,64 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
                 () -> pick(LidarMenu.LOCK_COPY_BUTTON)));
         menu.batteryOpen = false;
         // The body's bottom left corner screw holds the lid; taken out, it lies above the bay.
-        addRenderableWidget(new LidarControls.Screw(leftPos + 4, topPos + DEVICE_HEIGHT - 12,
+        batteryScrew = addRenderableWidget(new LidarControls.Screw(leftPos + 4, topPos + DEVICE_HEIGHT - 12,
                 leftPos + 40, topPos + 76,
                 Component.translatable("seepers.lidar.screen.battery.screw"), Component.translatable("seepers.lidar.screen.battery.screw_out"),
-                () -> menu.batteryOpen, () -> menu.batteryOpen = !menu.batteryOpen));
+                () -> menu.batteryOpen, () -> {
+                    menu.batteryOpen = !menu.batteryOpen;
+                    pick(LidarMenu.BATTERY_LID_BUTTON);
+                }));
+        // The body's other screws hold the main panel: they come out once the battery and the card are out.
+        menu.panelOpen = false;
+        panelScrews.clear();
+        wiring = null;
+        for (int[] screw : new int[][] {{8, 8}, {imageWidth - 8, 8}, {imageWidth - 8, DEVICE_HEIGHT - 8}}) {
+            panelScrews.add(addRenderableWidget(new LidarControls.PanelScrew(leftPos + screw[0] - 4, topPos + screw[1] - 4,
+                    Component.translatable("seepers.lidar.screen.panel.locked"), Component.translatable("seepers.lidar.screen.panel.ready"),
+                    this::panelReady, this::screwTaken)));
+        }
+    }
+
+    /** The panel comes off only with the battery bay open, the battery out and the card out. */
+    private boolean panelReady() {
+        return menu.batteryOpen && !menu.getSlot(LidarMenu.BATTERY_SLOT).hasItem() && LidarModules.card(menu.lidar()).isEmpty();
+    }
+
+    /** The last screw out: the panel comes off, the wiring board shows. */
+    private void screwTaken() {
+        for (LidarControls.PanelScrew screw : panelScrews) if (!screw.out()) return;
+        menu.panelOpen = true;
+        boolean offhand = minecraft != null && minecraft.player != null && minecraft.player.getOffhandItem() == menu.lidar();
+        wiring = addRenderableWidget(new LidarWiring(leftPos + (imageWidth - Wiring.COLUMNS * LidarWiring.CELL) / 2, topPos + 14,
+                Wiring.board(menu.lidar()), kind -> kind == Wiring.BASE ? LidarHud.COLOR : KIND_COLORS[kind], offhand));
     }
 
     private void pick(int id) {
         if (minecraft != null && minecraft.gameMode != null) minecraft.gameMode.handleInventoryButtonClick(menu.containerId, id);
     }
 
+    /** Container screens keep drags for item spreading and never pass them to widgets: the wiring board needs them. */
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (wiring != null && wiring.mouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
     @Override
     protected void containerTick() {
         super.containerTick();
         ItemStack lidar = menu.lidar();
+        for (LidarControls.PanelScrew screw : panelScrews) screw.tick();
+        if (menu.panelOpen) {
+            // The panel is off: its controls went with it.
+            area.visible = false;
+            pattern.visible = false;
+            erase.visible = false;
+            lockWrite.visible = false;
+            lockCopy.visible = false;
+            batteryScrew.visible = false;
+            return;
+        }
         pattern.visible = LidarModules.level(lidar, LidarModules.Kind.PATTERN) > 0;
         ItemStack card = LidarModules.card(lidar);
         CardData data = MemoryCardItem.data(card);
@@ -165,13 +216,14 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
             graphics.fill(x0 + 1, y, x0 + 4, y + 2, EDGE_DARK);
             graphics.fill(x1 - 4, y, x1 - 1, y + 2, EDGE_DARK);
         }
-        // The fourth corner's screw is the battery lid's own (a control).
-        for (int[] screw : new int[][] {{x0 + 8, y0 + 8}, {x1 - 8, y0 + 8}, {x1 - 8, y1 - 8}}) {
-            LidarControls.screwHead(graphics, screw[0], screw[1], false);
+        // The corner screws are controls (the battery lid's, and the panel's three).
+        if (menu.panelOpen) {
+            inside(graphics);
+        } else {
+            display(graphics);
         }
-        display(graphics);
         for (Slot slot : menu.slots) {
-            if (slot.index > LidarMenu.BATTERY_SLOT) continue;
+            if (slot.index > LidarMenu.BATTERY_SLOT || menu.panelOpen) continue;
             int x = leftPos + slot.x - 1;
             int y = topPos + slot.y - 1;
             if (slot.index == LidarMenu.BATTERY_SLOT) {
@@ -283,6 +335,25 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
                     dt + (18 - LidarGlyphs.PATTERN_SIZE) / 2, text);
             controlLabel(graphics, Component.translatable("seepers.lidar.screen.pattern"), nl, dt);
         }
+    }
+
+    /**
+     * Inside the device, the panel off: the cavity the wiring board sits in, and under it how far the wiring goes and
+     * what the tuned wiring gives now.
+     */
+    private void inside(GuiGraphics graphics) {
+        graphics.fill(leftPos + 8, topPos + 8, leftPos + imageWidth - 8, topPos + DEVICE_HEIGHT - 8, 0xFF0A0E11);
+        if (wiring == null) return;
+        Wiring.Board board = wiring.board();
+        int y = topPos + 14 + Wiring.ROWS * LidarWiring.CELL + 4;
+        Component progress = Component.translatable("seepers.lidar.screen.wiring.progress", wiring.joined(), board.pairs().size(),
+                wiring.length(), board.minimal());
+        graphics.drawString(font, progress, leftPos + 42, y, 0xFF000000 | LABEL_COLOR, false);
+        float[] bonus = Wiring.bonus(menu.lidar());
+        Component result = bonus[0] <= 0 ? Component.translatable(wiring.sent() ? "seepers.lidar.screen.wiring.checking" : "seepers.lidar.screen.wiring.none")
+                : board.dynamo() ? Component.translatable("seepers.lidar.screen.wiring.bonus_dynamo", Math.round(bonus[0] * 100), Math.round(bonus[1] * 100))
+                : Component.translatable("seepers.lidar.screen.wiring.bonus", Math.round(bonus[0] * 100));
+        graphics.drawString(font, result, leftPos + 42, y + 10, 0xFF000000 | LidarHud.COLOR, false);
     }
 
     /** A small display of the controls row: bezel, rim, glass; 18 high. */

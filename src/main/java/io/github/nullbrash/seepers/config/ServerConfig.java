@@ -115,6 +115,10 @@ public final class ServerConfig {
     public static final ModConfigSpec.IntValue LIDAR_CARD_2;
     public static final ModConfigSpec.IntValue LIDAR_CARD_3;
     public static final ModConfigSpec.IntValue LIDAR_CARD_UPLOAD_KB;
+    public static final ModConfigSpec.DoubleValue LIDAR_WIRING_DRAIN_MIN;
+    public static final ModConfigSpec.DoubleValue LIDAR_WIRING_DRAIN_MAX;
+    public static final ModConfigSpec.DoubleValue LIDAR_WIRING_CHARGE_MIN;
+    public static final ModConfigSpec.DoubleValue LIDAR_WIRING_CHARGE_MAX;
     public static final ModConfigSpec.IntValue LIDAR_CARD_DOWNLOAD_KB;
     public static final ModConfigSpec.DoubleValue LIDAR_DYNAMO_RATE;
     public static final ModConfigSpec.DoubleValue LIDAR_SCHEMATIC_2_CHANCE;
@@ -394,11 +398,19 @@ public final class ServerConfig {
         LIDAR_CARD_3 = builder.comment("Memory card III: points it keeps.").translation("seepers.configuration.lidar.modules.card3").defineInRange("card3", 8_388_608, 1, 8_388_608);
         LIDAR_CARD_UPLOAD_KB = builder.comment("Memory cards: kilobytes of new points per second a player may send to the server.")
                 .translation("seepers.configuration.lidar.modules.cardUploadKb").defineInRange("cardUploadKb", 512, 16, 16384);
+        LIDAR_WIRING_DRAIN_MIN = builder.comment("Wiring mini-game: battery drain cut of a solved but long wiring (twice the shortest or more).")
+                .translation("seepers.configuration.lidar.modules.wiringDrainMin").defineInRange("wiringDrainMin", 0.05, 0.0, 0.9);
+        LIDAR_WIRING_DRAIN_MAX = builder.comment("Wiring mini-game: battery drain cut of the shortest wiring.")
+                .translation("seepers.configuration.lidar.modules.wiringDrainMax").defineInRange("wiringDrainMax", 0.25, 0.0, 0.9);
+        LIDAR_WIRING_CHARGE_MIN = builder.comment("Wiring mini-game, with the dynamo module: crank power added by a solved but long wiring.")
+                .translation("seepers.configuration.lidar.modules.wiringChargeMin").defineInRange("wiringChargeMin", 0.10, 0.0, 5.0);
+        LIDAR_WIRING_CHARGE_MAX = builder.comment("Wiring mini-game, with the dynamo module: crank power added by the shortest wiring.")
+                .translation("seepers.configuration.lidar.modules.wiringChargeMax").defineInRange("wiringChargeMax", 0.50, 0.0, 5.0);
         LIDAR_CARD_DOWNLOAD_KB = builder.comment("Memory cards: kilobytes per second the server sends a player of the card they put in.")
                 .translation("seepers.configuration.lidar.modules.cardDownloadKb").defineInRange("cardDownloadKb", 2048, 16, 65536);
         LIDAR_DYNAMO_RATE = builder.comment("Hand dynamo: seconds of basic scanning charged per second of cranking.")
                 .translation("seepers.configuration.lidar.modules.dynamoRate")
-                .defineInRange("dynamoRate", 6.0, 0.0, 600.0);
+                .defineInRange("dynamoRate", 9.0, 0.0, 600.0);
         LIDAR_SCHEMATIC_2_CHANCE = builder.comment("Chance a mineshaft or dungeon chest holds a level II schematic.")
                 .translation("seepers.configuration.lidar.modules.schematic2Chance")
                 .defineInRange("schematic2Chance", 0.25, 0.0, 1.0);

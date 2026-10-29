@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class SeepersNetwork {
     /** Bump on any incompatible payload change: NeoForge refuses connections with a different version. */
-    public static final String PROTOCOL_VERSION = "18";
+    public static final String PROTOCOL_VERSION = "20";
 
     public static void register(RegisterPayloadHandlersEvent event) {
         // Handlers run on the main thread (registrar default).
@@ -73,6 +73,8 @@ public final class SeepersNetwork {
                 (payload, context) -> ClientPayloadHandlers.handleCardDrop(payload, context));
         registrar.playToServer(io.github.nullbrash.seepers.network.payload.CardUploadPayload.TYPE,
                 io.github.nullbrash.seepers.network.payload.CardUploadPayload.STREAM_CODEC, io.github.nullbrash.seepers.lidar.CardService::handleUpload);
+        registrar.playToServer(io.github.nullbrash.seepers.network.payload.WiringPayload.TYPE,
+                io.github.nullbrash.seepers.network.payload.WiringPayload.STREAM_CODEC, io.github.nullbrash.seepers.lidar.Wiring::handle);
         registrar.playToServer(FogProbeReplyPayload.TYPE, FogProbeReplyPayload.STREAM_CODEC, FogProbeTracker::handleReply);
     }
 

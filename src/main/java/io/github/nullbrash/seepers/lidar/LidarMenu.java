@@ -47,8 +47,10 @@ public class LidarMenu extends AbstractContainerMenu {
     private final SimpleContainer modules = new SimpleContainer(LidarModules.SLOTS);
     private final SimpleContainer battery = new SimpleContainer(1);
     private boolean loading;
-    /** The battery compartment's lid is off (client only: the screen's screw); the slot hides under the lid. */
+    /** The battery compartment's lid is off (the screen's screw, told to the server); the slot is under the lid. */
     public boolean batteryOpen;
+    /** The main panel is off (client only): the wiring board shows, the device's slots are out of reach. */
+    public boolean panelOpen;
 
     public static void open(ServerPlayer player, InteractionHand hand) {
         if (!(player.getItemInHand(hand).getItem() instanceof LidarItem)) return;
@@ -76,6 +78,11 @@ public class LidarMenu extends AbstractContainerMenu {
             LidarModules.Kind kind = LidarModules.Kind.values()[i];
             addSlot(new Slot(modules, i, SOCKETS[i][0], SOCKETS[i][1]) {
                 @Override
+                public boolean isActive() {
+                    return !player.level().isClientSide || !panelOpen;
+                }
+
+                @Override
                 public boolean mayPlace(ItemStack stack) {
                     if (kind == LidarModules.Kind.MEMORY) return stack.getItem() instanceof MemoryCardItem;
                     return stack.getItem() instanceof ModuleItem module && module.kind() == kind;
@@ -90,12 +97,17 @@ public class LidarMenu extends AbstractContainerMenu {
         addSlot(new Slot(battery, 0, BATTERY_X, BATTERY_Y) {
             @Override
             public boolean isActive() {
-                return !player.level().isClientSide || batteryOpen;
+                return !player.level().isClientSide || batteryOpen && !panelOpen;
             }
 
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return stack.getItem() instanceof BatteryItem;
+                return batteryOpen && stack.getItem() instanceof BatteryItem;
+            }
+
+            @Override
+            public boolean mayPickup(Player player) {
+                return batteryOpen;
             }
 
             @Override
@@ -134,7 +146,16 @@ public class LidarMenu extends AbstractContainerMenu {
         NonNullList<ItemStack> slots = NonNullList.withSize(LidarModules.SLOTS, ItemStack.EMPTY);
         for (int i = 0; i < LidarModules.SLOTS; i++) slots.set(i, modules.getItem(i).copy());
         ItemStack lidar = lidar();
-        if (lidar.getItem() instanceof LidarItem) LidarModules.store(lidar, slots);
+        if (!(lidar.getItem() instanceof LidarItem)) return;
+        // A module taken out or put in undoes the wiring for good (the card is not wired).
+        NonNullList<ItemStack> before = LidarModules.contents(lidar);
+        for (int i = 0; i < LidarModules.SLOTS; i++) {
+            if (i != LidarModules.Kind.MEMORY.ordinal() && !ItemStack.isSameItem(before.get(i), slots.get(i))) {
+                lidar.remove(SeepersComponents.WIRING.get());
+                break;
+            }
+        }
+        LidarModules.store(lidar, slots);
     }
 
     private void saveBattery() {
@@ -152,9 +173,15 @@ public class LidarMenu extends AbstractContainerMenu {
     public static final int ERASE_BUTTON = 40;
     public static final int LOCK_WRITE_BUTTON = 41;
     public static final int LOCK_COPY_BUTTON = 42;
+    /** The battery lid's screw, out or in. */
+    public static final int BATTERY_LID_BUTTON = 43;
 
     @Override
     public boolean clickMenuButton(Player player, int id) {
+        if (id == BATTERY_LID_BUTTON) {
+            batteryOpen = !batteryOpen;
+            return true;
+        }
         if (player instanceof ServerPlayer server && id >= ERASE_BUTTON) {
             save();
             if (id == ERASE_BUTTON) CardService.erase(server, lidar());

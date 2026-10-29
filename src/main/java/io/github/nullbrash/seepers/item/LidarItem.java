@@ -41,20 +41,9 @@ public class LidarItem extends Item {
     @Override
     public boolean overrideOtherStackedOnMe(ItemStack stack, ItemStack other, Slot slot, ClickAction action, Player player, SlotAccess access) {
         if (action != ClickAction.SECONDARY) return false;
+        // The battery goes in and out only through the bay on the lidar's screen (its lid is screwed shut).
         Integer inside = battery(stack);
-        if (other.getItem() instanceof BatteryItem) {
-            stack.set(SeepersComponents.BATTERY.get(), BatteryItem.charge(other));
-            access.set(inside == null ? ItemStack.EMPTY : BatteryItem.withCharge(inside));
-            player.playSound(SoundEvents.ARMOR_EQUIP_IRON.value(), 0.6F, 1.6F);
-            return true;
-        }
         if (inside == null) return false;
-        if (other.isEmpty()) {
-            access.set(BatteryItem.withCharge(inside));
-            stack.remove(SeepersComponents.BATTERY.get());
-            player.playSound(SoundEvents.BUNDLE_REMOVE_ONE, 0.6F, 1.4F);
-            return true;
-        }
         if (other.is(Items.REDSTONE)) {
             int charged = BatteryItem.withDust(inside);
             if (charged < 0) return true;

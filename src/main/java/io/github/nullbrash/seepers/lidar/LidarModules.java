@@ -172,7 +172,7 @@ public final class LidarModules {
         };
         boolean cone = area.field() == Field.CONE;
         return new Stats(view, area.field(), cone ? area.value() / 2 : 0, cone ? 0 : area.value(), points, limit, memory,
-                tierCost(area.tier()) * densityCost * beamsCost, pattern(lidar),
+                tierCost(area.tier()) * densityCost * beamsCost * (1 - Wiring.bonus(lidar)[0]), pattern(lidar),
                 level(lidar, Kind.DYNAMO) > 0, level(lidar, Kind.REFRESH) > 0, beams);
     }
 

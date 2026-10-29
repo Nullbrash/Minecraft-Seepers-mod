@@ -330,5 +330,56 @@ final class LidarControls {
         }
     }
 
+    /**
+     * One of the body's screws that hold the main panel: it stays put until the device is ready to open (then it lights
+     * up under the cursor); a click takes it out and leaves its hole.
+     */
+    static final class PanelScrew extends Control {
+        private final BooleanSupplier allowed;
+        private final Runnable taken;
+        private final Component lockedName;
+        private final Component readyName;
+        private boolean out;
+
+        PanelScrew(int x, int y, Component lockedName, Component readyName, BooleanSupplier allowed, Runnable taken) {
+            super(x, y, 8, 8, lockedName);
+            this.allowed = allowed;
+            this.taken = taken;
+            this.lockedName = lockedName;
+            this.readyName = readyName;
+        }
+
+        boolean out() {
+            return out;
+        }
+
+        void tick() {
+            setTooltip(out ? null : Tooltip.create(allowed.getAsBoolean() ? readyName : lockedName));
+        }
+
+        @Override
+        public void onClick(double mouseX, double mouseY) {
+            if (out) return;
+            if (!allowed.getAsBoolean()) {
+                sound(SoundEvents.STONE_BUTTON_CLICK_OFF, 2.0F, 0.2F);
+                return;
+            }
+            out = true;
+            taken.run();
+            sound(SoundEvents.IRON_TRAPDOOR_OPEN, 1.6F, 0.35F);
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            int cx = getX() + 4;
+            int cy = getY() + 4;
+            if (out) {
+                disc(graphics, cx, cy, 2, DARK);
+                return;
+            }
+            screwHead(graphics, cx, cy, isHoveredOrFocused() && allowed.getAsBoolean());
+        }
+    }
+
     private LidarControls() {}
 }

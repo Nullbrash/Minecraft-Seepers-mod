@@ -41,5 +41,10 @@ public final class SeepersComponents {
             COMPONENTS.registerComponentType("card", builder -> builder.persistent(io.github.nullbrash.seepers.lidar.CardData.CODEC)
                     .networkSynchronized(io.github.nullbrash.seepers.lidar.CardData.STREAM_CODEC));
 
+    /** A lidar's tuned wiring (lidar.WiringData): the bonus of the wiring mini-game for the modules it was wired with. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<io.github.nullbrash.seepers.lidar.WiringData>> WIRING =
+            COMPONENTS.registerComponentType("wiring", builder -> builder.persistent(io.github.nullbrash.seepers.lidar.WiringData.CODEC)
+                    .networkSynchronized(io.github.nullbrash.seepers.lidar.WiringData.STREAM_CODEC));
+
     private SeepersComponents() {}
 }

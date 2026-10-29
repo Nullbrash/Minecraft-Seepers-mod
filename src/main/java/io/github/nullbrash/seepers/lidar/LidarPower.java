@@ -103,7 +103,7 @@ public final class LidarPower {
                 crankSound(player, false);
                 return;
             }
-            crank.unspent += ServerConfig.get(ServerConfig.LIDAR_DYNAMO_RATE);
+            crank.unspent += ServerConfig.get(ServerConfig.LIDAR_DYNAMO_RATE) * (1 + Wiring.bonus(lidar)[1]);
             if (++crank.ticks % WRITE_TICKS == 0) write(player, crank, 1);
             // The crank is loud (CLAUDE.md 5.3): sculk sensors and wardens hear it all the time it turns, sneaking or not.
             if (crank.ticks % CRANK_VIBRATION_TICKS == 1) player.level().gameEvent(player, GameEvent.ENTITY_ACTION, player.position());
