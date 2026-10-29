@@ -88,7 +88,8 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue LIDAR_RANGE;
     public static final ModConfigSpec.DoubleValue LIDAR_CONE_DEGREES;
     public static final ModConfigSpec.IntValue LIDAR_POINTS_PER_SECOND;
-    public static final ModConfigSpec.IntValue LIDAR_POINT_LIMIT;
+    public static final ModConfigSpec.IntValue LIDAR_UNSAVED_LIMIT;
+    public static final ModConfigSpec.DoubleValue LIDAR_UNSAVED_SECONDS;
     public static final ModConfigSpec.IntValue LIDAR_BATTERY_MINUTES;
     public static final ModConfigSpec.DoubleValue LIDAR_REDSTONE_CHARGE;
     public static final ModConfigSpec.DoubleValue LIDAR_VIEW_CONE_DEGREES;
@@ -110,9 +111,11 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue LIDAR_BEAMS_COST_1;
     public static final ModConfigSpec.DoubleValue LIDAR_BEAMS_COST_2;
     public static final ModConfigSpec.DoubleValue LIDAR_BEAMS_COST_3;
-    public static final ModConfigSpec.IntValue LIDAR_MEMORY_1;
-    public static final ModConfigSpec.IntValue LIDAR_MEMORY_2;
-    public static final ModConfigSpec.IntValue LIDAR_MEMORY_3;
+    public static final ModConfigSpec.IntValue LIDAR_CARD_1;
+    public static final ModConfigSpec.IntValue LIDAR_CARD_2;
+    public static final ModConfigSpec.IntValue LIDAR_CARD_3;
+    public static final ModConfigSpec.IntValue LIDAR_CARD_UPLOAD_KB;
+    public static final ModConfigSpec.IntValue LIDAR_CARD_DOWNLOAD_KB;
     public static final ModConfigSpec.DoubleValue LIDAR_DYNAMO_RATE;
     public static final ModConfigSpec.DoubleValue LIDAR_SCHEMATIC_2_CHANCE;
     public static final ModConfigSpec.DoubleValue LIDAR_SCHEMATIC_3_CHANCE;
@@ -348,9 +351,10 @@ public final class ServerConfig {
                 .translation("seepers.configuration.lidar.coneDegrees").defineInRange("coneDegrees", 20.0, 1.0, 120.0);
         LIDAR_POINTS_PER_SECOND = builder.comment("Rays (points) per second of the basic beam while scanning.")
                 .translation("seepers.configuration.lidar.pointsPerSecond").defineInRange("pointsPerSecond", 320, 20, 20000);
-        // Ring slots are twice the limit and must fit 24 bits (PointCloud).
-        LIDAR_POINT_LIMIT = builder.comment("Lidar points kept at once without upgrades. They never fade: the oldest go when full, all go on leaving the world.")
-                .translation("seepers.configuration.lidar.pointLimit").defineInRange("pointLimit", 1_048_576, 0, 8_388_608);
+        LIDAR_UNSAVED_LIMIT = builder.comment("Lidar points shown at once with no memory card in the lidar (or a locked one); they fade quickly.")
+                .translation("seepers.configuration.lidar.unsavedLimit").defineInRange("unsavedLimit", 262_144, 0, 4_194_304);
+        LIDAR_UNSAVED_SECONDS = builder.comment("Seconds lidar points last with no memory card to keep them.")
+                .translation("seepers.configuration.lidar.unsavedSeconds").defineInRange("unsavedSeconds", 10.0, 1.0, 600.0);
         LIDAR_BATTERY_MINUTES = builder.comment("Minutes of continuous basic scanning a full battery lasts.")
                 .translation("seepers.configuration.lidar.batteryMinutes").defineInRange("batteryMinutes", 60, 1, 1440);
         LIDAR_REDSTONE_CHARGE = builder.comment("Share of a full battery one redstone dust adds.")
@@ -385,9 +389,13 @@ public final class ServerConfig {
         LIDAR_BEAMS_COST_2 = builder.comment("Beams II (4 beams): battery drain multiplier.").translation("seepers.configuration.lidar.modules.beamsCost2").defineInRange("beamsCost2", 2.0, 0.0, 100.0);
         LIDAR_BEAMS_COST_3 = builder.comment("Beams III (8 beams): battery drain multiplier.").translation("seepers.configuration.lidar.modules.beamsCost3").defineInRange("beamsCost3", 3.0, 0.0, 100.0);
         // Ring slots are twice the limit and must fit 24 bits (PointCloud).
-        LIDAR_MEMORY_1 = builder.comment("Memory I: lidar points kept.").translation("seepers.configuration.lidar.modules.memory1").defineInRange("memory1", 2_097_152, 0, 8_388_608);
-        LIDAR_MEMORY_2 = builder.comment("Memory II: lidar points kept.").translation("seepers.configuration.lidar.modules.memory2").defineInRange("memory2", 4_194_304, 0, 8_388_608);
-        LIDAR_MEMORY_3 = builder.comment("Memory III: lidar points kept; they are also saved between visits.").translation("seepers.configuration.lidar.modules.memory3").defineInRange("memory3", 8_388_608, 0, 8_388_608);
+        LIDAR_CARD_1 = builder.comment("Memory card I: points it keeps (the oldest go when it is full).").translation("seepers.configuration.lidar.modules.card1").defineInRange("card1", 1_048_576, 1, 8_388_608);
+        LIDAR_CARD_2 = builder.comment("Memory card II: points it keeps.").translation("seepers.configuration.lidar.modules.card2").defineInRange("card2", 4_194_304, 1, 8_388_608);
+        LIDAR_CARD_3 = builder.comment("Memory card III: points it keeps.").translation("seepers.configuration.lidar.modules.card3").defineInRange("card3", 8_388_608, 1, 8_388_608);
+        LIDAR_CARD_UPLOAD_KB = builder.comment("Memory cards: kilobytes of new points per second a player may send to the server.")
+                .translation("seepers.configuration.lidar.modules.cardUploadKb").defineInRange("cardUploadKb", 512, 16, 16384);
+        LIDAR_CARD_DOWNLOAD_KB = builder.comment("Memory cards: kilobytes per second the server sends a player of the card they put in.")
+                .translation("seepers.configuration.lidar.modules.cardDownloadKb").defineInRange("cardDownloadKb", 2048, 16, 65536);
         LIDAR_DYNAMO_RATE = builder.comment("Hand dynamo: seconds of basic scanning charged per second of cranking.")
                 .translation("seepers.configuration.lidar.modules.dynamoRate")
                 .defineInRange("dynamoRate", 6.0, 0.0, 600.0);

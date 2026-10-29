@@ -38,12 +38,17 @@ public final class SeepersItems {
 
     /** The board every lidar module starts from. */
     public static final DeferredItem<Item> CIRCUIT = ITEMS.register("lidar_circuit", () -> new Item(new Item.Properties()));
+    /** Scan memory cards I-III (CLAUDE.md 5.3): they go into the lidar's card slot, where the memory module was. */
+    public static final List<DeferredItem<io.github.nullbrash.seepers.item.MemoryCardItem>> MEMORY_CARDS = List.of(
+            ITEMS.register("memory_card_1", () -> new io.github.nullbrash.seepers.item.MemoryCardItem(new Item.Properties().stacksTo(1), 1)),
+            ITEMS.register("memory_card_2", () -> new io.github.nullbrash.seepers.item.MemoryCardItem(new Item.Properties().stacksTo(1), 2)),
+            ITEMS.register("memory_card_3", () -> new io.github.nullbrash.seepers.item.MemoryCardItem(new Item.Properties().stacksTo(1), 3)));
     /** Predecessors' schematics for module levels II and III (CLAUDE.md 6.6). */
     public static final DeferredItem<SchematicItem> SCHEMATIC_2 = ITEMS.register("schematic_2", () -> new SchematicItem(new Item.Properties().stacksTo(1), 2));
     public static final DeferredItem<SchematicItem> SCHEMATIC_3 = ITEMS.register("schematic_3", () -> new SchematicItem(new Item.Properties().stacksTo(1), 3));
     /** Lidar modules that exist so far, by kind, level I first (analysis, filter, water and echo come in later phases). */
     public static final Map<LidarModules.Kind, List<DeferredItem<ModuleItem>>> MODULES = modules(
-            LidarModules.Kind.VIEW, LidarModules.Kind.DENSITY, LidarModules.Kind.MEMORY, LidarModules.Kind.PATTERN, LidarModules.Kind.DYNAMO,
+            LidarModules.Kind.VIEW, LidarModules.Kind.DENSITY, LidarModules.Kind.PATTERN, LidarModules.Kind.DYNAMO,
             LidarModules.Kind.REFRESH, LidarModules.Kind.ANALYSIS, LidarModules.Kind.BEAMS);
 
     private static Map<LidarModules.Kind, List<DeferredItem<ModuleItem>>> modules(LidarModules.Kind... kinds) {
@@ -71,6 +76,7 @@ public final class SeepersItems {
             event.accept(CIRCUIT.get());
             event.accept(SCHEMATIC_2.get());
             event.accept(SCHEMATIC_3.get());
+            MEMORY_CARDS.forEach(card -> event.accept(card.get()));
             MODULES.values().forEach(levels -> levels.forEach(module -> event.accept(module.get())));
         }
         if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) event.accept(SeepersBlocks.ANOMALY_ROCK_ITEM.get());

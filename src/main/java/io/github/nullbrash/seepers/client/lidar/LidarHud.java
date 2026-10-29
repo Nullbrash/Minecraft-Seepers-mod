@@ -139,7 +139,10 @@ public final class LidarHud {
         Component rate = Component.translatable(LidarScan.latched() ? "seepers.lidar.hud.rate_auto" : "seepers.lidar.hud.rate", stats.rate());
         Component idle = Component.translatable("seepers.lidar.hud.idle");
         Component range = range(minecraft, player);
-        Component memoryText = Component.translatable("seepers.lidar.hud.memory", grouped((long) shownMemory), grouped(limit));
+        // No card: the lidar forgets; a card its author locked is read only.
+        boolean locked = io.github.nullbrash.seepers.item.MemoryCardItem.data(LidarModules.card(player.getItemInHand(hand))).noWrite();
+        Component memoryText = limit <= 0 ? Component.translatable("seepers.lidar.hud.no_card")
+                : Component.translatable(locked ? "seepers.lidar.hud.memory_locked" : "seepers.lidar.hud.memory", grouped((long) shownMemory), grouped(limit));
         Component chargeText = charge == null ? Component.translatable("seepers.lidar.hud.no_battery") : chargeText(charge, stats);
         int separator = font.width(SEPARATOR);
         int rangeWidth = Math.max(font.width(Component.translatable("seepers.lidar.hud.range",
@@ -150,7 +153,8 @@ public final class LidarHud {
         int scanWidth = Math.max(Math.max(font.width(rate), font.width(idle)),
                 font.width(Component.translatable("seepers.lidar.hud.rate_auto", stats.rate())));
         int beamWidth = ICON * 3 + rangeWidth + modeWidth + scanWidth + separator * 2;
-        int memoryWidth = ICON + font.width(Component.translatable("seepers.lidar.hud.memory", grouped(limit), grouped(limit)));
+        int memoryWidth = ICON + Math.max(font.width(Component.translatable("seepers.lidar.hud.memory_locked", grouped(limit), grouped(limit))),
+                font.width(Component.translatable("seepers.lidar.hud.no_card")));
         int chargeWidth = ICON + Math.max(font.width(chargeText(BatteryItem.capacity(), stats)), font.width(Component.translatable("seepers.lidar.hud.no_battery")));
         int width = Math.max(Math.max(beamWidth, memoryWidth + separator + chargeWidth), MIN_WIDTH) + PAD * 2;
         int height = BAR + 2 * (font.lineHeight + 2) + PAD * 2 - 2 + BAR;

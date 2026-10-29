@@ -126,12 +126,6 @@ public final class LidarScan {
                 PacketDistributor.sendToServer(new LidarActionPayload(LidarActionPayload.OPEN_SCREEN, held == InteractionHand.OFF_HAND));
             }
         }
-        // The cloud keeps as many lidar points as the last lidar in hand remembers.
-        if (held != null) {
-            LidarModules.Stats heldStats = LidarModules.stats(player.getItemInHand(held));
-            PointSource.setLidarLimit(heldStats.pointLimit());
-            io.github.nullbrash.seepers.client.points.LidarMemory.setKeeps(heldStats.keepsMemory());
-        }
         boolean cranking = crank(minecraft, held);
         // The view key's passes: view II's 180 over the whole screen (walking too), view III's 360 (only standing still;
         // walking with it held scans nothing).
@@ -347,7 +341,7 @@ public final class LidarScan {
             }
         }
         if (texel != null) {
-            cloud.addColored(PointSource.LIDAR, texel.at().x, texel.at().y, texel.at().z, texel.face(), TouchMaterial.TEXEL.ordinal(), texel.rgb());
+            cloud.addColored(CardSync.target(), texel.at().x, texel.at().y, texel.at().z, texel.face(), TouchMaterial.TEXEL.ordinal(), texel.rgb());
             sessionPoints++;
             return texel.at();
         }
@@ -356,7 +350,7 @@ public final class LidarScan {
         if (paint.material() == TouchMaterial.ANOMALY.ordinal()) seepage(level);
         // A texel sits at its pixel's centre.
         Vec3 at = paint.material() == TouchMaterial.TEXEL.ordinal() ? LidarAnalysis.snap(hit) : hit.location();
-        cloud.addColored(PointSource.LIDAR, at.x, at.y, at.z, hit.result().getDirection(), paint.material(), paint.rgb());
+        cloud.addColored(CardSync.target(), at.x, at.y, at.z, hit.result().getDirection(), paint.material(), paint.rgb());
         sessionPoints++;
         return at;
     }

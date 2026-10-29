@@ -59,6 +59,7 @@ public final class Seepers {
         SeepersBlocks.BLOCKS.register(modBus);
         SeepersItems.ITEMS.register(modBus);
         SeepersComponents.COMPONENTS.register(modBus);
+        io.github.nullbrash.seepers.registry.SeepersRecipes.SERIALIZERS.register(modBus);
         io.github.nullbrash.seepers.registry.SeepersMenus.MENUS.register(modBus);
         io.github.nullbrash.seepers.registry.SeepersSounds.SOUNDS.register(modBus);
         SeepersWorldgen.DENSITY_FUNCTION_TYPES.register(modBus);
@@ -72,6 +73,11 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.LidarPower::onStartTracking);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.SchematicLoot::onLootTableLoad);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.LidarPower::onLoggedOut);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.CardService::onPlayerTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.CardService::onLoggedOut);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.CardService::onServerStopping);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.CardService::onAnvilUpdate);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.CardService::onAnvilRepair);
         modBus.addListener(SeepersItems::addToCreativeTabs);
         modBus.addListener(io.github.nullbrash.seepers.item.ChiselItem::registerDataMaps);
 

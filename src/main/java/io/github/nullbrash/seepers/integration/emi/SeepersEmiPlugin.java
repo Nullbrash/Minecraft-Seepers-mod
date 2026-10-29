@@ -25,7 +25,7 @@ import net.minecraft.world.level.block.Block;
 
 /**
  * Optional EMI integration: shows what plain recipes do not — the cane's iron tip and repairs on the anvil, the
- * chisel's block conversions and the lidar battery's inventory clicks. Loaded only by EMI (annotation scan), so the mod never needs it.
+ * chisel's block conversions, the lidar battery's inventory clicks and memory card copies. Loaded only by EMI (annotation scan), so the mod never needs it.
  */
 @EmiEntrypoint
 public final class SeepersEmiPlugin implements EmiPlugin {
@@ -39,6 +39,7 @@ public final class SeepersEmiPlugin implements EmiPlugin {
         repair(registry, SeepersItems.BOUND_CANE.get(), Items.STRING);
         inventory(registry);
         repair(registry, SeepersItems.CHISEL.get(), Items.IRON_INGOT);
+        cardCopies(registry);
 
         ItemStack hewn = new ItemStack(SeepersBlocks.ANOMALY_ROCK_ITEM.get());
         hewn.set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(AnomalyRockBlock.KIND, AnomalyRockBlock.Kind.HEWN));
@@ -50,6 +51,27 @@ public final class SeepersEmiPlugin implements EmiPlugin {
             if (from.asItem() == Items.AIR || result.result().asItem() == Items.AIR) return;
             chisel(registry, key.location().getNamespace() + "/" + key.location().getPath(), EmiStack.of(from), EmiStack.of(result.result()), null);
         });
+    }
+
+    /**
+     * Memory card copies (lidar.CardCopyRecipe): a written card with a blank one of the same or a higher level gives a
+     * copy of the blank's level; the written card stays.
+     */
+    private static void cardCopies(EmiRegistry registry) {
+        var cards = SeepersItems.MEMORY_CARDS;
+        for (int level = 1; level <= cards.size(); level++) {
+            java.util.List<EmiStack> written = new java.util.ArrayList<>();
+            for (int source = 1; source <= level; source++) {
+                ItemStack card = new ItemStack(cards.get(source - 1).get());
+                card.set(SeepersComponents.CARD.get(), io.github.nullbrash.seepers.lidar.CardData.BLANK.withId(new java.util.UUID(0, source)).withPoints(1));
+                written.add(EmiStack.of(card).setRemainder(EmiStack.of(card)));
+            }
+            ItemStack copy = new ItemStack(cards.get(level - 1).get());
+            copy.set(SeepersComponents.CARD.get(), io.github.nullbrash.seepers.lidar.CardData.BLANK.withId(new java.util.UUID(0, level)).copy());
+            registry.addRecipe(new dev.emi.emi.api.recipe.EmiCraftingRecipe(
+                    java.util.List.of(dev.emi.emi.api.stack.EmiIngredient.of(written), EmiStack.of(cards.get(level - 1).get())),
+                    EmiStack.of(copy), id("crafting/memory_card_copy_" + level), true));
+        }
     }
 
     /** Lidar battery clicks (CLAUDE.md 5.3): putting it in, and charging with redstone dust. */

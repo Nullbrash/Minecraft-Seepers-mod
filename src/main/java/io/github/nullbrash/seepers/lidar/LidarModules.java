@@ -17,7 +17,7 @@ import net.minecraft.world.item.component.ItemContainerContents;
  */
 public final class LidarModules {
     public enum Kind {
-        // Appended only: a lidar keeps its modules by slot index.
+        // Appended only: a lidar keeps its modules by slot index. MEMORY's slot holds the memory card (no module).
         VIEW(3), DENSITY(3), MEMORY(3), ANALYSIS(3), FILTER(3), WATER(2), PATTERN(1), ECHO(1), DYNAMO(1), REFRESH(1), BEAMS(3);
 
         public final int maxLevel;
@@ -53,9 +53,10 @@ public final class LidarModules {
 
     /**
      * What a lidar does with its modules. view: the view module's level (II and III also have the special scans:
-     * 180 and 360). pointsPerSecond is one beam's; beams: how many run at once (the beams module).
+     * 180 and 360). pointsPerSecond is one beam's; beams: how many run at once (the beams module). card: the memory
+     * card's level (0 = none), pointLimit its capacity.
      */
-    public record Stats(int view, Field field, double coneHalf, double screenShare, int pointsPerSecond, int pointLimit, boolean keepsMemory,
+    public record Stats(int view, Field field, double coneHalf, double screenShare, int pointsPerSecond, int pointLimit, int card,
                         double cost, Pattern pattern, boolean dynamo, boolean refresh, int beams) {
         /** Points per second of all beams together. */
         public int rate() {
@@ -101,6 +102,21 @@ public final class LidarModules {
         return module.getItem() instanceof ModuleItem item && item.kind() == kind ? item.level() : 0;
     }
 
+    /** The memory card in the lidar (the memory slot), or empty. */
+    public static ItemStack card(ItemStack lidar) {
+        ItemContainerContents modules = lidar.get(SeepersComponents.MODULES.get());
+        if (modules == null || modules.getSlots() <= Kind.MEMORY.ordinal()) return ItemStack.EMPTY;
+        ItemStack card = modules.getStackInSlot(Kind.MEMORY.ordinal());
+        return card.getItem() instanceof io.github.nullbrash.seepers.item.MemoryCardItem ? card : ItemStack.EMPTY;
+    }
+
+    /** Puts a (changed) memory card into the lidar's card slot. */
+    public static void setCard(ItemStack lidar, ItemStack card) {
+        NonNullList<ItemStack> slots = contents(lidar);
+        slots.set(Kind.MEMORY.ordinal(), card);
+        store(lidar, slots);
+    }
+
     public static Pattern pattern(ItemStack lidar) {
         if (level(lidar, Kind.PATTERN) == 0) return Pattern.ROSETTE;
         int id = lidar.getOrDefault(SeepersComponents.PATTERN.get(), 0);
@@ -129,7 +145,8 @@ public final class LidarModules {
     public static Stats stats(ItemStack lidar) {
         int view = level(lidar, Kind.VIEW);
         int density = level(lidar, Kind.DENSITY);
-        int memory = level(lidar, Kind.MEMORY);
+        ItemStack card = card(lidar);
+        int memory = card.getItem() instanceof io.github.nullbrash.seepers.item.MemoryCardItem item ? item.level() : 0;
         Area area = areas(view).get(areaIndex(lidar));
         int points = switch (density) {
             case 0 -> ServerConfig.get(ServerConfig.LIDAR_POINTS_PER_SECOND);
@@ -137,12 +154,7 @@ public final class LidarModules {
             case 2 -> ServerConfig.get(ServerConfig.LIDAR_DENSITY_2);
             default -> ServerConfig.get(ServerConfig.LIDAR_DENSITY_3);
         };
-        int limit = switch (memory) {
-            case 0 -> ServerConfig.get(ServerConfig.LIDAR_POINT_LIMIT);
-            case 1 -> ServerConfig.get(ServerConfig.LIDAR_MEMORY_1);
-            case 2 -> ServerConfig.get(ServerConfig.LIDAR_MEMORY_2);
-            default -> ServerConfig.get(ServerConfig.LIDAR_MEMORY_3);
-        };
+        int limit = memory == 0 ? 0 : io.github.nullbrash.seepers.item.MemoryCardItem.capacity(memory);
         double densityCost = switch (density) {
             case 0 -> 1;
             case 1 -> ServerConfig.get(ServerConfig.LIDAR_DENSITY_COST_1);
@@ -159,7 +171,7 @@ public final class LidarModules {
             default -> ServerConfig.get(ServerConfig.LIDAR_BEAMS_COST_3);
         };
         boolean cone = area.field() == Field.CONE;
-        return new Stats(view, area.field(), cone ? area.value() / 2 : 0, cone ? 0 : area.value(), points, limit, memory >= 3,
+        return new Stats(view, area.field(), cone ? area.value() / 2 : 0, cone ? 0 : area.value(), points, limit, memory,
                 tierCost(area.tier()) * densityCost * beamsCost, pattern(lidar),
                 level(lidar, Kind.DYNAMO) > 0, level(lidar, Kind.REFRESH) > 0, beams);
     }

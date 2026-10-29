@@ -36,5 +36,10 @@ public final class SeepersComponents {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> AREA =
             COMPONENTS.registerComponentType("area", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
 
+    /** A memory card's identity (lidar.CardData); its points live in the world, not here. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<io.github.nullbrash.seepers.lidar.CardData>> CARD =
+            COMPONENTS.registerComponentType("card", builder -> builder.persistent(io.github.nullbrash.seepers.lidar.CardData.CODEC)
+                    .networkSynchronized(io.github.nullbrash.seepers.lidar.CardData.STREAM_CODEC));
+
     private SeepersComponents() {}
 }

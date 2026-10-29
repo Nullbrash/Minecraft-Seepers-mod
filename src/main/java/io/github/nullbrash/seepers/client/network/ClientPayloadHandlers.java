@@ -100,4 +100,16 @@ public final class ClientPayloadHandlers {
     public static void handleDynamoSound(io.github.nullbrash.seepers.network.payload.DynamoSoundPayload payload, IPayloadContext context) {
         io.github.nullbrash.seepers.client.lidar.DynamoSounds.set(payload.entityId(), payload.cranking());
     }
+
+    public static void handleCardActive(io.github.nullbrash.seepers.network.payload.CardActivePayload payload, IPayloadContext context) {
+        io.github.nullbrash.seepers.client.lidar.CardSync.active(payload);
+    }
+
+    public static void handleCardSection(io.github.nullbrash.seepers.network.payload.CardSectionPayload payload, IPayloadContext context) {
+        io.github.nullbrash.seepers.client.lidar.CardSync.section(payload);
+    }
+
+    public static void handleCardDrop(io.github.nullbrash.seepers.network.payload.CardDropPayload payload, IPayloadContext context) {
+        io.github.nullbrash.seepers.client.lidar.CardSync.drop(payload);
+    }
 }

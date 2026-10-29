@@ -11,12 +11,14 @@ public enum PointSource {
     CANE,
     /** Silhouettes of mobs left by blows. */
     SILHOUETTE,
-    /** Lidar scans: never fade by time, only pushed out by newer ones (CLAUDE.md 5.3). */
+    /** Lidar scans kept on the memory card in the lidar: never fade by time, only pushed out by newer ones (CLAUDE.md 5.3). */
     LIDAR,
     /** Foreign data (milestone 16): no share yet. */
     FOREIGN,
     /** {@code /seepers points test}: large share for render benchmarks. */
-    DEBUG;
+    DEBUG,
+    /** Lidar scans with no card to keep them (or a locked one): gone in seconds. */
+    LIDAR_UNSAVED;
 
     /** values() without the copy: looked up per point. */
     public static final PointSource[] VALUES = values();
@@ -27,8 +29,8 @@ public enum PointSource {
     /** "Forever" for the shader's fade (it starts after two thirds of the lifetime): months of play. */
     private static final double LIDAR_LIFETIME_SECONDS = 1.0E7;
 
-    /** The lidar share's limit from the last lidar in hand (memory module), or -1 for the config's base. */
-    private static int lidarLimit = -1;
+    /** The lidar share's limit: the active memory card's capacity (0 = no card). */
+    private static int lidarLimit = 0;
     /** Slots the lidar share may grow to whatever its limit: twice the largest memory, so a new limit keeps the points. */
     public static final int LIDAR_MAX_LIMIT = 8_388_608;
 
@@ -46,7 +48,8 @@ public enum PointSource {
             case TOUCH -> ServerConfig.get(ServerConfig.TOUCH_POINT_LIMIT);
             case CANE -> ServerConfig.get(ServerConfig.CANE_POINT_LIMIT);
             case SILHOUETTE -> SILHOUETTE_CAPACITY;
-            case LIDAR -> lidarLimit < 0 ? ServerConfig.get(ServerConfig.LIDAR_POINT_LIMIT) : lidarLimit;
+            case LIDAR -> lidarLimit;
+            case LIDAR_UNSAVED -> ServerConfig.get(ServerConfig.LIDAR_UNSAVED_LIMIT);
             case DEBUG -> DEBUG_CAPACITY;
             default -> 0;
         };
@@ -59,6 +62,7 @@ public enum PointSource {
             case SILHOUETTE -> ServerConfig.get(ServerConfig.SILHOUETTE_SECONDS);
             case DEBUG -> DEBUG_LIFETIME_SECONDS;
             case LIDAR -> LIDAR_LIFETIME_SECONDS;
+            case LIDAR_UNSAVED -> ServerConfig.get(ServerConfig.LIDAR_UNSAVED_SECONDS);
             default -> 60.0;
         };
     }

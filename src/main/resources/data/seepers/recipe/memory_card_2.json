@@ -3,23 +3,20 @@
   "category": "equipment",
   "ingredients": [
     {
-      "item": "seepers:lidar_module_memory_2"
+      "item": "seepers:memory_card_1"
     },
     {
-      "item": "seepers:schematic_3"
+      "item": "seepers:schematic_2"
     },
     {
-      "item": "minecraft:diamond"
-    },
-    {
-      "item": "seepers:anomaly_shard"
+      "item": "minecraft:gold_ingot"
     },
     {
       "item": "seepers:anomaly_shard"
     }
   ],
   "result": {
-    "id": "seepers:lidar_module_memory_3",
+    "id": "seepers:memory_card_2",
     "count": 1
   }
 }

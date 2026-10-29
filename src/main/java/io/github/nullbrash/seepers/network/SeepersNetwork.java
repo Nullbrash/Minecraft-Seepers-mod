@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class SeepersNetwork {
     /** Bump on any incompatible payload change: NeoForge refuses connections with a different version. */
-    public static final String PROTOCOL_VERSION = "17";
+    public static final String PROTOCOL_VERSION = "18";
 
     public static void register(RegisterPayloadHandlersEvent event) {
         // Handlers run on the main thread (registrar default).
@@ -62,6 +62,17 @@ public final class SeepersNetwork {
         registrar.playToClient(io.github.nullbrash.seepers.network.payload.DynamoSoundPayload.TYPE,
                 io.github.nullbrash.seepers.network.payload.DynamoSoundPayload.STREAM_CODEC,
                 (payload, context) -> ClientPayloadHandlers.handleDynamoSound(payload, context));
+        registrar.playToClient(io.github.nullbrash.seepers.network.payload.CardActivePayload.TYPE,
+                io.github.nullbrash.seepers.network.payload.CardActivePayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandlers.handleCardActive(payload, context));
+        registrar.playToClient(io.github.nullbrash.seepers.network.payload.CardSectionPayload.TYPE,
+                io.github.nullbrash.seepers.network.payload.CardSectionPayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandlers.handleCardSection(payload, context));
+        registrar.playToClient(io.github.nullbrash.seepers.network.payload.CardDropPayload.TYPE,
+                io.github.nullbrash.seepers.network.payload.CardDropPayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandlers.handleCardDrop(payload, context));
+        registrar.playToServer(io.github.nullbrash.seepers.network.payload.CardUploadPayload.TYPE,
+                io.github.nullbrash.seepers.network.payload.CardUploadPayload.STREAM_CODEC, io.github.nullbrash.seepers.lidar.CardService::handleUpload);
         registrar.playToServer(FogProbeReplyPayload.TYPE, FogProbeReplyPayload.STREAM_CODEC, FogProbeTracker::handleReply);
     }
 

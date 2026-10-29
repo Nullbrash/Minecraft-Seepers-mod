@@ -12,7 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 final class LidarGlyphs {
     private static final ResourceLocation DIGITS = Seepers.id("textures/gui/lidar_digits.png");
     private static final ResourceLocation PATTERNS = Seepers.id("textures/gui/lidar_patterns.png");
-    private static final String ORDER = "0123456789°%.<>";
+    private static final String ORDER = "0123456789°%.<>xlc";
     static final int GLYPH_WIDTH = 6;
     static final int GLYPH_HEIGHT = 7;
     static final int PATTERN_SIZE = 12;

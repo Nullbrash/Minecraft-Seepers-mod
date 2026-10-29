@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "seepers:item/lidar_module_memory_2"
+    "layer0": "seepers:item/memory_card_3"
   }
 }

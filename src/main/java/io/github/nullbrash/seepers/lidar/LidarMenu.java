@@ -1,6 +1,8 @@
 package io.github.nullbrash.seepers.lidar;
 
+import io.github.nullbrash.seepers.item.BatteryItem;
 import io.github.nullbrash.seepers.item.LidarItem;
+import io.github.nullbrash.seepers.item.MemoryCardItem;
 import io.github.nullbrash.seepers.item.ModuleItem;
 import io.github.nullbrash.seepers.registry.SeepersComponents;
 import io.github.nullbrash.seepers.registry.SeepersMenus;
@@ -18,20 +20,28 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * The lidar's screen as a menu (CLAUDE.md 5.3): one slot per module kind, the player's inventory below. The modules
- * live in the held lidar (component {@code seepers:modules}); every change is written straight back to it. The held
- * lidar's own slot is locked while the screen is open. Buttons pick the scan pattern (with the pattern module) and
- * the scan area.
+ * The lidar's screen as a menu (CLAUDE.md 5.3): the device in hand — a socket per module kind, the memory card's
+ * reader in the memory slot, the battery compartment — and the player's inventory below. Modules, card and battery
+ * live in the held lidar (components {@code seepers:modules}, {@code seepers:battery}); every change is written straight
+ * back to it. The held lidar's own slot is locked while the screen is open. Buttons pick the scan pattern and area,
+ * erase the card and set its author's locks.
  */
 public class LidarMenu extends AbstractContainerMenu {
-    public static final int MODULE_X = 12;
-    public static final int MODULE_Y = 22;
-    public static final int INVENTORY_X = 69;
-    public static final int INVENTORY_Y = 162;
+    /** Socket positions on the device, by module kind (slot i = kind i); the memory slot is the card reader. */
+    public static final int[][] SOCKETS = {
+            {14, 26}, {36, 26}, {312, 100}, {14, 48}, {36, 48}, {14, 70},
+            {290, 26}, {312, 26}, {290, 48}, {312, 48}, {290, 70}};
+    public static final int BATTERY_X = 157;
+    public static final int BATTERY_Y = 134;
+    /** The battery compartment's slot index, after the modules. */
+    public static final int BATTERY_SLOT = LidarModules.SLOTS;
+    public static final int INVENTORY_X = 89;
+    public static final int INVENTORY_Y = 172;
 
     private final Player player;
     private final InteractionHand hand;
     private final SimpleContainer modules = new SimpleContainer(LidarModules.SLOTS);
+    private final SimpleContainer battery = new SimpleContainer(1);
     private boolean loading;
 
     public static void open(ServerPlayer player, InteractionHand hand) {
@@ -51,13 +61,17 @@ public class LidarMenu extends AbstractContainerMenu {
         loading = true;
         NonNullList<ItemStack> stored = LidarModules.contents(lidar());
         for (int i = 0; i < LidarModules.SLOTS; i++) modules.setItem(i, stored.get(i));
+        Integer charge = LidarItem.battery(lidar());
+        battery.setItem(0, charge == null ? ItemStack.EMPTY : BatteryItem.withCharge(charge));
         loading = false;
         modules.addListener(container -> save());
+        battery.addListener(container -> saveBattery());
         for (int i = 0; i < LidarModules.SLOTS; i++) {
             LidarModules.Kind kind = LidarModules.Kind.values()[i];
-            addSlot(new Slot(modules, i, MODULE_X + (i % 3) * 20, MODULE_Y + (i / 3) * 20) {
+            addSlot(new Slot(modules, i, SOCKETS[i][0], SOCKETS[i][1]) {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
+                    if (kind == LidarModules.Kind.MEMORY) return stack.getItem() instanceof MemoryCardItem;
                     return stack.getItem() instanceof ModuleItem module && module.kind() == kind;
                 }
 
@@ -67,6 +81,17 @@ public class LidarMenu extends AbstractContainerMenu {
                 }
             });
         }
+        addSlot(new Slot(battery, 0, BATTERY_X, BATTERY_Y) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return stack.getItem() instanceof BatteryItem;
+            }
+
+            @Override
+            public int getMaxStackSize() {
+                return 1;
+            }
+        });
         int locked = hand == InteractionHand.MAIN_HAND ? inventory.selected : -1;
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
@@ -101,11 +126,34 @@ public class LidarMenu extends AbstractContainerMenu {
         if (lidar.getItem() instanceof LidarItem) LidarModules.store(lidar, slots);
     }
 
+    private void saveBattery() {
+        if (loading || player.level().isClientSide) return;
+        ItemStack lidar = lidar();
+        if (!(lidar.getItem() instanceof LidarItem)) return;
+        ItemStack inside = battery.getItem(0);
+        if (inside.isEmpty()) lidar.remove(SeepersComponents.BATTERY.get());
+        else lidar.set(SeepersComponents.BATTERY.get(), BatteryItem.charge(inside));
+    }
+
     /** Buttons: 0-3 the scan pattern (with the pattern module), AREA_BUTTON + i the scan area. */
     public static final int AREA_BUTTON = 10;
+    /** Buttons beyond the pattern and area ones: the memory card's erase and its author's locks. */
+    public static final int ERASE_BUTTON = 40;
+    public static final int LOCK_WRITE_BUTTON = 41;
+    public static final int LOCK_COPY_BUTTON = 42;
 
     @Override
     public boolean clickMenuButton(Player player, int id) {
+        if (player instanceof ServerPlayer server && id >= ERASE_BUTTON) {
+            save();
+            if (id == ERASE_BUTTON) CardService.erase(server, lidar());
+            else if (id == LOCK_WRITE_BUTTON || id == LOCK_COPY_BUTTON) CardService.lock(server, lidar(), id == LOCK_WRITE_BUTTON);
+            loading = true;
+            modules.setItem(LidarModules.Kind.MEMORY.ordinal(), LidarModules.card(lidar()).copy());
+            loading = false;
+            return true;
+        }
+        if (id >= ERASE_BUTTON) return true;
         if (id >= AREA_BUTTON) {
             int count = LidarModules.areas(LidarModules.level(lidar(), LidarModules.Kind.VIEW)).size();
             if (id - AREA_BUTTON >= count) return false;
@@ -123,17 +171,33 @@ public class LidarMenu extends AbstractContainerMenu {
         if (!slot.hasItem()) return ItemStack.EMPTY;
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        if (index < LidarModules.SLOTS) {
-            if (!moveItemStackTo(stack, LidarModules.SLOTS, slots.size(), true)) return ItemStack.EMPTY;
-        } else if (stack.getItem() instanceof ModuleItem module) {
-            int target = module.kind().ordinal();
-            if (!moveItemStackTo(stack, target, target + 1, false)) return ItemStack.EMPTY;
+        int device = BATTERY_SLOT + 1;
+        if (index < device) {
+            if (!moveItemStackTo(stack, device, slots.size(), true)) return ItemStack.EMPTY;
         } else {
-            return ItemStack.EMPTY;
+            int target = stack.getItem() instanceof ModuleItem module ? module.kind().ordinal()
+                    : stack.getItem() instanceof MemoryCardItem ? LidarModules.Kind.MEMORY.ordinal()
+                    : stack.getItem() instanceof BatteryItem ? BATTERY_SLOT : -1;
+            if (target < 0 || !moveItemStackTo(stack, target, target + 1, false)) return ItemStack.EMPTY;
         }
         if (stack.isEmpty()) slot.setByPlayer(ItemStack.EMPTY);
         else slot.setChanged();
         return original;
+    }
+
+    /** The card slot follows the server's changes to the card (its id, its point count) while the screen is open. */
+    @Override
+    public void broadcastChanges() {
+        if (!player.level().isClientSide && lidar().getItem() instanceof LidarItem) {
+            ItemStack card = LidarModules.card(lidar());
+            int slot = LidarModules.Kind.MEMORY.ordinal();
+            if (!ItemStack.isSameItemSameComponents(card, modules.getItem(slot)) && card.getItem() == modules.getItem(slot).getItem()) {
+                loading = true;
+                modules.setItem(slot, card.copy());
+                loading = false;
+            }
+        }
+        super.broadcastChanges();
     }
 
     @Override

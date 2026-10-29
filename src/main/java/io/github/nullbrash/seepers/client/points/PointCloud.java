@@ -146,7 +146,6 @@ public final class PointCloud {
         if (current != null && current.level != level) reset();
         if (current == null && level != null) {
             current = new PointCloud(level);
-            LidarMemory.load(current, level);
         }
         return current;
     }
@@ -166,7 +165,6 @@ public final class PointCloud {
 
     public static void reset() {
         if (current != null) {
-            LidarMemory.save(current, current.level);
             current.clear();
             current = null;
         }
@@ -241,6 +239,9 @@ public final class PointCloud {
 
         section.points.put(local, source.ordinal() << 24 | slot);
         section.dirty = true;
+        if (source == PointSource.LIDAR && !replaying && recorder != null) {
+            recorder.record(sectionKey, ring.x[slot], ring.y[slot], ring.z[slot], face.ordinal(), material, rgb);
+        }
         if (section.buffer != null && section.fresh.size() < FRESH_LIMIT) {
             section.fresh.add(source.ordinal() << 24 | slot);
             section.freshDirty = true;
@@ -305,6 +306,87 @@ public final class PointCloud {
         int light = Math.max(level.getBrightness(LightLayer.BLOCK, at), io.github.nullbrash.seepers.client.light.ClientDynamicLights.level(at));
         cells.put(cell, light);
         return light;
+    }
+
+    /** Takes every new card point as it lands (client.lidar.CardSync uploads them). */
+    public interface Recorder {
+        void record(long section, short x, short y, short z, int face, int material, int rgb);
+
+        /** A section's card points changed other than by new ones (the data refresh dropped some). */
+        void rewrite(long section);
+    }
+
+    private static @Nullable Recorder recorder;
+    /** Points replayed from a card are not recorded back. */
+    private boolean replaying;
+
+    public static void setRecorder(@Nullable Recorder value) {
+        recorder = value;
+    }
+
+    /** One point record from a card, at its exact place (section-relative, 1/1024 block). */
+    public void addRecord(PointSource source, long sectionKey, short x, short y, short z, int face, int material, int rgb) {
+        double ox = SectionPos.sectionToBlockCoord(SectionPos.x(sectionKey));
+        double oy = SectionPos.sectionToBlockCoord(SectionPos.y(sectionKey));
+        double oz = SectionPos.sectionToBlockCoord(SectionPos.z(sectionKey));
+        replaying = true;
+        try {
+            add(source, ox + x / POSITION_SCALE, oy + y / POSITION_SCALE, oz + z / POSITION_SCALE, DIRECTIONS[face % 6], material, -1, rgb);
+        } finally {
+            replaying = false;
+        }
+    }
+
+    /** All of one source's points go (another card went in, or none). */
+    public void clearSource(PointSource source) {
+        Ring ring = rings.remove(source);
+        if (ring == null) return;
+        for (int i = 0; i < ring.size; i++) {
+            int slot = (ring.head + i) % ring.slots();
+            Section section = sections.get(ring.section[slot]);
+            if (section != null && section.points.get(ring.local[slot]) == (source.ordinal() << 24 | slot)) {
+                section.points.remove(ring.local[slot]);
+                section.dirty = true;
+            }
+        }
+    }
+
+    /** One source's points in a section go (a full card let the section go). */
+    public void dropSection(long sectionKey, PointSource source) {
+        Section section = sections.get(sectionKey);
+        Ring ring = rings.get(source);
+        if (section == null || ring == null) return;
+        it.unimi.dsi.fastutil.ints.IntArrayList gone = new it.unimi.dsi.fastutil.ints.IntArrayList();
+        for (Int2IntMap.Entry entry : section.points.int2IntEntrySet()) {
+            if (entry.getIntValue() >>> 24 == source.ordinal()) gone.add(entry.getIntKey());
+        }
+        for (int i = 0; i < gone.size(); i++) section.points.remove(gone.getInt(i));
+        ring.live -= gone.size();
+        if (!gone.isEmpty()) section.dirty = true;
+    }
+
+    /** How many of a source's points a section holds. */
+    public int liveIn(long sectionKey, PointSource source) {
+        Section section = sections.get(sectionKey);
+        if (section == null) return 0;
+        int count = 0;
+        for (int packed : section.points.values()) if (packed >>> 24 == source.ordinal()) count++;
+        return count;
+    }
+
+    /** A section's points of one source as card records (lidar.CardRecords), for rewriting it compactly. */
+    public byte[] exportRecords(long sectionKey, PointSource source) {
+        Section section = sections.get(sectionKey);
+        Ring ring = rings.get(source);
+        if (section == null || ring == null) return new byte[0];
+        java.nio.ByteBuffer out = java.nio.ByteBuffer.allocate(section.points.size() * io.github.nullbrash.seepers.lidar.CardRecords.BYTES);
+        for (int packed : section.points.values()) {
+            if (packed >>> 24 != source.ordinal()) continue;
+            int slot = packed & 0xFFFFFF;
+            io.github.nullbrash.seepers.lidar.CardRecords.put(out, ring.x[slot], ring.y[slot], ring.z[slot], ring.local[slot] >>> 27,
+                    ring.material[slot], ring.rgb[slot]);
+        }
+        return java.util.Arrays.copyOf(out.array(), out.position());
     }
 
     /** A fresh cell memo for lightAt. */
@@ -376,6 +458,7 @@ public final class PointCloud {
             stale.add(entry.getIntKey());
         }
         if (stale != null) {
+            if (recorder != null) recorder.rewrite(key);
             for (int i = 0; i < stale.size(); i++) {
                 int packed = section.points.remove(stale.getInt(i));
                 ringOf(packed).live--;
