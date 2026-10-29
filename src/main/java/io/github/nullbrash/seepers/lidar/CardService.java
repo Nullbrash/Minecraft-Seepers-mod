@@ -45,15 +45,21 @@ public final class CardService {
         byte @Nullable [] sending;
         long sendingKey;
         int sendingOffset;
-        long uploadSecond;
-        int uploadedThisSecond;
+        /** Upload bytes the player may still send: refills at the limit's rate, holds up to two seconds of it. */
+        double allowance;
+        int allowanceTick;
         /** The card before the last change, still taking the points the client had not sent yet, until the tick. */
         @Nullable UUID previous;
         int previousCapacity;
         int previousUntil;
+        /** A rewrite coming in parts: its card and section, and the records so far; null when none (or one broke). */
+        @Nullable UUID rewriteCard;
+        long rewriteKey;
+        java.io.@Nullable ByteArrayOutputStream rewrite;
     }
 
-    private static final int PREVIOUS_CARD_TICKS = 100;
+    /** The client sends what the old card had not yet received within its budget, for up to 120 s. */
+    private static final int PREVIOUS_CARD_TICKS = 2600;
 
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
     private static int epochs;
@@ -135,6 +141,8 @@ public final class CardService {
             java.util.Arrays.sort(boxed, java.util.Comparator.comparingDouble(key -> distance(key, px, py, pz)));
             session.queue.clear();
             for (Long key : boxed) session.queue.add(key.longValue());
+            io.github.nullbrash.seepers.Seepers.LOGGER.debug("Card {} active for {}: {} sections, {} live", card, player.getGameProfile().getName(),
+                    sections.size(), CardStore.get(player.server).live(card));
         }
         send(player, session);
     }
@@ -180,18 +188,53 @@ public final class CardService {
         if (session == null) return;
         boolean current = session.card != null && session.card.equals(upload.card()) && session.writable;
         boolean previous = upload.card().equals(session.previous) && player.server.getTickCount() < session.previousUntil;
-        if (!current && !previous) return;
-        long second = player.server.getTickCount() / 20;
-        if (second != session.uploadSecond) {
-            session.uploadSecond = second;
-            session.uploadedThisSecond = 0;
+        if (!current && !previous) {
+            dropped(player, "not the card in hand", upload.records().length);
+            return;
         }
-        session.uploadedThisSecond += upload.records().length;
-        if (session.uploadedThisSecond > ServerConfig.get(ServerConfig.LIDAR_CARD_UPLOAD_KB) * 1024) return;
-        if (upload.records().length % CardRecords.BYTES != 0 || upload.live() < 0 || upload.live() > 16 * 16 * 16 * 1024) return;
-        LongArrayList dropped = CardStore.get(player.server).write(upload.card(), upload.section(), upload.records(), upload.live(),
-                upload.replace(), player.level().getGameTime(), current ? session.capacity : session.previousCapacity);
+        double rate = ServerConfig.get(ServerConfig.LIDAR_CARD_UPLOAD_KB) * 1024.0;
+        int now = player.server.getTickCount();
+        session.allowance = Math.min(session.allowance + rate * (now - session.allowanceTick) / 20, rate * 2);
+        session.allowanceTick = now;
+        boolean affordable = session.allowance >= upload.records().length;
+        if (affordable) session.allowance -= upload.records().length;
+        boolean valid = affordable && upload.records().length % CardRecords.BYTES == 0 && upload.live() >= 0 && upload.live() <= 16 * 16 * 16 * 1024;
+        byte[] records = upload.records();
+        if (upload.rewrite()) {
+            // A rewrite replaces the file only whole: a part missing (over budget, out of order) and it is dropped.
+            if ((upload.mode() & CardUploadPayload.FIRST) != 0) {
+                session.rewriteCard = upload.card();
+                session.rewriteKey = upload.section();
+                session.rewrite = new java.io.ByteArrayOutputStream();
+            } else if (!upload.card().equals(session.rewriteCard) || upload.section() != session.rewriteKey) {
+                session.rewrite = null;
+            }
+            if (!valid || session.rewrite == null || session.rewrite.size() + records.length > CardStore.MAX_SECTION_BYTES) {
+                if (session.rewrite != null || valid) dropped(player, "rewrite broken (" + (valid ? "order/size" : "over budget") + ")", records.length);
+                session.rewrite = null;
+                return;
+            }
+            session.rewrite.write(records, 0, records.length);
+            if ((upload.mode() & CardUploadPayload.LAST) == 0) return;
+            records = session.rewrite.toByteArray();
+            session.rewrite = null;
+        } else if (!valid) {
+            dropped(player, "over upload budget or invalid", records.length);
+            return;
+        } else if (records.length == 0) {
+            // Only the section's count (it changed on the player's side without new points).
+            CardStore.get(player.server).setLive(upload.card(), upload.section(), upload.live());
+            return;
+        }
+        LongArrayList dropped = CardStore.get(player.server).write(upload.card(), upload.section(), records, upload.live(),
+                upload.rewrite(), player.level().getGameTime(), current ? session.capacity : session.previousCapacity);
         if (current && !dropped.isEmpty()) PacketDistributor.sendToPlayer(player, new CardDropPayload(session.card, dropped.toLongArray()));
+    }
+
+    /** Card points the server could not keep: worth a line in the log (their loss shows only on the next replay). */
+    private static void dropped(ServerPlayer player, String why, int bytes) {
+        io.github.nullbrash.seepers.Seepers.LOGGER.warn("Card upload from {} dropped: {}, {} records", player.getGameProfile().getName(), why,
+                bytes / CardRecords.BYTES);
     }
 
     /** The erase button: the card in the open lidar empties (unless its author locked it). */

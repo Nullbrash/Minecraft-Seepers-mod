@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 public final class CardStore {
     private static final String INDEX = "index.dat";
     /** A section file larger than this takes no more appends, only a rewrite (a client that keeps sending). */
-    private static final long MAX_SECTION_BYTES = 8L << 20;
+    public static final long MAX_SECTION_BYTES = 8L << 20;
 
     /** owner: the card whose folder holds the file (a copy not yet written there); null = this card's own. */
     public record Section(int live, long written, long bytes, @Nullable UUID owner) {
@@ -79,6 +79,16 @@ public final class CardStore {
         return card(id).live;
     }
 
+    /** A section's live count as the player's lidar counts it now; the records stay as they are (no file touched). */
+    public void setLive(UUID id, long section, int live) {
+        Card card = card(id);
+        Section old = card.sections.get(section);
+        if (old == null || old.live() == live) return;
+        card.live += live - old.live();
+        card.sections.put(section, new Section(live, old.written(), old.bytes(), old.owner()));
+        card.dirty = true;
+    }
+
     /** The card's sections, for streaming to a player: key → info. */
     public Long2ObjectMap<Section> sections(UUID id) {
         return card(id).sections;
@@ -103,7 +113,10 @@ public final class CardStore {
         Card card = card(id);
         Section old = card.sections.get(section);
         long bytes = (old == null || replace ? 0 : old.bytes()) + records.length;
-        if (!replace && old != null && bytes > MAX_SECTION_BYTES) return new LongArrayList();
+        if (!replace && old != null && bytes > MAX_SECTION_BYTES) {
+            Seepers.LOGGER.warn("Card {} section {} is full ({} bytes): {} records dropped", id, section, old.bytes(), records.length / CardRecords.BYTES);
+            return new LongArrayList();
+        }
         try {
             Path file = sectionFile(id, section);
             Files.createDirectories(file.getParent());

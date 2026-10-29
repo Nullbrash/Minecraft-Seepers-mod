@@ -204,10 +204,12 @@ public final class PointCloud {
         double ox = SectionPos.sectionToBlockCoord(SectionPos.x(sectionKey));
         double oy = SectionPos.sectionToBlockCoord(SectionPos.y(sectionKey));
         double oz = SectionPos.sectionToBlockCoord(SectionPos.z(sectionKey));
-        float lx = (float) (x - ox);
-        float ly = (float) (y - oy);
-        float lz = (float) (z - oz);
-        int local = face.ordinal() << 27 | quant(lx) << 18 | quant(ly) << 9 | quant(lz);
+        // The cell comes from the stored position (1/1024 block, rounded down), not the exact one: a card replays
+        // the stored one, and a point must land in the same cell then as when it was scanned.
+        short sx = stored(x - ox);
+        short sy = stored(y - oy);
+        short sz = stored(z - oz);
+        int local = face.ordinal() << 27 | cell(sx) << 18 | cell(sy) << 9 | cell(sz);
 
         Section section = sections.computeIfAbsent(sectionKey, Section::new);
         if (source == PointSource.LIDAR && !takePixel(section, ring, face, local, rank(material, rgb))) return;
@@ -215,6 +217,8 @@ public final class PointCloud {
         float now = now(0);
         if (existing != -1) {
             Ring owner = ringOf(existing);
+            // A card point is the scan's saved data: other senses do not take its spot (the card would bring it back).
+            if (owner != ring && owner == rings.get(PointSource.LIDAR)) return;
             if (precise >= 0 && owner.material[existing & 0xFFFFFF] == precise) material = precise;
             // A replayed card section is the scan in order: the later record wins, however close in time.
             if (owner == ring && !replaying && now - ring.born[existing & 0xFFFFFF] < REFRESH_MIN_AGE_SECONDS) return;
@@ -231,9 +235,9 @@ public final class PointCloud {
         ring.live++;
         ring.section[slot] = sectionKey;
         ring.local[slot] = local;
-        ring.x[slot] = (short) Math.round(lx * POSITION_SCALE);
-        ring.y[slot] = (short) Math.round(ly * POSITION_SCALE);
-        ring.z[slot] = (short) Math.round(lz * POSITION_SCALE);
+        ring.x[slot] = sx;
+        ring.y[slot] = sy;
+        ring.z[slot] = sz;
         ring.material[slot] = (byte) material;
         ring.rgb[slot] = rgb;
         ring.born[slot] = now;
@@ -375,6 +379,22 @@ public final class PointCloud {
         return count;
     }
 
+    /** Debugging the cards: one source's points by section, each as material << 24 | colour. */
+    public it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap> snapshot(PointSource source) {
+        Ring ring = rings.get(source);
+        var out = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap>();
+        if (ring == null) return out;
+        for (Section section : sections.values()) {
+            for (Int2IntMap.Entry entry : section.points.int2IntEntrySet()) {
+                if (entry.getIntValue() >>> 24 != source.ordinal()) continue;
+                int slot = entry.getIntValue() & 0xFFFFFF;
+                out.computeIfAbsent(section.key, k -> new it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap())
+                        .put(entry.getIntKey(), (ring.material[slot] & 0xFF) << 24 | ring.rgb[slot] & 0xFFFFFF);
+            }
+        }
+        return out;
+    }
+
     /** A section's points of one source as card records (lidar.CardRecords), for rewriting it compactly. */
     public byte[] exportRecords(long sectionKey, PointSource source) {
         Section section = sections.get(sectionKey);
@@ -510,10 +530,16 @@ public final class PointCloud {
             buried.add(entry.getIntKey());
         }
         if (buried == null) return false;
+        Ring card = rings.get(PointSource.LIDAR);
+        boolean cardPoints = false;
         for (int i = 0; i < buried.size(); i++) {
             int packed = section.points.remove(buried.getInt(i));
-            ringOf(packed).live--;
+            Ring ring = ringOf(packed);
+            ring.live--;
+            cardPoints |= ring == card;
         }
+        // The card must lose them too, or the next replay brings them back.
+        if (cardPoints && recorder != null) recorder.rewrite(section.key);
         return true;
     }
 
@@ -631,7 +657,11 @@ public final class PointCloud {
         return true;
     }
 
-    private static int quant(float local) {
-        return Mth.clamp((int) (local * QUANT), 0, 16 * QUANT - 1);
+    private static short stored(double local) {
+        return (short) Mth.clamp(Mth.floor(local * POSITION_SCALE), 0, 16 * (int) POSITION_SCALE - 1);
+    }
+
+    private static int cell(short stored) {
+        return stored * QUANT / (int) POSITION_SCALE;
     }
 }

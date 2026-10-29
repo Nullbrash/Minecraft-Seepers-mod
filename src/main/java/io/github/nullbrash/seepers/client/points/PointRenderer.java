@@ -25,6 +25,7 @@ import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.system.MemoryUtil;
@@ -139,7 +140,9 @@ public final class PointRenderer {
         Minecraft minecraft = Minecraft.getInstance();
 
         RenderSystem.enableBlend();
-        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE); // points glow
+        // The brighter wins, not the sum: at grazing angles dozens of points overlap on screen and adding them
+        // burnt whole surfaces to white.
+        RenderSystem.blendEquation(GL14.GL_MAX);
         RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
         RenderSystem.disableCull();
@@ -171,6 +174,7 @@ public final class PointRenderer {
         GL11.glDisable(GL32.GL_PROGRAM_POINT_SIZE);
         RenderSystem.enableCull();
         RenderSystem.depthMask(true);
+        RenderSystem.blendEquation(GL14.GL_FUNC_ADD);
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
         drawNanosAverage += (System.nanoTime() - started - drawNanosAverage) * 0.05;

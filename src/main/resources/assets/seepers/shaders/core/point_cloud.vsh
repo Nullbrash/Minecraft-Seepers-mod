@@ -44,6 +44,9 @@ void main() {
     gl_Position = ProjMat * view;
     // Fixed world size, never smaller than MinPixels: far points stay visible.
     gl_PointSize = max(PointSize * ProjMat[1][1] * ScreenSize.y / (2.0 * depth), MinPixels);
+    // Texels exactly a cell wide leave rows of 1-pixel gaps after rounding (dark moire lines): they overlap a little
+    // instead, which the max blending does not brighten.
+    if (texel > 0.5) gl_PointSize = gl_PointSize * 1.15 + 1.0;
 
     // Full brightness for the first two thirds of the lifetime, then a linear fade.
     float fade = 1.0;
