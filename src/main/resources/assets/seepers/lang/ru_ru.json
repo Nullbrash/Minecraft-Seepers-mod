@@ -704,5 +704,7 @@
   "seepers.lidar.screen.wiring.none": "Проводка не настроена",
   "seepers.lidar.screen.wiring.checking": "Проверка…",
   "seepers.lidar.screen.wiring.bonus": "Расход −%s%%",
-  "seepers.lidar.screen.wiring.bonus_dynamo": "Расход −%s%% · зарядка +%s%%"
+  "seepers.lidar.screen.wiring.bonus_dynamo": "Расход −%s%% · зарядка +%s%%",
+  "seepers.configuration.spawnerMaxAlive": "Живых мобов спавнера, не больше",
+  "seepers.configuration.spawnerMaxAlive.tooltip": "Спавнер не выпускает новых, пока живы столько его мобов (где бы они ни были). Испытательные спавнеры не затрагивает."
 }

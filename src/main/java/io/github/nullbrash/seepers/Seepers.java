@@ -86,6 +86,10 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener(SeepersCommands::register);
         NeoForge.EVENT_BUS.addListener(HostileSpawnControl::onSpawnPlacementCheck);
         NeoForge.EVENT_BUS.addListener(HostileSpawnControl::onFinalizeSpawn);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.mob.SpawnerCap::onFinalizeSpawn);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.mob.SpawnerCap::onJoin);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.mob.SpawnerCap::onLeave);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.mob.SpawnerCap::onServerStopped);
 
         // Light overrides depend on tags and the server config: rebuild whenever either changes.
         NeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> LightTable.rebuild());

@@ -704,5 +704,7 @@
   "seepers.lidar.screen.wiring.none": "Wiring not tuned",
   "seepers.lidar.screen.wiring.checking": "Checking…",
   "seepers.lidar.screen.wiring.bonus": "Drain −%s%%",
-  "seepers.lidar.screen.wiring.bonus_dynamo": "Drain −%s%% · crank +%s%%"
+  "seepers.lidar.screen.wiring.bonus_dynamo": "Drain −%s%% · crank +%s%%",
+  "seepers.configuration.spawnerMaxAlive": "Living spawner mobs, at most",
+  "seepers.configuration.spawnerMaxAlive.tooltip": "A mob spawner lets out no more while this many of its own mobs are alive (wherever they went). Trial spawners are not affected."
 }

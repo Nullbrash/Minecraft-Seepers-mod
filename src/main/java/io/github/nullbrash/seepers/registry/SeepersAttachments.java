@@ -34,6 +34,10 @@ public final class SeepersAttachments {
                     .sync(HeatSources.SYNC)
                     .build());
 
+    /** On a mob: the position of the spawner that let it out (mob.SpawnerCap counts them). */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<Long>> SPAWNER =
+            ATTACHMENT_TYPES.register("spawner", () -> AttachmentType.builder(() -> 0L).serialize(com.mojang.serialization.Codec.LONG).build());
+
     private static <T extends ChunkData> DeferredHolder<AttachmentType<?>, AttachmentType<T>> chunk(
             String name, Function<IAttachmentHolder, T> constructor) {
         return ATTACHMENT_TYPES.register(name, () -> AttachmentType.builder(constructor)

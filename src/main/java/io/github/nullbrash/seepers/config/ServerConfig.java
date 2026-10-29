@@ -19,6 +19,7 @@ public final class ServerConfig {
     public static final ModConfigSpec.BooleanValue NIGHT_VISION_BRIGHTENS;
     public static final ModConfigSpec.BooleanValue DISABLE_NATURAL_HOSTILE_SPAWNS;
     public static final ModConfigSpec.IntValue EXEMPT_MAX_NEARBY;
+    public static final ModConfigSpec.IntValue SPAWNER_MAX_ALIVE;
     public static final ModConfigSpec.DoubleValue EXEMPT_RADIUS;
     public static final ModConfigSpec.DoubleValue EXEMPT_SPAWN_CHANCE;
     public static final ModConfigSpec.IntValue LIGHT_UNCATEGORIZED_MAX;
@@ -198,6 +199,8 @@ public final class ServerConfig {
                 .translation("seepers.configuration.exemptMaxNearby").defineInRange("exemptMaxNearby", 2, 0, 70);
         EXEMPT_RADIUS = builder.comment("Radius for exemptMaxNearby, blocks.")
                 .translation("seepers.configuration.exemptRadius").defineInRange("exemptRadius", 48.0, 8.0, 128.0);
+        SPAWNER_MAX_ALIVE = builder.comment("A mob spawner lets out no more while this many of its own mobs are alive (wherever they went). Trial spawners are not affected.")
+                .translation("seepers.configuration.spawnerMaxAlive").defineInRange("spawnerMaxAlive", 4, 1, 64);
         EXEMPT_SPAWN_CHANCE = builder.comment("Chance that a natural spawn attempt of an exempt hostile goes ahead (slows refilling).")
                 .translation("seepers.configuration.exemptSpawnChance").defineInRange("exemptSpawnChance", 0.3, 0.0, 1.0);
         builder.pop();
