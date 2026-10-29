@@ -23,8 +23,9 @@ import org.lwjgl.glfw.GLFW;
 /**
  * The lidar's own screen (CLAUDE.md 5.3), opened by its key while the lidar is in hand: the device itself, as if held
  * — a glowing display of everything it knows in the middle, module sockets along its sides (a lit diode by each module
- * in), the memory card's reader with its erase button and its author's locks, the battery compartment, physical
- * buttons for the scan area and pattern — and the inventory below.
+ * in), the memory card's reader with its erase button under a flip cover and its author's latching lock buttons, a knob for the
+ * scan area and a rotary switch for the pattern, the battery under a screwed lid — and the inventory below. The lid
+ * closes with the screen.
  */
 public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
     public static final KeyMapping KEY = new KeyMapping("key.seepers.lidar_screen", InputConstants.Type.KEYSYM,
@@ -43,10 +44,18 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
     private static final int DISPLAY_RIGHT = 282;
     private static final int DISPLAY_BOTTOM = 116;
     private static final int ROW = 10;
-    private static final int CONTROLS_Y = 122;
-    private static final int BUTTON = 18;
-    /** The erase button wants a second press within this many ticks. */
-    private static final int ERASE_CONFIRM_TICKS = 60;
+    /** The knob and the rotary switch under the display: their centre line. */
+    private static final int CONTROLS_Y = 143;
+    private static final int KNOB = 22;
+    /** The pattern switch, its name display to the left and its icon display to the right. */
+    private static final int PATTERN_SWITCH_X = 226;
+    private static final int PATTERN_NAME_WIDTH = 58;
+    private static final int PATTERN_ICON_WIDTH = 18;
+    /** The battery bay's lid, bottom left, held by the body's corner screw. */
+    private static final int LID_LEFT = 5;
+    private static final int LID_TOP = 98;
+    private static final int LID_RIGHT = 54;
+    private static final int LID_BOTTOM = 153;
 
     private static final int LABEL_COLOR = 0x8FB4CC;
     private static final int BODY = 0xFF1C2329;
@@ -58,13 +67,11 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
      * water, pattern, echo, dynamo, refresh, beams. */
     private static final int[] KIND_COLORS = {0xA06EDC, 0xE1DCCD, 0xD6AA46, 0x4FC46A, 0xB8B8B8, 0x3E7FE0, 0xDC3C32, 0x2AA89A, 0xBE6E46, 0xE8C040, 0x5CC8DC};
 
-    private final LidarIconButton[] patternButtons = new LidarIconButton[LidarModules.Pattern.values().length];
-    private LidarIconButton narrower;
-    private LidarIconButton wider;
-    private LidarIconButton erase;
-    private LidarIconButton lockWrite;
-    private LidarIconButton lockCopy;
-    private int eraseArmed;
+    private LidarControls.Knob area;
+    private LidarControls.RotarySwitch pattern;
+    private LidarControls.GuardedButton erase;
+    private LidarControls.LatchButton lockWrite;
+    private LidarControls.LatchButton lockCopy;
 
     public LidarScreen(LidarMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -79,42 +86,30 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
     @Override
     protected void init() {
         super.init();
-        LidarModules.Pattern[] patterns = LidarModules.Pattern.values();
-        for (int i = 0; i < patterns.length; i++) {
-            int id = i;
-            int x = leftPos + DISPLAY_RIGHT - (patterns.length - i) * (BUTTON + 2) + 2;
-            patternButtons[i] = addRenderableWidget(new LidarIconButton(x, topPos + CONTROLS_Y, BUTTON, i, "",
-                    Component.translatable("seepers.lidar.pattern." + patterns[i].id()), () -> pick(id)));
-        }
-        narrower = addRenderableWidget(new LidarIconButton(leftPos + DISPLAY_LEFT + 2, topPos + CONTROLS_Y, BUTTON, -1, "<",
-                Component.translatable("seepers.lidar.screen.area.narrower"), () -> area(-1)));
-        wider = addRenderableWidget(new LidarIconButton(leftPos + DISPLAY_LEFT + 2 + BUTTON + 56, topPos + CONTROLS_Y, BUTTON, -1, ">",
-                Component.translatable("seepers.lidar.screen.area.wider"), () -> area(1)));
+        int y = topPos + CONTROLS_Y - KNOB / 2;
+        area = addRenderableWidget(new LidarControls.Knob(leftPos + DISPLAY_LEFT + 4, y, KNOB, Component.translatable("seepers.lidar.screen.area.knob"),
+                () -> LidarModules.areaIndex(menu.lidar()),
+                () -> LidarModules.areas(LidarModules.level(menu.lidar(), LidarModules.Kind.VIEW)).size(),
+                index -> pick(LidarMenu.AREA_BUTTON + index)));
+        pattern = addRenderableWidget(new LidarControls.RotarySwitch(leftPos + PATTERN_SWITCH_X, y, KNOB,
+                Component.translatable("seepers.lidar.screen.pattern.switch"), LidarModules.Pattern.values().length,
+                () -> LidarModules.pattern(menu.lidar()).ordinal(), this::pick));
         int[] reader = LidarMenu.SOCKETS[LidarModules.Kind.MEMORY.ordinal()];
-        erase = addRenderableWidget(new LidarIconButton(leftPos + reader[0] - 23, topPos + reader[1] - 1, BUTTON, -1, "x",
-                Component.translatable("seepers.lidar.screen.card.erase"), this::erase));
-        lockWrite = addRenderableWidget(new LidarIconButton(leftPos + reader[0] - 23, topPos + reader[1] + 21, BUTTON, -1, "l",
-                Component.translatable("seepers.lidar.screen.card.lock_write"), () -> pick(LidarMenu.LOCK_WRITE_BUTTON)));
-        lockCopy = addRenderableWidget(new LidarIconButton(leftPos + reader[0] - 1, topPos + reader[1] + 21, BUTTON, -1, "c",
-                Component.translatable("seepers.lidar.screen.card.lock_copy"), () -> pick(LidarMenu.LOCK_COPY_BUTTON)));
-    }
-
-    /** Steps the scan area narrower or wider within what the view module gives. */
-    private void area(int step) {
-        ItemStack lidar = menu.lidar();
-        int count = LidarModules.areas(LidarModules.level(lidar, LidarModules.Kind.VIEW)).size();
-        int next = LidarModules.areaIndex(lidar) + step;
-        if (next >= 0 && next < count) pick(LidarMenu.AREA_BUTTON + next);
-    }
-
-    /** First press arms the erase, a second one soon after erases. */
-    private void erase() {
-        if (eraseArmed > 0) {
-            eraseArmed = 0;
-            pick(LidarMenu.ERASE_BUTTON);
-        } else {
-            eraseArmed = ERASE_CONFIRM_TICKS;
-        }
+        erase = addRenderableWidget(new LidarControls.GuardedButton(leftPos + reader[0] - 24, topPos + reader[1] - 2,
+                Component.translatable("seepers.lidar.screen.card.erase"), Component.translatable("seepers.lidar.screen.card.erase_confirm"),
+                () -> pick(LidarMenu.ERASE_BUTTON)));
+        lockWrite = addRenderableWidget(new LidarControls.LatchButton(leftPos + reader[0] - 22, topPos + reader[1] + 24,
+                Component.translatable("seepers.lidar.screen.card.lock_write"), () -> MemoryCardItem.data(LidarModules.card(menu.lidar())).noWrite(),
+                () -> pick(LidarMenu.LOCK_WRITE_BUTTON)));
+        lockCopy = addRenderableWidget(new LidarControls.LatchButton(leftPos + reader[0] + 2, topPos + reader[1] + 24,
+                Component.translatable("seepers.lidar.screen.card.lock_copy"), () -> MemoryCardItem.data(LidarModules.card(menu.lidar())).noCopy(),
+                () -> pick(LidarMenu.LOCK_COPY_BUTTON)));
+        menu.batteryOpen = false;
+        // The body's bottom left corner screw holds the lid; taken out, it lies above the bay.
+        addRenderableWidget(new LidarControls.Screw(leftPos + 4, topPos + DEVICE_HEIGHT - 12,
+                leftPos + 40, topPos + 76,
+                Component.translatable("seepers.lidar.screen.battery.screw"), Component.translatable("seepers.lidar.screen.battery.screw_out"),
+                () -> menu.batteryOpen, () -> menu.batteryOpen = !menu.batteryOpen));
     }
 
     private void pick(int id) {
@@ -125,28 +120,13 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
     protected void containerTick() {
         super.containerTick();
         ItemStack lidar = menu.lidar();
-        boolean module = LidarModules.level(lidar, LidarModules.Kind.PATTERN) > 0;
-        LidarModules.Pattern current = LidarModules.pattern(lidar);
-        for (int i = 0; i < patternButtons.length; i++) {
-            patternButtons[i].visible = module;
-            patternButtons[i].selected = current.ordinal() == i;
-        }
-        int index = LidarModules.areaIndex(lidar);
-        narrower.active = index > 0;
-        wider.active = index < LidarModules.areas(LidarModules.level(lidar, LidarModules.Kind.VIEW)).size() - 1;
+        pattern.visible = LidarModules.level(lidar, LidarModules.Kind.PATTERN) > 0;
         ItemStack card = LidarModules.card(lidar);
         CardData data = MemoryCardItem.data(card);
         boolean author = data.author().isPresent() && minecraft != null && minecraft.player != null && data.author().get().equals(minecraft.player.getUUID());
-        if (eraseArmed > 0) eraseArmed--;
-        erase.visible = !card.isEmpty() && data.id().isPresent();
-        erase.active = !data.noWrite();
-        erase.selected = eraseArmed > 0;
-        erase.setTooltip(Tooltip.create(Component.translatable(eraseArmed > 0 ? "seepers.lidar.screen.card.erase_confirm"
-                : data.noWrite() ? "seepers.lidar.screen.card.erase_locked" : "seepers.lidar.screen.card.erase")));
+        erase.visible = !card.isEmpty() && data.id().isPresent() && !data.noWrite();
         lockWrite.visible = author;
         lockCopy.visible = author;
-        lockWrite.selected = data.noWrite();
-        lockCopy.selected = data.noCopy();
     }
 
     @Override
@@ -185,9 +165,9 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
             graphics.fill(x0 + 1, y, x0 + 4, y + 2, EDGE_DARK);
             graphics.fill(x1 - 4, y, x1 - 1, y + 2, EDGE_DARK);
         }
-        for (int[] screw : new int[][] {{x0 + 6, y0 + 6}, {x1 - 10, y0 + 6}, {x0 + 6, y1 - 10}, {x1 - 10, y1 - 10}}) {
-            graphics.fill(screw[0], screw[1], screw[0] + 4, screw[1] + 4, 0xFF4A5560);
-            graphics.fill(screw[0] + 1, screw[1] + 2, screw[0] + 3, screw[1] + 3, EDGE_DARK);
+        // The fourth corner's screw is the battery lid's own (a control).
+        for (int[] screw : new int[][] {{x0 + 8, y0 + 8}, {x1 - 8, y0 + 8}, {x1 - 8, y1 - 8}}) {
+            LidarControls.screwHead(graphics, screw[0], screw[1], false);
         }
         display(graphics);
         for (Slot slot : menu.slots) {
@@ -195,15 +175,23 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
             int x = leftPos + slot.x - 1;
             int y = topPos + slot.y - 1;
             if (slot.index == LidarMenu.BATTERY_SLOT) {
-                battery(graphics, x, y);
+                battery(graphics, x, y, menu.batteryOpen);
             } else if (slot.index == LidarModules.Kind.MEMORY.ordinal()) {
                 reader(graphics, x, y, slot.hasItem());
             } else {
                 socket(graphics, x, y, KIND_COLORS[slot.index], slot.hasItem());
             }
         }
-        // The pocket the inventory sits in.
-        graphics.fill(x0 + LidarMenu.INVENTORY_X - 6, topPos + LidarMenu.INVENTORY_Y - 14, x0 + LidarMenu.INVENTORY_X + 168, y0 + imageHeight, 0xE00A1A26);
+        // The pocket the inventory sits in, apart from the device, with its own edges.
+        int px0 = x0 + LidarMenu.INVENTORY_X - 7;
+        int py0 = topPos + LidarMenu.INVENTORY_Y - 15;
+        int px1 = x0 + LidarMenu.INVENTORY_X + 169;
+        int py1 = y0 + imageHeight;
+        graphics.fill(px0, py0, px1, py1, 0xF00A1A26);
+        graphics.fill(px0, py0, px1, py0 + 1, EDGE_LIGHT);
+        graphics.fill(px0, py0, px0 + 1, py1, EDGE_LIGHT);
+        graphics.fill(px0, py1 - 1, px1, py1, EDGE_DARK);
+        graphics.fill(px1 - 1, py0, px1, py1, EDGE_DARK);
         for (Slot slot : menu.slots) {
             if (slot.index <= LidarMenu.BATTERY_SLOT) continue;
             int x = leftPos + slot.x - 1;
@@ -229,13 +217,35 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
         for (int i = 0; i < 4; i++) graphics.fill(x + 3 + i * 4, y + 15, x + 5 + i * 4, y + 17, 0xFFB08A38);
     }
 
-    /** The battery compartment: a wider recess with its contacts. */
-    private static void battery(GuiGraphics graphics, int x, int y) {
-        graphics.fill(x - 8, y - 2, x + 26, y + 20, EDGE_DARK);
-        graphics.fill(x - 7, y - 1, x + 25, y + 19, 0xFF141A1F);
-        graphics.fill(x - 5, y + 7, x - 2, y + 11, 0xFFB08A38);
-        graphics.fill(x + 20, y + 7, x + 23, y + 11, 0xFFB08A38);
-        graphics.fill(x, y, x + 18, y + 18, 0x66000000 | LidarHud.COLOR);
+    /**
+     * The battery bay: under its lid (the panel's own colour, seams, a screw), or open — a recess where the battery
+     * stands upright between a spring contact on its top nub and a plate under it.
+     */
+    private void battery(GuiGraphics graphics, int x, int y, boolean open) {
+        int l = leftPos + LID_LEFT;
+        int t = topPos + LID_TOP;
+        int r = leftPos + LID_RIGHT;
+        int b = topPos + LID_BOTTOM;
+        if (!open) {
+            graphics.fill(l - 1, t - 1, r + 1, b + 1, EDGE_DARK);
+            graphics.fill(l, t, r, b, PANEL);
+            graphics.fill(l, t, r, t + 1, EDGE_LIGHT);
+            graphics.fill(l, t, l + 1, b, EDGE_LIGHT);
+            for (int i = 0; i < 3; i++) graphics.fill(l + 8, t + 12 + i * 5, r - 8, t + 13 + i * 5, EDGE_DARK);
+            graphics.drawString(font, Component.translatable("seepers.lidar.screen.battery.lid"), l + (r - l - font.width(Component.translatable("seepers.lidar.screen.battery.lid"))) / 2,
+                    t + 3, 0xFF000000 | LABEL_COLOR, false);
+            return;
+        }
+        graphics.fill(l - 1, t - 1, r + 1, b + 1, EDGE_DARK);
+        graphics.fill(l, t, r, b, 0xFF11171C);
+        // Spring contact on the battery's top nub, plate under its base.
+        int cx = x + 9;
+        graphics.fill(cx - 3, y - 6, cx + 3, y - 5, 0xFFB08A38);
+        graphics.fill(cx - 1, y - 5, cx + 1, y + 1, 0xFFD6AA46);
+        graphics.fill(cx - 2, y - 3, cx + 2, y - 2, 0xFFB08A38);
+        graphics.fill(x + 3, y + 18, x + 15, y + 20, 0xFFD6AA46);
+        graphics.fill(x + 2, y + 20, x + 16, y + 21, 0xFFB08A38);
+        graphics.fill(x, y, x + 18, y + 18, 0x55000000 | LidarHud.COLOR);
         graphics.fill(x + 1, y + 1, x + 17, y + 17, RECESS);
     }
 
@@ -251,20 +261,46 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
         int text = 0xFF000000 | LidarHud.COLOR;
         stats(graphics, l + 6, r - 6, t + 5, text);
         for (int row = t; row < b; row += 2) graphics.fill(l, row, r, row + 1, 0x14000000);
-        // The area's value between its buttons, in the device's own digits.
+        // The area knob's own small display beside it, in the device's digits.
         ItemStack lidar = menu.lidar();
-        LidarModules.Area area = LidarModules.areas(LidarModules.level(lidar, LidarModules.Kind.VIEW)).get(LidarModules.areaIndex(lidar));
-        String value = area.field() == LidarModules.Field.CONE ? LidarHud.number(area.value()) + "°" : Math.round(area.value() * 100) + "%";
-        int left = narrower.getX() + BUTTON;
-        int width = wider.getX() - left;
-        graphics.fill(left + 2, topPos + CONTROLS_Y, left + width - 2, topPos + CONTROLS_Y + BUTTON, 0xFF07141C);
-        LidarGlyphs.draw(graphics, value, left + (width - LidarGlyphs.width(value) * 2) / 2, topPos + CONTROLS_Y + (BUTTON - LidarGlyphs.GLYPH_HEIGHT * 2) / 2,
-                2, text);
+        LidarModules.Area current = LidarModules.areas(LidarModules.level(lidar, LidarModules.Kind.VIEW)).get(LidarModules.areaIndex(lidar));
+        String value = current.field() == LidarModules.Field.CONE ? LidarHud.number(current.value()) + "°" : Math.round(current.value() * 100) + "%";
+        int dl = area.getX() + KNOB + 6;
+        int dt = topPos + CONTROLS_Y - 9;
+        glass(graphics, dl, dt, 50);
+        LidarGlyphs.draw(graphics, value, dl + (50 - LidarGlyphs.width(value) * 2) / 2, dt + (18 - LidarGlyphs.GLYPH_HEIGHT * 2) / 2, 2, text);
+        controlLabel(graphics, Component.translatable("seepers.lidar.screen.beam"), area.getX(), dt);
+        // The pattern switch: its name on a display to the left, its icon on a small one to the right.
+        if (LidarModules.level(lidar, LidarModules.Kind.PATTERN) > 0) {
+            LidarModules.Pattern chosen = LidarModules.pattern(lidar);
+            int nl = pattern.getX() - PATTERN_NAME_WIDTH - 6;
+            glass(graphics, nl, dt, PATTERN_NAME_WIDTH);
+            Component name = Component.translatable("seepers.lidar.pattern." + chosen.id());
+            graphics.drawString(font, name, nl + (PATTERN_NAME_WIDTH - font.width(name)) / 2, dt + 5, text, false);
+            int il = pattern.getX() + KNOB + 6;
+            glass(graphics, il, dt, PATTERN_ICON_WIDTH);
+            LidarGlyphs.pattern(graphics, chosen.ordinal(), il + (PATTERN_ICON_WIDTH - LidarGlyphs.PATTERN_SIZE) / 2,
+                    dt + (18 - LidarGlyphs.PATTERN_SIZE) / 2, text);
+            controlLabel(graphics, Component.translatable("seepers.lidar.screen.pattern"), nl, dt);
+        }
+    }
+
+    /** A small display of the controls row: bezel, rim, glass; 18 high. */
+    private static void glass(GuiGraphics graphics, int x, int y, int width) {
+        graphics.fill(x - 2, y - 2, x + width + 2, y + 20, EDGE_DARK);
+        graphics.fill(x - 1, y - 1, x + width + 1, y + 19, 0x80000000 | LidarHud.COLOR);
+        graphics.fill(x, y, x + width, y + 18, 0xFF07141C);
+    }
+
+    /** A control's name engraved on the panel just above it. */
+    private void controlLabel(GuiGraphics graphics, Component label, int x, int displayTop) {
+        graphics.drawString(font, label, x, displayTop - 13, 0xFF000000 | LABEL_COLOR, false);
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(font, title, titleLabelX, titleLabelY, 0xFF000000 | LABEL_COLOR, false);
+        // The model's code, stamped on the body (LIDA-RA is the starting model, this the second).
+        graphics.drawString(font, Component.translatable("seepers.lidar.model.rb"), titleLabelX, titleLabelY, 0xFF000000 | LABEL_COLOR, false);
         graphics.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xFF000000 | LABEL_COLOR, false);
     }
 
@@ -275,8 +311,6 @@ public class LidarScreen extends AbstractContainerScreen<LidarMenu> {
         PointCloud cloud = PointCloud.get();
         int memory = cloud == null ? 0 : cloud.count(PointSource.LIDAR);
         Component[][] rows = {
-                {Component.translatable("seepers.lidar.screen.beam"), LidarHud.field(stats)},
-                {Component.translatable("seepers.lidar.screen.pattern"), Component.translatable("seepers.lidar.pattern." + stats.pattern().id())},
                 {Component.translatable("seepers.lidar.screen.range"),
                         Component.translatable("seepers.lidar.screen.range.value", LidarHud.number(ServerConfig.get(ServerConfig.LIDAR_RANGE)))},
                 {Component.translatable("seepers.lidar.screen.rate"),

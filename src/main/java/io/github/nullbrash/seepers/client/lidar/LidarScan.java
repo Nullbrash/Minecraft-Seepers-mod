@@ -355,6 +355,15 @@ public final class LidarScan {
         return at;
     }
 
+    /**
+     * The view's right, from the body's turn alone: crossing the look with the vertical fails looking straight up or
+     * down (the beams then started from the wrong side and the pattern spun).
+     */
+    static Vec3 right(net.minecraft.world.entity.Entity player, float partial) {
+        double yaw = Math.toRadians(player.getViewYRot(partial));
+        return new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
+    }
+
     /** How far along the ray it leaves the block at pos (the ray starts before or inside it). */
     private static double exitDistance(Vec3 from, Vec3 dir, BlockPos pos) {
         double exit = Double.MAX_VALUE;
@@ -426,8 +435,7 @@ public final class LidarScan {
         // From the player's eyes along their view, also in third person (CLAUDE.md 5).
         Vec3 eye = player.getEyePosition(partial);
         Vec3 look = player.getViewVector(partial);
-        Vec3 right = look.cross(new Vec3(0, 1, 0));
-        right = right.lengthSqr() < 1.0E-6 ? new Vec3(1, 0, 0) : right.normalize();
+        Vec3 right = right(player, partial);
         Vec3 up = right.cross(look);
         double[] uv = new double[2];
         // The chosen area; the special scans go by passes (roundPass).
@@ -489,8 +497,7 @@ public final class LidarScan {
         prepare(player, level, range);
         Vec3 eye = player.getEyePosition();
         Vec3 look = player.getViewVector(1.0F);
-        Vec3 right = look.cross(new Vec3(0, 1, 0));
-        right = right.lengthSqr() < 1.0E-6 ? new Vec3(1, 0, 0) : right.normalize();
+        Vec3 right = right(player, 1.0F);
         Vec3 up = right.cross(look);
         Minecraft minecraft = Minecraft.getInstance();
         double screenY = Math.tan(Math.toRadians(minecraft.options.fov().get()) / 2);

@@ -47,7 +47,13 @@ public final class CardService {
         int sendingOffset;
         long uploadSecond;
         int uploadedThisSecond;
+        /** The card before the last change, still taking the points the client had not sent yet, until the tick. */
+        @Nullable UUID previous;
+        int previousCapacity;
+        int previousUntil;
     }
+
+    private static final int PREVIOUS_CARD_TICKS = 100;
 
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
     private static int epochs;
@@ -106,6 +112,11 @@ public final class CardService {
 
     /** Another card (or none): the player's cloud starts over, the new card's sections follow nearest first. */
     private static void activate(ServerPlayer player, Session session, @Nullable UUID card, int capacity, boolean writable) {
+        if (session.card != null && session.writable && !session.card.equals(card)) {
+            session.previous = session.card;
+            session.previousCapacity = session.capacity;
+            session.previousUntil = player.server.getTickCount() + PREVIOUS_CARD_TICKS;
+        }
         session.card = card;
         session.capacity = capacity;
         session.writable = writable;
@@ -166,7 +177,10 @@ public final class CardService {
     public static void handleUpload(CardUploadPayload upload, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player)) return;
         Session session = SESSIONS.get(player.getUUID());
-        if (session == null || session.card == null || !session.card.equals(upload.card()) || !session.writable) return;
+        if (session == null) return;
+        boolean current = session.card != null && session.card.equals(upload.card()) && session.writable;
+        boolean previous = upload.card().equals(session.previous) && player.server.getTickCount() < session.previousUntil;
+        if (!current && !previous) return;
         long second = player.server.getTickCount() / 20;
         if (second != session.uploadSecond) {
             session.uploadSecond = second;
@@ -175,9 +189,9 @@ public final class CardService {
         session.uploadedThisSecond += upload.records().length;
         if (session.uploadedThisSecond > ServerConfig.get(ServerConfig.LIDAR_CARD_UPLOAD_KB) * 1024) return;
         if (upload.records().length % CardRecords.BYTES != 0 || upload.live() < 0 || upload.live() > 16 * 16 * 16 * 1024) return;
-        LongArrayList dropped = CardStore.get(player.server).write(session.card, upload.section(), upload.records(), upload.live(),
-                upload.replace(), player.level().getGameTime(), session.capacity);
-        if (!dropped.isEmpty()) PacketDistributor.sendToPlayer(player, new CardDropPayload(session.card, dropped.toLongArray()));
+        LongArrayList dropped = CardStore.get(player.server).write(upload.card(), upload.section(), upload.records(), upload.live(),
+                upload.replace(), player.level().getGameTime(), current ? session.capacity : session.previousCapacity);
+        if (current && !dropped.isEmpty()) PacketDistributor.sendToPlayer(player, new CardDropPayload(session.card, dropped.toLongArray()));
     }
 
     /** The erase button: the card in the open lidar empties (unless its author locked it). */

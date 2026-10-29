@@ -97,8 +97,7 @@ public final class LidarRays {
     private static Vec3 origin(Minecraft minecraft, Player player, float partial) {
         Vec3 eye = player.getEyePosition(partial);
         Vec3 look = player.getViewVector(partial);
-        Vec3 right = look.cross(new Vec3(0, 1, 0));
-        right = right.lengthSqr() < 1.0E-6 ? new Vec3(1, 0, 0) : right.normalize();
+        Vec3 right = LidarScan.right(player, partial);
         Vec3 up = right.cross(look);
         InteractionHand hand = LidarScan.lidarHand(minecraft.player);
         HumanoidArm arm = hand == InteractionHand.OFF_HAND ? player.getMainArm().getOpposite() : player.getMainArm();

@@ -27,22 +27,28 @@ import net.minecraft.world.item.ItemStack;
  * erase the card and set its author's locks.
  */
 public class LidarMenu extends AbstractContainerMenu {
-    /** Socket positions on the device, by module kind (slot i = kind i); the memory slot is the card reader. */
+    /**
+     * Socket positions on the device, by module kind (slot i = kind i); the memory slot is the card reader. Left:
+     * quality and output (view, density, beams, dynamo); right: accuracy, filters, display (analysis, filter, water,
+     * pattern, refresh, echo).
+     */
     public static final int[][] SOCKETS = {
-            {14, 26}, {36, 26}, {312, 100}, {14, 48}, {36, 48}, {14, 70},
-            {290, 26}, {312, 26}, {290, 48}, {312, 48}, {290, 70}};
-    public static final int BATTERY_X = 157;
-    public static final int BATTERY_Y = 134;
+            {14, 20}, {36, 20}, {312, 100}, {290, 20}, {312, 20}, {290, 42},
+            {312, 42}, {312, 64}, {36, 42}, {290, 64}, {14, 42}};
+    public static final int BATTERY_X = 21;
+    public static final int BATTERY_Y = 116;
     /** The battery compartment's slot index, after the modules. */
     public static final int BATTERY_SLOT = LidarModules.SLOTS;
     public static final int INVENTORY_X = 89;
-    public static final int INVENTORY_Y = 172;
+    public static final int INVENTORY_Y = 180;
 
     private final Player player;
     private final InteractionHand hand;
     private final SimpleContainer modules = new SimpleContainer(LidarModules.SLOTS);
     private final SimpleContainer battery = new SimpleContainer(1);
     private boolean loading;
+    /** The battery compartment's lid is off (client only: the screen's screw); the slot hides under the lid. */
+    public boolean batteryOpen;
 
     public static void open(ServerPlayer player, InteractionHand hand) {
         if (!(player.getItemInHand(hand).getItem() instanceof LidarItem)) return;
@@ -82,6 +88,11 @@ public class LidarMenu extends AbstractContainerMenu {
             });
         }
         addSlot(new Slot(battery, 0, BATTERY_X, BATTERY_Y) {
+            @Override
+            public boolean isActive() {
+                return !player.level().isClientSide || batteryOpen;
+            }
+
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof BatteryItem;

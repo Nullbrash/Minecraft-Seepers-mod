@@ -677,9 +677,16 @@
   "seepers.lidar.screen.card.level": "сканирования %s",
   "seepers.lidar.screen.card.locked": "%s · защищена",
   "seepers.lidar.screen.card.signed": "%s · %s",
-  "seepers.lidar.screen.card.erase": "Стереть карту",
-  "seepers.lidar.screen.card.erase_confirm": "Нажмите ещё раз, чтобы стереть все точки карты",
+  "seepers.lidar.screen.card.erase": "Стереть карту: поднимите крышечку",
+  "seepers.lidar.screen.card.erase_confirm": "Нажмите кнопку, чтобы стереть все точки карты; клик по поднятой крышечке её опустит",
   "seepers.lidar.screen.card.erase_locked": "Автор запретил стирать эту карту",
   "seepers.lidar.screen.card.lock_write": "Запретить стирать и дописывать (только вы как автор)",
-  "seepers.lidar.screen.card.lock_copy": "Запретить копировать (только вы как автор)"
+  "seepers.lidar.screen.card.lock_copy": "Запретить копировать (только вы как автор)",
+  "seepers.lidar.screen.area.knob": "Область скана: правая половина — шире, левая — уже (или колесо)",
+  "seepers.lidar.screen.pattern.switch": "Рисунок скана: правая половина — вправо, левая — влево (или колесо)",
+  "seepers.lidar.screen.battery.screw": "Выкрутить винт крышки отсека батареи",
+  "seepers.lidar.screen.battery.lid": "Батарея",
+  "seepers.lidar.screen.battery.screw_out": "Вкрутить винт обратно и закрыть отсек",
+  "seepers.lidar.model.rb": "LIDA-RB",
+  "seepers.lidar.model.ra": "LIDA-RA"
 }

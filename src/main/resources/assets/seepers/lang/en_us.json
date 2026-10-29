@@ -677,9 +677,16 @@
   "seepers.lidar.screen.card.level": "scan %s",
   "seepers.lidar.screen.card.locked": "%s · locked",
   "seepers.lidar.screen.card.signed": "%s · %s",
-  "seepers.lidar.screen.card.erase": "Erase the card",
-  "seepers.lidar.screen.card.erase_confirm": "Press again to erase all the card's points",
+  "seepers.lidar.screen.card.erase": "Erase the card: lift the cover",
+  "seepers.lidar.screen.card.erase_confirm": "Press the button to erase all the card points; click the lifted cover to put it down",
   "seepers.lidar.screen.card.erase_locked": "The author locked this card against erasing",
   "seepers.lidar.screen.card.lock_write": "Lock against erasing and writing (you, the author)",
-  "seepers.lidar.screen.card.lock_copy": "Lock against copying (you, the author)"
+  "seepers.lidar.screen.card.lock_copy": "Lock against copying (you, the author)",
+  "seepers.lidar.screen.area.knob": "Scan area: right half wider, left half narrower (or scroll)",
+  "seepers.lidar.screen.pattern.switch": "Scan pattern: right half turns right, left half left (or scroll)",
+  "seepers.lidar.screen.battery.screw": "Take out the battery lid screw",
+  "seepers.lidar.screen.battery.lid": "Battery",
+  "seepers.lidar.screen.battery.screw_out": "Screw it back and close the bay",
+  "seepers.lidar.model.rb": "LIDA-RB",
+  "seepers.lidar.model.ra": "LIDA-RA"
 }

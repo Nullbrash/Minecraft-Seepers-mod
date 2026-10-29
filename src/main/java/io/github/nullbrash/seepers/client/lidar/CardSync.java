@@ -69,6 +69,14 @@ public final class CardSync {
         UUID next = payload.card().orElse(null);
         PointCloud cloud = PointCloud.get();
         if (!Objects.equals(next, card) || payload.epoch() != epoch) {
+            // What the old card has not yet received goes now (the server takes it a few seconds more), not lost.
+            if (card != null && writable && Objects.equals(next, card) == false) {
+                while (!PENDING.isEmpty()) {
+                    long key = PENDING.firstLongKey();
+                    ByteArrayList bytes = PENDING.removeFirst();
+                    send(key, bytes.toByteArray(), cloud == null ? 0 : cloud.liveIn(key, PointSource.LIDAR), false);
+                }
+            }
             if (cloud != null) cloud.clearSource(PointSource.LIDAR);
             PENDING.clear();
             REWRITE.clear();

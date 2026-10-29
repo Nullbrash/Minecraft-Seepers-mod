@@ -216,7 +216,8 @@ public final class PointCloud {
         if (existing != -1) {
             Ring owner = ringOf(existing);
             if (precise >= 0 && owner.material[existing & 0xFFFFFF] == precise) material = precise;
-            if (owner == ring && now - ring.born[existing & 0xFFFFFF] < REFRESH_MIN_AGE_SECONDS) return;
+            // A replayed card section is the scan in order: the later record wins, however close in time.
+            if (owner == ring && !replaying && now - ring.born[existing & 0xFFFFFF] < REFRESH_MIN_AGE_SECONDS) return;
             section.points.remove(local); // its slot turns dead now, before any eviction below
             owner.live--;
         }
