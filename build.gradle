@@ -79,6 +79,9 @@ neoForge {
         configureEach {
             systemProperty 'forge.logging.markers', 'REGISTRIES'
             logLevel = org.slf4j.event.Level.DEBUG
+            // No generated IDE run configs: they carry this machine's absolute paths into .vscode/launch.json, which
+            // is shared. Runs go through the Gradle tasks (see .vscode/tasks.json and launch.json).
+            disableIdeRun()
         }
     }
 
