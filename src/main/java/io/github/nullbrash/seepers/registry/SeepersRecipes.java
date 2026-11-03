@@ -15,5 +15,8 @@ public final class SeepersRecipes {
     public static final DeferredHolder<RecipeSerializer<?>, SimpleCraftingRecipeSerializer<CardCopyRecipe>> CARD_COPY =
             SERIALIZERS.register("memory_card_copy", () -> new SimpleCraftingRecipeSerializer<>(CardCopyRecipe::new));
 
+    public static final DeferredHolder<RecipeSerializer<?>, SimpleCraftingRecipeSerializer<io.github.nullbrash.seepers.lidar.StarterDismantleRecipe>> STARTER_DISMANTLE =
+            SERIALIZERS.register("starter_dismantle", () -> new SimpleCraftingRecipeSerializer<>(io.github.nullbrash.seepers.lidar.StarterDismantleRecipe::new));
+
     private SeepersRecipes() {}
 }

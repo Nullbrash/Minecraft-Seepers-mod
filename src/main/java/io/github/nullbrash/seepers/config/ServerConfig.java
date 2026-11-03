@@ -12,6 +12,17 @@ import net.neoforged.neoforge.common.ModConfigSpec;
  * A copy in &lt;world&gt;/serverconfig/ overrides it for that world only.
  */
 public final class ServerConfig {
+    public static final ModConfigSpec.IntValue STARTER_CHARGE_MIN;
+    public static final ModConfigSpec.IntValue STARTER_CHARGE_MAX;
+    public static final ModConfigSpec.IntValue STARTER_POINTS;
+    public static final ModConfigSpec.IntValue STARTER_DURABILITY;
+    public static final ModConfigSpec.IntValue STARTER_RECOVERED_CIRCUITS;
+    public static final ModConfigSpec.IntValue STARTER_SCAN_WEAR_TICKS;
+    public static final ModConfigSpec.DoubleValue STARTER_DAMAGE_WEAR;
+    public static final ModConfigSpec.IntValue HAZMAT_DURABILITY_FACTOR;
+    public static final ModConfigSpec.IntValue HAZMAT_WEAR_TICKS;
+    public static final ModConfigSpec.DoubleValue ECHO_SOUND_RADIUS;
+    public static final ModConfigSpec.IntValue ECHO_SOUND_INTERVAL;
     public static final ModConfigSpec SPEC;
     public static final ModConfigSpec.BooleanValue DEBUG_COMMANDS;
     public static final ModConfigSpec.IntValue BLACK_LIGHT_LEVEL;
@@ -521,6 +532,19 @@ public final class ServerConfig {
                 .translation("seepers.configuration.collapse.caneDirectShare").defineInRange("caneDirectShare", 0.50, 0.0, 1.0);
         builder.pop();
 
+        builder.comment("Стартовое снаряжение и сигналы Эха; значения баланса предварительные.").translation("seepers.configuration.startingEquipment").push("startingEquipment");
+        STARTER_CHARGE_MIN = builder.comment("Минимальный заряд нового стартового лидара, проценты.").translation("seepers.configuration.startingEquipment.chargeMin").defineInRange("chargeMin", 42, 0, 100);
+        STARTER_CHARGE_MAX = builder.comment("Максимальный заряд нового стартового лидара, проценты.").translation("seepers.configuration.startingEquipment.chargeMax").defineInRange("chargeMax", 67, 0, 100);
+        STARTER_POINTS = builder.comment("Ёмкость несъёмной памяти LIDA-RA.").translation("seepers.configuration.startingEquipment.points").defineInRange("points", 200000, 1, 8388608);
+        STARTER_DURABILITY = builder.comment("Прочность LIDA-RA; сломанный прибор остаётся предметом.").translation("seepers.configuration.startingEquipment.durability").defineInRange("durability", 1000, 1, 1000000);
+        STARTER_RECOVERED_CIRCUITS = builder.comment("Платы, возвращаемые при разборке стартового прибора.").translation("seepers.configuration.startingEquipment.recoveredCircuits").defineInRange("recoveredCircuits", 1, 1, 64);
+        STARTER_SCAN_WEAR_TICKS = builder.comment("Тики сканирования на единицу износа LIDA-RA.").translation("seepers.configuration.startingEquipment.scanWearTicks").defineInRange("scanWearTicks", 100, 1, 72000);
+        STARTER_DAMAGE_WEAR = builder.comment("Износ переносимого LIDA-RA на единицу полученного урона.").translation("seepers.configuration.startingEquipment.damageWear").defineInRange("damageWear", 2.0, 0.0, 100.0);
+        HAZMAT_DURABILITY_FACTOR = builder.comment("Множитель прочности частей хазмата (как у ванильных материалов).").translation("seepers.configuration.startingEquipment.hazmatDurabilityFactor").defineInRange("hazmatDurabilityFactor", 5, 1, 1000);
+        HAZMAT_WEAR_TICKS = builder.comment("Тики носки на единицу износа хазмата; 0 отключает износ от носки.").translation("seepers.configuration.startingEquipment.hazmatWearTicks").defineInRange("hazmatWearTicks", 400, 0, 72000);
+        ECHO_SOUND_RADIUS = builder.comment("Радиус личного звукового сигнала у места смерти, блоки.").translation("seepers.configuration.startingEquipment.echoSoundRadius").defineInRange("echoSoundRadius", 16.0, 0.0, 128.0);
+        ECHO_SOUND_INTERVAL = builder.comment("Пауза между сигналами Эха, тики.").translation("seepers.configuration.startingEquipment.echoSoundInterval").defineInRange("echoSoundInterval", 40, 1, 1200);
+        builder.pop();
         SPEC = builder.build();
     }
 

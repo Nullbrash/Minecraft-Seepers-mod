@@ -35,12 +35,13 @@ public class LidarItem extends Item {
 
     public static boolean canScan(ItemStack lidar) {
         Integer charge = battery(lidar);
-        return charge != null && charge > 0;
+        return lidar.getItem() instanceof LidarItem && charge != null && charge > 0
+                && (!StarterLidarItem.isStarter(lidar) || lidar.getDamageValue() < lidar.getMaxDamage());
     }
 
     @Override
     public boolean overrideOtherStackedOnMe(ItemStack stack, ItemStack other, Slot slot, ClickAction action, Player player, SlotAccess access) {
-        if (action != ClickAction.SECONDARY) return false;
+        if (action != ClickAction.SECONDARY || StarterLidarItem.isStarter(stack)) return false;
         // The battery goes in and out only through the bay on the lidar's screen (its lid is screwed shut).
         Integer inside = battery(stack);
         if (inside == null) return false;
@@ -79,6 +80,11 @@ public class LidarItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        if (StarterLidarItem.isStarter(stack)) {
+            tooltip.add(Component.translatable("item.seepers.starter_lidar.dismantle").withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable(stack.getDamageValue() >= stack.getMaxDamage()
+                    ? "item.seepers.starter_lidar.broken" : "item.seepers.starter_lidar.builtin").withStyle(ChatFormatting.GOLD));
+        }
         Integer charge = battery(stack);
         tooltip.add((charge == null ? Component.translatable("item.seepers.lidar.no_battery")
                 : Component.translatable("item.seepers.lidar.battery", BatteryItem.describe(charge))).withStyle(ChatFormatting.GRAY));

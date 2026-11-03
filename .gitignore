@@ -45,6 +45,7 @@ repo/
 !**/src/**/repo/
 
 ### Private project docs (owner decision: not in git) ###
+/AGENTS.md
 CLAUDE.md
 .plans/
 .ideas/

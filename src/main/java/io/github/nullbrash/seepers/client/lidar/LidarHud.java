@@ -127,7 +127,11 @@ public final class LidarHud {
         }
         shownMemory += (memory - shownMemory) * 0.25;
         if (Math.abs(memory - shownMemory) < 1) shownMemory = memory;
-        LidarModules.Stats stats = LidarModules.stats(player.getItemInHand(hand));
+        var lidar = player.getItemInHand(hand);
+        boolean starter = io.github.nullbrash.seepers.item.StarterLidarItem.isStarter(lidar);
+        int color = starter ? 0xFFC36A : COLOR;
+        boolean echo = EchoCompass.enabled(lidar);
+        LidarModules.Stats stats = LidarModules.stats(lidar);
         int limit = stats.pointLimit();
 
         Font font = minecraft.font;
@@ -179,11 +183,16 @@ public final class LidarHud {
             default -> { left = MARGIN; top = MARGIN; }
         }
 
+        if (echo) {
+            if (top < MARGIN + EchoCompass.HEIGHT) top = MARGIN + EchoCompass.HEIGHT;
+            EchoCompass.render(graphics, lidar, left + width / 2, top - EchoCompass.HEIGHT / 2);
+            if (raisedTop != NOT_RAISED) raisedTop = top - EchoCompass.HEIGHT;
+        }
         // A faint flicker, brighter while the beam runs.
         long now = System.currentTimeMillis();
         float flicker = 0.92F + 0.08F * Mth.sin(now / 37.0F) * Mth.sin(now / 91.0F);
         float strength = (LidarScan.scanning() ? 1.0F : 0.85F) * flicker;
-        int text = alpha(strength) << 24 | COLOR;
+        int text = alpha(strength) << 24 | color;
 
         graphics.pose().pushPose();
         graphics.pose().translate(left, top, 0);
@@ -212,7 +221,7 @@ public final class LidarHud {
         boolean low = charge == null || charge < capacity * LOW_SHARE;
         float chargeStrength = low && (now / 400) % 2 == 0 ? strength * 0.35F : strength;
         x = icon(graphics, Icon.BATTERY, width - PAD - chargeWidth, y, chargeStrength);
-        graphics.drawString(font, chargeText, x, y, alpha(chargeStrength) << 24 | COLOR, false);
+        graphics.drawString(font, chargeText, x, y, alpha(chargeStrength) << 24 | color, false);
         bar(graphics, height - BAR, width, limit <= 0 ? 0 : shownMemory / limit, strength, text);
         // Scanlines: every other row a touch darker, drifting slowly.
         int offset = (int) (now / 120 % 2);
@@ -252,7 +261,7 @@ public final class LidarHud {
 
     /** A full-width bar: faint track, lit share. */
     private static void bar(GuiGraphics graphics, int y, int width, double share, float strength, int lit) {
-        graphics.fill(0, y, width, y + BAR, alpha(strength * 0.25F) << 24 | COLOR);
+        graphics.fill(0, y, width, y + BAR, alpha(strength * 0.25F) << 24 | color());
         int filled = (int) Math.round(width * Math.min(1.0, Math.max(0.0, share)));
         if (share > 0) graphics.fill(0, y, Math.max(filled, 1), y + BAR, lit);
     }
@@ -262,7 +271,7 @@ public final class LidarHud {
 
     /** Draws the icon at x and returns where its text starts. */
     private static int icon(GuiGraphics graphics, Icon icon, int x, int y, float strength) {
-        graphics.setColor(((COLOR >> 16) & 0xFF) / 255.0F, ((COLOR >> 8) & 0xFF) / 255.0F, (COLOR & 0xFF) / 255.0F, Mth.clamp(strength, 0, 1));
+        graphics.setColor(((color() >> 16) & 0xFF) / 255.0F, ((color() >> 8) & 0xFF) / 255.0F, (color() & 0xFF) / 255.0F, Mth.clamp(strength, 0, 1));
         RenderSystem.enableBlend();
         graphics.blit(ICONS, x, y, icon.ordinal() * 8, 0, 8, 8, ICONS_WIDTH, 8);
         graphics.setColor(1, 1, 1, 1);
@@ -290,6 +299,12 @@ public final class LidarHud {
     /** Text alpha below 4 is drawn opaque by vanilla. */
     static int alpha(float strength) {
         return Math.max(4, Math.round(Mth.clamp(strength, 0, 1) * 255));
+    }
+
+    static int color() {
+        var player = Minecraft.getInstance().player;
+        var hand = player == null ? null : LidarScan.heldHand(player);
+        return hand != null && io.github.nullbrash.seepers.item.StarterLidarItem.isStarter(player.getItemInHand(hand)) ? 0xFFC36A : COLOR;
     }
 
     private LidarHud() {}

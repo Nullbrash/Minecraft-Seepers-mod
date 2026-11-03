@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "seepers:hazmat_helmet",
+    "seepers:hazmat_chestplate",
+    "seepers:hazmat_leggings",
+    "seepers:hazmat_boots"
+  ]
+}

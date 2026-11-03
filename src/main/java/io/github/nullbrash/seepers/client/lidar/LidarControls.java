@@ -115,13 +115,13 @@ final class LidarControls {
             int count = Math.max(1, steps.getAsInt());
             for (int i = 0; i < count; i++) {
                 double a = Math.toRadians(135 + 270.0 * (count == 1 ? 0.5 : i / (double) (count - 1)));
-                ray(graphics, cx, cy, a, r + 1, r + 2, i == position.getAsInt() ? 0xFF000000 | LidarHud.COLOR : 0xFF3A4650);
+                ray(graphics, cx, cy, a, r + 1, r + 2, i == position.getAsInt() ? 0xFF000000 | LidarHud.color() : 0xFF3A4650);
             }
             disc(graphics, cx, cy + 1, r, DARK);
             disc(graphics, cx, cy, r, isHoveredOrFocused() ? METAL_LIGHT : METAL);
             disc(graphics, cx, cy, r - 2, 0xFF3A444D);
             double a = Math.toRadians(135 + 270.0 * (count == 1 ? 0.5 : position.getAsInt() / (double) (count - 1)));
-            ray(graphics, cx, cy, a, 1, r - 1, 0xFF000000 | LidarHud.COLOR);
+            ray(graphics, cx, cy, a, 1, r - 1, 0xFF000000 | LidarHud.color());
         }
     }
 
@@ -175,7 +175,7 @@ final class LidarControls {
                 double ny = Math.cos(a) * w;
                 ray(graphics, cx + nx, cy + ny, a, -r + 2, r - 1, w == 0 ? 0xFF2A3238 : 0xFF3A444D);
             }
-            ray(graphics, cx, cy, a, r - 3, r - 1, 0xFF000000 | LidarHud.COLOR);
+            ray(graphics, cx, cy, a, r - 3, r - 1, 0xFF000000 | LidarHud.color());
         }
     }
 
@@ -378,6 +378,65 @@ final class LidarControls {
                 return;
             }
             screwHead(graphics, cx, cy, isHoveredOrFocused() && allowed.getAsBoolean());
+        }
+    }
+
+    /** Клипса сдвигается после снятия крутилок; состояние живёт лишь до закрытия экрана. */
+    static final class DisplayClip extends Control {
+        private final BooleanSupplier allowed;
+        private final Runnable release;
+        private final Component lockedName;
+        private final Component readyName;
+        private boolean out;
+        DisplayClip(int x, int y, Component lockedName, Component readyName, BooleanSupplier allowed, Runnable release) {
+            super(x, y, 10, 8, lockedName);
+            this.allowed = allowed;
+            this.release = release;
+            this.lockedName = lockedName;
+            this.readyName = readyName;
+        }
+        void tick() { setTooltip(Tooltip.create(allowed.getAsBoolean() ? readyName : lockedName)); }
+        @Override
+        public void onClick(double x, double y) {
+            if (out || !allowed.getAsBoolean()) return;
+            out = true;
+            release.run();
+            sound(SoundEvents.LEVER_CLICK, 1.5F, 0.25F);
+        }
+        @Override
+        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            int x = getX(), y = getY();
+            g.fill(x, y + 2, x + 10, y + 6, DARK);
+            int slide = out ? 5 : 0;
+            g.fill(x + slide, y, x + slide + 5, y + 8, isHoveredOrFocused() && allowed.getAsBoolean() ? METAL_LIGHT : METAL);
+            g.fill(x + slide + 1, y + 3, x + slide + 4, y + 4, DARK);
+        }
+    }
+
+    /** Две половины механически связаны одним переключателем; будущий раздельный режим не включён. */
+    static final class EchoSwitch extends Control {
+        private final BooleanSupplier on;
+        private final Runnable press;
+        EchoSwitch(int x, int y, BooleanSupplier on, Runnable press) {
+            super(x, y, 40, 18, Component.translatable("seepers.lidar.echo.toggle"));
+            this.on = on;
+            this.press = press;
+        }
+        @Override
+        public void onClick(double x, double y) { press.run(); }
+        @Override
+        protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            int x = getX(), y = getY();
+            int c = on.getAsBoolean() ? 0xFF2AA89A : 0xFF52616B;
+            g.fill(x, y, x + 40, y + 18, DARK);
+            g.fill(x + 1, y + 1, x + 19, y + 17, c);
+            g.fill(x + 21, y + 1, x + 39, y + 17, c);
+            g.fill(x + 18, y + 7, x + 22, y + 11, METAL_LIGHT);
+            disc(g, x + 10, y + 9, 5, DARK);
+            ray(g, x + 10, y + 9, -Math.PI / 3, 0, 4, 0xFFC7E6FF);
+            g.fill(x + 25, y + 7, x + 28, y + 12, DARK);
+            for (int i = 0; i < 4; i++) g.fill(x + 28 + i, y + 7 - i, x + 29 + i, y + 12 + i, DARK);
+            g.fill(x + 34, y + 5, x + 35, y + 14, 0xFFC7E6FF);
         }
     }
 

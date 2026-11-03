@@ -77,11 +77,12 @@ public final class CardService {
         InteractionHand hand = lidarHand(player);
         if (hand != null) {
             ItemStack lidar = player.getItemInHand(hand);
+            LidarModules.initializeStarter(lidar);
             ItemStack card = LidarModules.card(lidar);
             UUID id = card.isEmpty() ? null : ensureId(player, lidar, card);
             CardData data = card.isEmpty() ? CardData.BLANK : MemoryCardItem.data(LidarModules.card(lidar));
             boolean writable = id != null && !data.noWrite();
-            int capacity = card.isEmpty() ? 0 : MemoryCardItem.capacity(((MemoryCardItem) card.getItem()).level());
+            int capacity = LidarModules.stats(lidar).pointLimit();
             if (!java.util.Objects.equals(id, session.card)) {
                 activate(player, session, id, capacity, writable);
             } else if (writable != session.writable || capacity != session.capacity) {

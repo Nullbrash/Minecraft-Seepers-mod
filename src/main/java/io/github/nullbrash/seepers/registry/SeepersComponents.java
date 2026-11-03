@@ -46,5 +46,12 @@ public final class SeepersComponents {
             COMPONENTS.registerComponentType("wiring", builder -> builder.persistent(io.github.nullbrash.seepers.lidar.WiringData.CODEC)
                     .networkSynchronized(io.github.nullbrash.seepers.lidar.WiringData.STREAM_CODEC));
 
+    /** Общий переключатель двух сигналов Эха; отсутствие компонента означает включённое состояние. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> ECHO_ENABLED =
+            COMPONENTS.registerComponentType("echo_enabled", builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
+    /** Доля износа не теряется при смене руки или повторном входе. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SCAN_WEAR =
+            COMPONENTS.registerComponentType("scan_wear", builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
+
     private SeepersComponents() {}
 }

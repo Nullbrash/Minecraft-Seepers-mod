@@ -44,6 +44,7 @@ public class LidarMenu extends AbstractContainerMenu {
 
     private final Player player;
     private final InteractionHand hand;
+    private final ItemStack device;
     private final SimpleContainer modules = new SimpleContainer(LidarModules.SLOTS);
     private final SimpleContainer battery = new SimpleContainer(1);
     private boolean loading;
@@ -54,6 +55,7 @@ public class LidarMenu extends AbstractContainerMenu {
 
     public static void open(ServerPlayer player, InteractionHand hand) {
         if (!(player.getItemInHand(hand).getItem() instanceof LidarItem)) return;
+        LidarModules.initializeStarter(player.getItemInHand(hand));
         player.openMenu(new SimpleMenuProvider((id, inventory, p) -> new LidarMenu(id, inventory, hand),
                 Component.translatable("seepers.lidar.screen.title")), buf -> buf.writeBoolean(hand == InteractionHand.OFF_HAND));
     }
@@ -66,6 +68,7 @@ public class LidarMenu extends AbstractContainerMenu {
         super(SeepersMenus.LIDAR.get(), id);
         this.player = inventory.player;
         this.hand = hand;
+        this.device = player.getItemInHand(hand);
         loading = true;
         NonNullList<ItemStack> stored = LidarModules.contents(lidar());
         for (int i = 0; i < LidarModules.SLOTS; i++) modules.setItem(i, stored.get(i));
@@ -79,11 +82,18 @@ public class LidarMenu extends AbstractContainerMenu {
             addSlot(new Slot(modules, i, SOCKETS[i][0], SOCKETS[i][1]) {
                 @Override
                 public boolean isActive() {
-                    return !player.level().isClientSide || !panelOpen;
+                    return accessible(kind) && (!player.level().isClientSide || !panelOpen);
+                }
+
+                @Override
+                public boolean mayPickup(Player player) {
+                    return accessible(kind);
                 }
 
                 @Override
                 public boolean mayPlace(ItemStack stack) {
+                    if (!accessible(kind)) return false;
+                    if (starter() && stack.getItem() instanceof ModuleItem module && module.level() != 1) return false;
                     if (kind == LidarModules.Kind.MEMORY) return stack.getItem() instanceof MemoryCardItem;
                     return stack.getItem() instanceof ModuleItem module && module.kind() == kind;
                 }
@@ -97,17 +107,17 @@ public class LidarMenu extends AbstractContainerMenu {
         addSlot(new Slot(battery, 0, BATTERY_X, BATTERY_Y) {
             @Override
             public boolean isActive() {
-                return !player.level().isClientSide || batteryOpen && !panelOpen;
+                return !starter() && (!player.level().isClientSide || batteryOpen && !panelOpen);
             }
 
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return batteryOpen && stack.getItem() instanceof BatteryItem;
+                return !starter() && batteryOpen && stack.getItem() instanceof BatteryItem;
             }
 
             @Override
             public boolean mayPickup(Player player) {
-                return batteryOpen;
+                return !starter() && batteryOpen;
             }
 
             @Override
@@ -138,7 +148,8 @@ public class LidarMenu extends AbstractContainerMenu {
     }
 
     public ItemStack lidar() {
-        return player.getItemInHand(hand);
+        // Клиент получает новый экземпляр стека при синхронизации компонентов; сервер держит исходный прибор.
+        return player.level().isClientSide ? player.getItemInHand(hand) : device;
     }
 
     private void save() {
@@ -159,7 +170,7 @@ public class LidarMenu extends AbstractContainerMenu {
     }
 
     private void saveBattery() {
-        if (loading || player.level().isClientSide) return;
+        if (loading || player.level().isClientSide || starter()) return;
         ItemStack lidar = lidar();
         if (!(lidar.getItem() instanceof LidarItem)) return;
         ItemStack inside = battery.getItem(0);
@@ -175,13 +186,29 @@ public class LidarMenu extends AbstractContainerMenu {
     public static final int LOCK_COPY_BUTTON = 42;
     /** The battery lid's screw, out or in. */
     public static final int BATTERY_LID_BUTTON = 43;
+    public static final int ECHO_BUTTON = 44;
+
+    public boolean starter() {
+        return io.github.nullbrash.seepers.item.StarterLidarItem.isStarter(lidar());
+    }
+
+    public boolean accessible(LidarModules.Kind kind) {
+        return !starter() || kind == LidarModules.Kind.PATTERN || kind == LidarModules.Kind.ANALYSIS;
+    }
 
     @Override
     public boolean clickMenuButton(Player player, int id) {
+        if (id == ECHO_BUTTON) {
+            if (LidarModules.level(lidar(), LidarModules.Kind.ECHO) == 0) return false;
+            lidar().set(SeepersComponents.ECHO_ENABLED.get(), !lidar().getOrDefault(SeepersComponents.ECHO_ENABLED.get(), true));
+            return true;
+        }
         if (id == BATTERY_LID_BUTTON) {
+            if (starter()) return false;
             batteryOpen = !batteryOpen;
             return true;
         }
+        if (starter() && id >= ERASE_BUTTON) return false;
         if (player instanceof ServerPlayer server && id >= ERASE_BUTTON) {
             save();
             if (id == ERASE_BUTTON) CardService.erase(server, lidar());
@@ -206,7 +233,7 @@ public class LidarMenu extends AbstractContainerMenu {
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         Slot slot = slots.get(index);
-        if (!slot.hasItem()) return ItemStack.EMPTY;
+        if (!slot.hasItem() || !slot.mayPickup(player)) return ItemStack.EMPTY;
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
         int device = BATTERY_SLOT + 1;
@@ -240,6 +267,6 @@ public class LidarMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return lidar().getItem() instanceof LidarItem;
+        return player.getItemInHand(hand) == device && device.getItem() instanceof LidarItem;
     }
 }

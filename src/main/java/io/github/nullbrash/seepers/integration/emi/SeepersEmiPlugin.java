@@ -40,6 +40,18 @@ public final class SeepersEmiPlugin implements EmiPlugin {
         inventory(registry);
         repair(registry, SeepersItems.CHISEL.get(), Items.IRON_INGOT);
         cardCopies(registry);
+        repair(registry, SeepersItems.STARTER_LIDAR.get(), Items.COPPER_INGOT);
+        repair(registry, SeepersItems.STARTER_LIDAR.get(), SeepersItems.CIRCUIT.get());
+        for (var item : SeepersItems.HAZMAT) {
+            repair(registry, item.get(), Items.LEATHER);
+            repair(registry, item.get(), Items.WHITE_WOOL);
+            registry.addRecipe(new dev.emi.emi.api.recipe.EmiCraftingRecipe(
+                    java.util.List.of(EmiStack.of(item.get()), dev.emi.emi.api.stack.EmiIngredient.of(net.neoforged.neoforge.common.Tags.Items.DYES)),
+                    EmiStack.of(item.get()), id("crafting/dye/" + name(item.get())), true));
+        }
+        registry.addRecipe(new dev.emi.emi.api.recipe.EmiCraftingRecipe(java.util.List.of(EmiStack.of(SeepersItems.STARTER_LIDAR.get())),
+                EmiStack.of(new ItemStack(SeepersItems.CIRCUIT.get(), io.github.nullbrash.seepers.config.ServerConfig.get(
+                        io.github.nullbrash.seepers.config.ServerConfig.STARTER_RECOVERED_CIRCUITS))), id("crafting/starter_dismantle"), true));
 
         ItemStack hewn = new ItemStack(SeepersBlocks.ANOMALY_ROCK_ITEM.get());
         hewn.set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(AnomalyRockBlock.KIND, AnomalyRockBlock.Kind.HEWN));
@@ -98,7 +110,7 @@ public final class SeepersEmiPlugin implements EmiPlugin {
     private static void repair(EmiRegistry registry, Item item, Item material) {
         ItemStack worn = new ItemStack(item);
         worn.setDamageValue(worn.getMaxDamage() * 3 / 4);
-        registry.addRecipe(new AnvilEmiRecipe(id("anvil/repair/" + name(item)), EmiStack.of(worn), EmiStack.of(material), EmiStack.of(item)));
+        registry.addRecipe(new AnvilEmiRecipe(id("anvil/repair/" + name(item) + "/" + name(material)), EmiStack.of(worn), EmiStack.of(material), EmiStack.of(item)));
     }
 
     private static void chisel(EmiRegistry registry, String path, EmiStack from, EmiStack to, Component note) {

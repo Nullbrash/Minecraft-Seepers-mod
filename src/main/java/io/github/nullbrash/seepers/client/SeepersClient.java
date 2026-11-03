@@ -59,6 +59,11 @@ public final class SeepersClient {
         NeoForge.EVENT_BUS.addListener(ClientTouch::onClientTick);
         NeoForge.EVENT_BUS.addListener(HandTouch::onInteraction);
         NeoForge.EVENT_BUS.addListener(HandTouch::onClientTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.lidar.EchoCompass::onTick);
+        modBus.addListener((net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item event) -> {
+            event.register((stack, tint) -> tint == 0 ? net.minecraft.world.item.component.DyedItemColor.getOrDefault(stack, 0xE1AA35) : -1,
+                    SeepersItems.HAZMAT.stream().map(java.util.function.Supplier::get).toArray(net.minecraft.world.item.Item[]::new));
+        });
         NeoForge.EVENT_BUS.addListener(CaneTouch::onClientTick);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.lidar.LidarScan::onClientTick);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.client.lidar.LidarScan::onRenderFrame);

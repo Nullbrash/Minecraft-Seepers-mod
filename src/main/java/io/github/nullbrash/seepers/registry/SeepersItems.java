@@ -49,7 +49,15 @@ public final class SeepersItems {
     /** Lidar modules that exist so far, by kind, level I first (analysis, filter, water and echo come in later phases). */
     public static final Map<LidarModules.Kind, List<DeferredItem<ModuleItem>>> MODULES = modules(
             LidarModules.Kind.VIEW, LidarModules.Kind.DENSITY, LidarModules.Kind.PATTERN, LidarModules.Kind.DYNAMO,
-            LidarModules.Kind.REFRESH, LidarModules.Kind.ANALYSIS, LidarModules.Kind.BEAMS);
+            LidarModules.Kind.REFRESH, LidarModules.Kind.ANALYSIS, LidarModules.Kind.BEAMS, LidarModules.Kind.ECHO);
+
+    public static final DeferredItem<io.github.nullbrash.seepers.item.StarterLidarItem> STARTER_LIDAR = ITEMS.register("starter_lidar",
+            () -> new io.github.nullbrash.seepers.item.StarterLidarItem(new Item.Properties().durability(1000)));
+    public static final List<DeferredItem<io.github.nullbrash.seepers.item.HazmatItem>> HAZMAT = java.util.Arrays.stream(
+            new net.minecraft.world.item.ArmorItem.Type[] {net.minecraft.world.item.ArmorItem.Type.HELMET,
+                    net.minecraft.world.item.ArmorItem.Type.CHESTPLATE, net.minecraft.world.item.ArmorItem.Type.LEGGINGS,
+                    net.minecraft.world.item.ArmorItem.Type.BOOTS})
+            .map(type -> ITEMS.register("hazmat_" + type.getName(), () -> new io.github.nullbrash.seepers.item.HazmatItem(type))).toList();
 
     private static Map<LidarModules.Kind, List<DeferredItem<ModuleItem>>> modules(LidarModules.Kind... kinds) {
         Map<LidarModules.Kind, List<DeferredItem<ModuleItem>>> map = new EnumMap<>(LidarModules.Kind.class);
@@ -66,6 +74,8 @@ public final class SeepersItems {
     }
 
     public static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) event.accept(STARTER_LIDAR.get());
+        if (event.getTabKey() == CreativeModeTabs.COMBAT) HAZMAT.forEach(item -> event.accept(item.get()));
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(CANE.get());
             event.accept(BOUND_CANE.get());

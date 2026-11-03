@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    {
+      "item": "minecraft:recovery_compass"
+    },
+    {
+      "item": "minecraft:echo_shard"
+    },
+    {
+      "item": "seepers:lidar_circuit"
+    }
+  ],
+  "result": {
+    "id": "seepers:lidar_module_echo",
+    "count": 1
+  }
+}

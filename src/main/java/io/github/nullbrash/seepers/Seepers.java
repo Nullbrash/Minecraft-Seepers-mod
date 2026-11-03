@@ -69,6 +69,12 @@ public final class Seepers {
         NeoForge.EVENT_BUS.addListener(WorldShape::onLoggedIn);
         NeoForge.EVENT_BUS.addListener(WorldShape::onCreateSpawn);
         NeoForge.EVENT_BUS.addListener(CaneItem::onAnvilUpdate);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.StartingEquipment::onLogin);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.StartingEquipment::onRespawnPosition);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.StartingEquipment::onClone);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.StartingEquipment::onRespawn);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.StartingEquipment::onTick);
+        NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.StartingEquipment::onDamage);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.LidarPower::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.LidarPower::onStartTracking);
         NeoForge.EVENT_BUS.addListener(io.github.nullbrash.seepers.lidar.SchematicLoot::onLootTableLoad);

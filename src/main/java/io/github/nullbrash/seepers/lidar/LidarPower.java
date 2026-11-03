@@ -35,12 +35,15 @@ public final class LidarPower {
 
     private static final class Session {
         final InteractionHand hand;
+        final ItemStack device;
         boolean round;
         double unspent;
         int ticks;
+        int wearTicks;
 
-        Session(InteractionHand hand) {
+        Session(InteractionHand hand, ItemStack device) {
             this.hand = hand;
+            this.device = device;
         }
     }
 
@@ -54,7 +57,7 @@ public final class LidarPower {
         }
         InteractionHand hand = payload.offhand() ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
         if (!LidarItem.canScan(player.getItemInHand(hand)) || CRANKING.containsKey(id)) return;
-        SCANNING.computeIfAbsent(id, key -> new Session(hand)).round = payload.round();
+        SCANNING.computeIfAbsent(id, key -> new Session(hand, player.getItemInHand(hand))).round = payload.round();
     }
 
     public static void handleAction(LidarActionPayload payload, IPayloadContext context) {
@@ -68,7 +71,7 @@ public final class LidarPower {
                         && LidarItem.battery(lidar) != null) {
                     Session scan = SCANNING.remove(player.getUUID());
                     if (scan != null) write(player, scan, -1);
-                    if (CRANKING.putIfAbsent(player.getUUID(), new Session(hand)) == null) crankSound(player, true);
+                    if (CRANKING.putIfAbsent(player.getUUID(), new Session(hand, player.getItemInHand(hand))) == null) crankSound(player, true);
                 }
             }
             case LidarActionPayload.DYNAMO_STOP -> {
@@ -88,17 +91,21 @@ public final class LidarPower {
         Session scan = SCANNING.get(id);
         if (scan != null) {
             ItemStack lidar = player.getItemInHand(scan.hand);
-            if (!(lidar.getItem() instanceof LidarItem) || !LidarItem.canScan(lidar)) {
+            if (lidar != scan.device || !(lidar.getItem() instanceof LidarItem) || !LidarItem.canScan(lidar)) {
+                write(player, scan, -1);
                 SCANNING.remove(id);
             } else {
                 scan.unspent += LidarModules.cost(lidar, scan.round);
+                if (!player.getAbilities().instabuild) scan.wearTicks++;
                 if (++scan.ticks % WRITE_TICKS == 0 && !write(player, scan, -1)) SCANNING.remove(id);
             }
         }
         Session crank = CRANKING.get(id);
         if (crank != null) {
             ItemStack lidar = player.getItemInHand(crank.hand);
-            if (!(lidar.getItem() instanceof LidarItem) || LidarItem.battery(lidar) == null) {
+            if (lidar != crank.device || !(lidar.getItem() instanceof LidarItem) || LidarItem.battery(lidar) == null
+                    || LidarModules.level(lidar, LidarModules.Kind.DYNAMO) == 0) {
+                write(player, crank, 1);
                 CRANKING.remove(id);
                 crankSound(player, false);
                 return;
@@ -111,8 +118,12 @@ public final class LidarPower {
     }
 
     public static void onLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        SCANNING.remove(event.getEntity().getUUID());
-        if (CRANKING.remove(event.getEntity().getUUID()) != null && event.getEntity() instanceof ServerPlayer player) crankSound(player, false);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            Session scan = SCANNING.remove(player.getUUID());
+            if (scan != null) write(player, scan, -1);
+            Session crank = CRANKING.remove(player.getUUID());
+            if (crank != null) { write(player, crank, 1); crankSound(player, false); }
+        }
     }
 
     /** Someone coming near a cranking player hears the crank too. */
@@ -133,11 +144,18 @@ public final class LidarPower {
      * false once a spending battery is flat.
      */
     private static boolean write(ServerPlayer player, Session session, int sign) {
-        ItemStack lidar = player.getItemInHand(session.hand);
+        ItemStack lidar = session.device;
         Integer charge = LidarItem.battery(lidar);
         int whole = (int) session.unspent;
         session.unspent -= whole;
         if (!(lidar.getItem() instanceof LidarItem) || charge == null) return false;
+        if (sign < 0 && io.github.nullbrash.seepers.item.StarterLidarItem.isStarter(lidar)) {
+            int wear = lidar.getOrDefault(SeepersComponents.SCAN_WEAR.get(), 0) + session.wearTicks;
+            int every = ServerConfig.get(ServerConfig.STARTER_SCAN_WEAR_TICKS);
+            io.github.nullbrash.seepers.item.StarterLidarItem.wear(lidar, wear / every);
+            lidar.set(SeepersComponents.SCAN_WEAR.get(), wear % every);
+            session.wearTicks = 0;
+        }
         int next = Math.max(0, Math.min(BatteryItem.capacity(), charge + sign * whole));
         lidar.set(SeepersComponents.BATTERY.get(), next);
         return next > 0;

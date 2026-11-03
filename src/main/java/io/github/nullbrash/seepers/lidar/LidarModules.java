@@ -96,10 +96,15 @@ public final class LidarModules {
     }
 
     public static int level(ItemStack lidar, Kind kind) {
+        if (io.github.nullbrash.seepers.item.StarterLidarItem.isStarter(lidar)) {
+            if (kind == Kind.VIEW || kind == Kind.DENSITY || kind == Kind.DYNAMO || kind == Kind.BEAMS) return 1;
+            if (kind != Kind.ANALYSIS && kind != Kind.PATTERN) return 0;
+        }
         ItemContainerContents modules = lidar.get(SeepersComponents.MODULES.get());
         if (modules == null || modules.getSlots() <= kind.ordinal()) return 0;
         ItemStack module = modules.getStackInSlot(kind.ordinal());
-        return module.getItem() instanceof ModuleItem item && item.kind() == kind ? item.level() : 0;
+        return module.getItem() instanceof ModuleItem item && item.kind() == kind
+                && (!io.github.nullbrash.seepers.item.StarterLidarItem.isStarter(lidar) || item.level() == 1) ? item.level() : 0;
     }
 
     /** The memory card in the lidar (the memory slot), or empty. */
@@ -154,7 +159,8 @@ public final class LidarModules {
             case 2 -> ServerConfig.get(ServerConfig.LIDAR_DENSITY_2);
             default -> ServerConfig.get(ServerConfig.LIDAR_DENSITY_3);
         };
-        int limit = memory == 0 ? 0 : io.github.nullbrash.seepers.item.MemoryCardItem.capacity(memory);
+        int limit = io.github.nullbrash.seepers.item.StarterLidarItem.isStarter(lidar)
+                ? ServerConfig.get(ServerConfig.STARTER_POINTS) : memory == 0 ? 0 : io.github.nullbrash.seepers.item.MemoryCardItem.capacity(memory);
         double densityCost = switch (density) {
             case 0 -> 1;
             case 1 -> ServerConfig.get(ServerConfig.LIDAR_DENSITY_COST_1);
@@ -174,6 +180,19 @@ public final class LidarModules {
         return new Stats(view, area.field(), cone ? area.value() / 2 : 0, cone ? 0 : area.value(), points, limit, memory,
                 tierCost(area.tier()) * densityCost * beamsCost * (1 - Wiring.bonus(lidar)[0]), pattern(lidar),
                 level(lidar, Kind.DYNAMO) > 0, level(lidar, Kind.REFRESH) > 0, beams);
+    }
+
+    /** Несъёмные узлы используют общий формат данных, но не выдаются в доступные слоты меню. */
+    public static void initializeStarter(ItemStack lidar) {
+        if (!io.github.nullbrash.seepers.item.StarterLidarItem.isStarter(lidar)) return;
+        NonNullList<ItemStack> slots = contents(lidar);
+        if (!slots.get(Kind.MEMORY.ordinal()).isEmpty()) return;
+        slots.set(Kind.MEMORY.ordinal(), new ItemStack(io.github.nullbrash.seepers.registry.SeepersItems.MEMORY_CARDS.getFirst().get()));
+        for (Kind kind : new Kind[] {Kind.VIEW, Kind.DENSITY, Kind.BEAMS, Kind.DYNAMO}) {
+            slots.set(kind.ordinal(), new ItemStack(io.github.nullbrash.seepers.registry.SeepersItems.MODULES.get(kind).getFirst().get()));
+        }
+        store(lidar, slots);
+        if (lidar.get(SeepersComponents.BATTERY.get()) == null) lidar.set(SeepersComponents.BATTERY.get(), 0);
     }
 
     private LidarModules() {}

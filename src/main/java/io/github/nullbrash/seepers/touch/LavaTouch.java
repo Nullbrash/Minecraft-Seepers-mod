@@ -16,6 +16,8 @@ public final class LavaTouch {
 
     public static void handle(TouchLavaPayload payload, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player) || player.isSpectator() || !player.isAlive()) return;
+        // Рука закрыта рукавом костюма; защита проверяется сервером.
+        if (player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).getItem() instanceof io.github.nullbrash.seepers.item.HazmatItem) return;
         // The client only reports; the lava must really be within reach.
         double reach = ServerConfig.get(ServerConfig.TOUCH_HAND_REACH) + 1.0;
         if (player.getEyePosition().distanceToSqr(Vec3.atCenterOf(payload.pos())) > reach * reach) return;
